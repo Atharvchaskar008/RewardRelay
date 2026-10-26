@@ -1,27 +1,25 @@
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
+/** Template deploy pipeline (create-mst-app). Replaced by the idempotent MST deploy script in H5. */
 export async function deployAll(hre: HardhatRuntimeEnvironment) {
   const { ethers } = hre;
 
   const [deployer] = await ethers.getSigners();
 
-  console.log("Deploying Certificate...");
+  console.log("Deploying ReputationSBT...");
   console.log("Deployer:", deployer.address);
 
-  const Certificate = await ethers.getContractFactory("Certificate");
+  const ReputationSBT = await ethers.getContractFactory("ReputationSBT");
+  const sbt = await ReputationSBT.deploy(deployer.address);
+  await sbt.waitForDeployment();
 
-  const certificate = await Certificate.deploy();
-
-  await certificate.waitForDeployment();
-
-  const address = await certificate.getAddress();
-
-  console.log("Certificate deployed to:", address);
+  const address = await sbt.getAddress();
+  console.log("ReputationSBT deployed to:", address);
 
   return {
-    Certificate: {
+    ReputationSBT: {
       address,
-      constructorArguments: [],
+      constructorArguments: [deployer.address],
     },
   };
 }
