@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "hardhat node",
     "compile": "hardhat compile",
+    "build": "hardhat compile && tsc --noEmit",
     "test": "hardhat test",
-    "lint": "solhint 'contracts/**/*.sol'",
+    "coverage": "hardhat coverage",
+    "lint": "solhint \"contracts/**/*.sol\"",
     "deploy:testnet": "hardhat run scripts/deploy.ts --network testnet",
     "deploy:mainnet": "hardhat run scripts/deploy.ts --network mainnet",
     "verify:testnet": "hardhat run scripts/verify.ts --network testnet",

@@ -3,22 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/shared",
+    "packages/contracts",
+    "packages/frontend"
   ],
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "compile": "turbo run compile",
-    "lint": "turbo run lint",
-    "deploy:testnet": "turbo run deploy:testnet",
-    "deploy:mainnet": "turbo run deploy:mainnet",
-    "verify:testnet": "turbo run verify:testnet",
-    "verify:mainnet": "turbo run verify:mainnet",
-    "clean": "turbo run clean"
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev": "concurrently -k -n chain,web -c blue,green \"npm run dev -w contracts\" \"npm run dev -w frontend\"",
+    "compile": "npm run compile -w contracts",
+    "contracts:test": "npm run test -w contracts",
+    "contracts:coverage": "npm run coverage -w contracts",
+    "clean": "npm run clean --workspaces --if-present"
   },
   "devDependencies": {
-    "turbo": "^2.1.3"
+    "concurrently": "^9.1.0"
   },
   "engines": {
     "node": ">=18.18.0"
