@@ -200,17 +200,17 @@ to a seeker. Pausing intake stops new money while no deadline can be turned agai
 
 ## 8. `nextActionFor(id, account)`
 
-| Status                                      | Sharer         | Seeker           | Arbiter (non-party) | Anyone else                                            |
-| ------------------------------------------- | -------------- | ---------------- | ------------------- | ------------------------------------------------------ |
-| Listed                                      | Cancel         | —                | —                   | Accept if badge and `price <= maxDealValue`, else None |
-| Locked, `now <= deliverBy`                  | MarkDelivered  | Wait             | None                | None                                                   |
-| Locked, `now > deliverBy`                   | None           | ClaimRefund      | ClaimRefund         | ClaimRefund                                            |
-| Delivered, `now < releaseAt`                | Wait           | ConfirmOrDispute | None                | None                                                   |
-| Delivered, `now >= releaseAt`               | Release        | Release          | Release             | Release                                                |
-| Disputed, evidence window open              | AddEvidence    | AddEvidence      | Resolve             | None                                                   |
-| Disputed, window closed, before timeout     | Wait           | Wait             | Resolve             | None                                                   |
-| Disputed, `now >= opened + arbiterTimeout`  | DefaultResolve | DefaultResolve   | Resolve             | DefaultResolve                                         |
-| Completed / Refunded / Resolved / Cancelled | None           | None             | None                | None                                                   |
+| Status                                      | Sharer         | Seeker           | Arbiter (non-party) | Anyone else                                                                                                       |
+| ------------------------------------------- | -------------- | ---------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Listed                                      | Cancel         | —                | —                   | Accept if not paused, the event has not started, the account holds a badge and `price <= maxDealValue`; else None |
+| Locked, `now <= deliverBy`                  | MarkDelivered  | Wait             | None                | None                                                                                                              |
+| Locked, `now > deliverBy`                   | None           | ClaimRefund      | ClaimRefund         | ClaimRefund                                                                                                       |
+| Delivered, `now < releaseAt`                | Wait           | ConfirmOrDispute | None                | None                                                                                                              |
+| Delivered, `now >= releaseAt`               | Release        | Release          | Release             | Release                                                                                                           |
+| Disputed, evidence window open              | AddEvidence    | AddEvidence      | Resolve             | None                                                                                                              |
+| Disputed, window closed, before timeout     | Wait           | Wait             | Resolve             | None                                                                                                              |
+| Disputed, `now >= opened + arbiterTimeout`  | DefaultResolve | DefaultResolve   | Resolve             | DefaultResolve                                                                                                    |
+| Completed / Refunded / Resolved / Cancelled | None           | None             | None                | None                                                                                                              |
 
 Unknown ids revert with `DealNotFound`. The backend maps these to its UI actions (H8).
 

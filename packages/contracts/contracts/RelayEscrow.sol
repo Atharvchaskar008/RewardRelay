@@ -7,6 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IRelayEscrow} from "./interfaces/IRelayEscrow.sol";
 import {IReputationSBT} from "./interfaces/IReputationSBT.sol";
 
@@ -19,14 +20,7 @@ import {IReputationSBT} from "./interfaces/IReputationSBT.sol";
 ///
 /// Solvency (I1): `address(this).balance == totalEscrowed + totalWithdrawable` before and after every
 /// external call; `totalEscrowed` is reduced right before each payout is sent.
-abstract contract RelayEscrow is
-    IRelayEscrow,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable,
-    EIP712,
-    Nonces
-{
+contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, Pausable, EIP712, Nonces {
     // ------------------------------------------------------------------------------------------------
     // Roles and bounds
     // ------------------------------------------------------------------------------------------------
@@ -349,8 +343,114 @@ abstract contract RelayEscrow is
     }
 
     // ------------------------------------------------------------------------------------------------
+    // Administration
+    // ------------------------------------------------------------------------------------------------
+
+    /// @inheritdoc IRelayEscrow
+    function setFeeBps(uint16 feeBps_) external onlyRole(POLICY_ADMIN_ROLE) {
+        if (feeBps_ > MAX_FEE_BPS) revert FeeTooHigh(feeBps_);
+        _feeBps = feeBps_;
+        emit FeeBpsSet(feeBps_);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function setDepositBps(
+        uint16[3] calldata sharerBpsByTier,
+        uint16 seekerBps
+    ) external onlyRole(POLICY_ADMIN_ROLE) {
+        for (uint256 tier; tier < 3; ++tier) {
+            if (sharerBpsByTier[tier] > BPS) revert DepositBpsTooHigh(sharerBpsByTier[tier]);
+        }
+        if (seekerBps > BPS) revert DepositBpsTooHigh(seekerBps);
+        _sharerDepositBps = sharerBpsByTier;
+        _seekerDepositBps = seekerBps;
+        emit DepositBpsSet(sharerBpsByTier, seekerBps);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function setArbiterTimeout(uint32 timeout) external onlyRole(POLICY_ADMIN_ROLE) {
+        if (timeout < MIN_WINDOW || timeout > MAX_ARBITER_TIMEOUT) {
+            revert ArbiterTimeoutOutOfBounds(timeout);
+        }
+        _arbiterTimeout = timeout;
+        emit ArbiterTimeoutSet(timeout);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function setTreasury(address treasury_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (treasury_ == address(0)) revert ZeroAddress();
+        _treasury = treasury_;
+        emit TreasurySet(treasury_);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function unpause() external onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+
+    /// @notice Plain MSTC transfers are rejected: value enters only through listings and accepts.
+    receive() external payable {
+        revert DirectPaymentRejected();
+    }
+
+    /// @notice Unknown calls are rejected.
+    fallback() external payable {
+        revert DirectPaymentRejected();
+    }
+
+    // ------------------------------------------------------------------------------------------------
     // Views
     // ------------------------------------------------------------------------------------------------
+
+    /// @inheritdoc IRelayEscrow
+    function nextActionFor(uint256 id, address account) external view returns (NextAction) {
+        Deal storage deal = _existingDeal(id);
+        Status status = deal.status;
+        bool isSharer = account == deal.sharer;
+        bool isSeeker = account != address(0) && account == deal.seeker;
+
+        if (status == Status.Listed) {
+            if (isSharer) return NextAction.Cancel;
+            return _canAccept(account, deal) ? NextAction.Accept : NextAction.None;
+        }
+        if (status == Status.Locked) {
+            if (block.timestamp > deal.deliverBy) {
+                return isSharer ? NextAction.None : NextAction.ClaimRefund;
+            }
+            if (isSharer) return NextAction.MarkDelivered;
+            return isSeeker ? NextAction.Wait : NextAction.None;
+        }
+        if (status == Status.Delivered) {
+            if (block.timestamp >= deal.releaseAt) return NextAction.Release;
+            if (isSeeker) return NextAction.ConfirmOrDispute;
+            return isSharer ? NextAction.Wait : NextAction.None;
+        }
+        if (status == Status.Disputed) {
+            bool isParty = isSharer || isSeeker;
+            if (!isParty && hasRole(ARBITER_ROLE, account)) return NextAction.Resolve;
+            if (block.timestamp >= uint256(deal.disputeOpenedAt) + deal.arbiterTimeout) {
+                return NextAction.DefaultResolve;
+            }
+            if (!isParty) return NextAction.None;
+            return
+                block.timestamp <= uint256(deal.disputeOpenedAt) + deal.policy.disputeWindow
+                    ? NextAction.AddEvidence
+                    : NextAction.Wait;
+        }
+        return NextAction.None; // terminal
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function solvencyDelta() external view returns (int256) {
+        return
+            SafeCast.toInt256(address(this).balance) -
+            SafeCast.toInt256(_totalEscrowed + _totalWithdrawable);
+    }
 
     /// @inheritdoc IRelayEscrow
     function requiredSharerDeposit(address sharer, uint256 price) external view returns (uint256) {
@@ -467,6 +567,13 @@ abstract contract RelayEscrow is
     function _dealIn(uint256 id, Status expected) internal view returns (Deal storage deal) {
         deal = _existingDeal(id);
         if (deal.status != expected) revert InvalidStatus(id, deal.status);
+    }
+
+    /// @dev Whether `account` could accept the listed `deal` right now.
+    function _canAccept(address account, Deal storage deal) internal view returns (bool) {
+        if (paused() || (deal.eventTime != 0 && block.timestamp >= deal.eventTime)) return false;
+        (bool badge, , , , , uint256 limit) = SBT.trustOf(account);
+        return badge && deal.price <= limit;
     }
 
     /// @dev Requires a badge and `price <= maxDealValue(account)`; returns the account's tier.
