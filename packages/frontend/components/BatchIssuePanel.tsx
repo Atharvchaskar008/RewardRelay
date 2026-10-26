@@ -81,8 +81,8 @@ export default function BatchIssuePanel() {
       <div className="card-header">
         <h2>Batch Issue</h2>
         <p className="hint">
-          One certificate per line: <code>address,holderName,credential,issuedOn</code> — issues
-          all of them in a single transaction.
+          One certificate per line: <code>address,holderName,credential,issuedOn</code> — issues all
+          of them in a single transaction.
         </p>
       </div>
 
@@ -111,7 +111,11 @@ export default function BatchIssuePanel() {
               type="button"
               onClick={handleBatchIssue}
               disabled={
-                !isConnected || !isConnectedWalletIssuer || rows.length === 0 || errors.length > 0 || busy
+                !isConnected ||
+                !isConnectedWalletIssuer ||
+                rows.length === 0 ||
+                errors.length > 0 ||
+                busy
               }
             >
               {isWritePending
@@ -131,14 +135,20 @@ export default function BatchIssuePanel() {
               CORS / failed outright (a &quot;Failed to fetch&quot; error in the console).
             </p>
           )}
-          {isConnected && !isIssuerLoading && !isIssuerError && isConnectedWalletIssuer === false && (
-            <p className="network-warning">
-              Connected wallet isn&apos;t an authorized issuer. Ask the contract owner to grant it
-              issuer rights in the Issuer Wallets panel below.
-            </p>
-          )}
+          {isConnected &&
+            !isIssuerLoading &&
+            !isIssuerError &&
+            isConnectedWalletIssuer === false && (
+              <p className="network-warning">
+                Connected wallet isn&apos;t an authorized issuer. Ask the contract owner to grant it
+                issuer rights in the Issuer Wallets panel below.
+              </p>
+            )}
           {errors.length > 0 && (
-            <p className="status-error">{errors[0]}{errors.length > 1 ? ` (+${errors.length - 1} more)` : ""}</p>
+            <p className="status-error">
+              {errors[0]}
+              {errors.length > 1 ? ` (+${errors.length - 1} more)` : ""}
+            </p>
           )}
           {isConfirmed && <p className="status-success">Batch issued successfully.</p>}
           {writeError && <p className="network-warning">{writeError.message}</p>}

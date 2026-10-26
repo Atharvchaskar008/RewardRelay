@@ -53,7 +53,7 @@ export function useMstWallet() {
       const gasLimit = await client.signer.estimateGas("sendNative", [to, amountWei]);
       return gasLimit.toString();
     },
-    [client]
+    [client],
   );
 
   const sendNative = useCallback(
@@ -72,7 +72,7 @@ export function useMstWallet() {
         setSending(false);
       }
     },
-    [client]
+    [client],
   );
 
   return {

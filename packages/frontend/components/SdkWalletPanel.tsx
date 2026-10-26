@@ -70,8 +70,8 @@ export function SdkWalletPanel() {
     <div className="card">
       <h2>SDK Wallet Playground</h2>
       <p className="hint">
-        Powered by <code>@mstblockchain/mst-sdk</code>. Generates a burner wallet in your
-        browser — testnet only, never fund it with real assets.
+        Powered by <code>@mstblockchain/mst-sdk</code>. Generates a burner wallet in your browser —
+        testnet only, never fund it with real assets.
       </p>
 
       {!address ? (

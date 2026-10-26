@@ -51,7 +51,9 @@ describe("Certificate", function () {
       const { certificate, holder, other, certHash } = await deployCertificate();
 
       await certificate.setIssuer(other.address, true);
-      await certificate.connect(other).issue(holder.address, certHash, "ipfs://QmExampleCertificate");
+      await certificate
+        .connect(other)
+        .issue(holder.address, certHash, "ipfs://QmExampleCertificate");
 
       expect(await certificate.ownerOf(1)).to.equal(holder.address);
     });
@@ -62,7 +64,7 @@ describe("Certificate", function () {
       await certificate.setIssuer(owner.address, false);
 
       await expect(
-        certificate.issue(holder.address, certHash, "ipfs://QmExampleCertificate")
+        certificate.issue(holder.address, certHash, "ipfs://QmExampleCertificate"),
       ).to.be.revertedWith("Certificate: caller is not an issuer");
     });
 
@@ -87,7 +89,7 @@ describe("Certificate", function () {
       const { certificate, holder, other, certHash } = await deployCertificate();
 
       await expect(
-        certificate.connect(other).issue(holder.address, certHash, "ipfs://QmExampleCertificate")
+        certificate.connect(other).issue(holder.address, certHash, "ipfs://QmExampleCertificate"),
       ).to.be.revertedWith("Certificate: caller is not an issuer");
     });
 
@@ -99,7 +101,7 @@ describe("Certificate", function () {
       await certificate.batchIssue(
         [holder.address, other.address],
         [certHash, certHash2],
-        ["ipfs://QmExampleCertificate1", "ipfs://QmExampleCertificate2"]
+        ["ipfs://QmExampleCertificate1", "ipfs://QmExampleCertificate2"],
       );
 
       expect(await certificate.ownerOf(1)).to.equal(holder.address);
@@ -111,7 +113,7 @@ describe("Certificate", function () {
       const { certificate, holder, certHash } = await deployCertificate();
 
       await expect(
-        certificate.batchIssue([holder.address], [certHash, certHash], ["ipfs://a"])
+        certificate.batchIssue([holder.address], [certHash, certHash], ["ipfs://a"]),
       ).to.be.revertedWith("Certificate: array length mismatch");
     });
   });
@@ -174,7 +176,7 @@ describe("Certificate", function () {
       await certificate.issue(holder.address, certHash, "ipfs://QmExampleCertificate");
 
       await expect(
-        certificate.connect(holder).transferFrom(holder.address, other.address, 1)
+        certificate.connect(holder).transferFrom(holder.address, other.address, 1),
       ).to.be.revertedWith("Certificate: soulbound, non-transferable");
     });
   });
@@ -185,8 +187,8 @@ describe("Certificate", function () {
 
       await certificate.pause();
 
-      await expect(certificate.issue(holder.address, certHash, "ipfs://QmExampleCertificate")).to
-        .be.reverted;
+      await expect(certificate.issue(holder.address, certHash, "ipfs://QmExampleCertificate")).to.be
+        .reverted;
     });
 
     it("should allow issuing after unpausing", async function () {

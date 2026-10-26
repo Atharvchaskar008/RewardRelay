@@ -3,8 +3,15 @@
 import { useCertificate } from "@/hooks/useCertificate";
 
 export default function CertificateStats() {
-  const { name, symbol, totalSupply, isDeployed, isNameLoading, isSymbolLoading, isTotalSupplyLoading } =
-    useCertificate();
+  const {
+    name,
+    symbol,
+    totalSupply,
+    isDeployed,
+    isNameLoading,
+    isSymbolLoading,
+    isTotalSupplyLoading,
+  } = useCertificate();
 
   return (
     <div className="card">
@@ -15,7 +22,8 @@ export default function CertificateStats() {
 
       {!isDeployed ? (
         <p className="hint">
-          No Certificate deployment found for this network. Run <code>npm run deploy:testnet</code> first.
+          No Certificate deployment found for this network. Run <code>npm run deploy:testnet</code>{" "}
+          first.
         </p>
       ) : (
         <div className="grid grid-3">

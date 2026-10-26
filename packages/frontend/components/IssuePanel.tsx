@@ -141,7 +141,11 @@ export default function IssuePanel() {
               }}
               disabled={!canSubmit || busy}
             >
-              {isWritePending ? "Confirm in wallet…" : isConfirming ? "Issuing…" : "Issue certificate"}
+              {isWritePending
+                ? "Confirm in wallet…"
+                : isConfirming
+                  ? "Issuing…"
+                  : "Issue certificate"}
             </button>
           </div>
 
@@ -154,12 +158,15 @@ export default function IssuePanel() {
               CORS / failed outright (a &quot;Failed to fetch&quot; error in the console).
             </p>
           )}
-          {isConnected && !isIssuerLoading && !isIssuerError && isConnectedWalletIssuer === false && (
-            <p className="network-warning">
-              Connected wallet isn&apos;t an authorized issuer. Ask the contract owner to grant it
-              issuer rights in the Issuer Wallets panel below.
-            </p>
-          )}
+          {isConnected &&
+            !isIssuerLoading &&
+            !isIssuerError &&
+            isConnectedWalletIssuer === false && (
+              <p className="network-warning">
+                Connected wallet isn&apos;t an authorized issuer. Ask the contract owner to grant it
+                issuer rights in the Issuer Wallets panel below.
+              </p>
+            )}
           {isConfirmed && (
             <p className="status-success">
               Certificate issued

@@ -39,8 +39,8 @@ export default function IssuerAdminPanel() {
       <div className="card-header">
         <h2>Issuer Wallets</h2>
         <p className="hint">
-          Owner-only. Grant issuing rights to any wallet — no need to deploy with, or connect as,
-          a single hard-coded address. The deployer is an issuer by default.
+          Owner-only. Grant issuing rights to any wallet — no need to deploy with, or connect as, a
+          single hard-coded address. The deployer is an issuer by default.
         </p>
       </div>
 
@@ -51,8 +51,8 @@ export default function IssuerAdminPanel() {
         </p>
       ) : isOwnerError ? (
         <p className="network-warning">
-          Couldn&apos;t read <code>owner()</code> from the deployed contract at this address —
-          check the browser console for the underlying error. Common causes: (1)
+          Couldn&apos;t read <code>owner()</code> from the deployed contract at this address — check
+          the browser console for the underlying error. Common causes: (1)
           <code>packages/shared/src/contracts.ts</code> points at a stale deployment — run{" "}
           <code>npm run deploy:testnet</code> again and reload; (2) the RPC request was blocked by
           CORS or failed outright (a &quot;Failed to fetch&quot; error in the console) — this

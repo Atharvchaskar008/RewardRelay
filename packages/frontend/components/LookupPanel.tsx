@@ -76,12 +76,18 @@ export default function LookupPanel() {
               <div className="nft-details">
                 {isVerifyLoading ? (
                   <p className="hint">Checking…</p>
-                ) : !verifyResult || (!verifyResult.isValid && verifyResult.holder === "0x0000000000000000000000000000000000000000") ? (
+                ) : !verifyResult ||
+                  (!verifyResult.isValid &&
+                    verifyResult.holder === "0x0000000000000000000000000000000000000000") ? (
                   <p className="status-error">No certificate found for this token ID.</p>
                 ) : (
                   <>
                     <p>
-                      <span className={verifyResult.revoked ? "badge badge-revoked" : "badge badge-valid"}>
+                      <span
+                        className={
+                          verifyResult.revoked ? "badge badge-revoked" : "badge badge-valid"
+                        }
+                      >
                         {verifyResult.revoked ? "Revoked" : "Valid"}
                       </span>
                     </p>
@@ -114,7 +120,11 @@ export default function LookupPanel() {
                           onClick={handleRevoke}
                           disabled={!isConnected || isWritePending || isConfirming}
                         >
-                          {isWritePending ? "Confirm in wallet…" : isConfirming ? "Revoking…" : "Revoke"}
+                          {isWritePending
+                            ? "Confirm in wallet…"
+                            : isConfirming
+                              ? "Revoking…"
+                              : "Revoke"}
                         </button>
                       </div>
                     )}

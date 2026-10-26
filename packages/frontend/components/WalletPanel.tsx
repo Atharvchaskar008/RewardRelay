@@ -9,7 +9,9 @@ export default function WalletPanel() {
     <div className="card">
       <div className="card-header">
         <h2>Issuer Wallet</h2>
-        <p className="hint">Connect the wallet that owns the Certificate contract to issue credentials.</p>
+        <p className="hint">
+          Connect the wallet that owns the Certificate contract to issue credentials.
+        </p>
       </div>
 
       <ConnectButton />

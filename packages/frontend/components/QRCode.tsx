@@ -26,5 +26,7 @@ export function CertificateQR({ value, size = 176 }: { value: string; size?: num
     return <div className="qr-placeholder" style={{ width: size, height: size }} />;
   }
 
-  return <img src={dataUrl} alt="Verification QR code" width={size} height={size} className="qr-code" />;
+  return (
+    <img src={dataUrl} alt="Verification QR code" width={size} height={size} className="qr-code" />
+  );
 }

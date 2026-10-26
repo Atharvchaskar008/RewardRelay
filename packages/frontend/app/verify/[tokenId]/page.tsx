@@ -14,13 +14,19 @@ export default function VerifyPage({ params }: { params: { tokenId: string } }) 
 
   const { verifyResult, isVerifyLoading, isDeployed } = useCertificate(parsedTokenId);
 
-  const notFound = verifyResult && !verifyResult.isValid && verifyResult.holder === ZERO_ADDRESS && !verifyResult.revoked;
+  const notFound =
+    verifyResult &&
+    !verifyResult.isValid &&
+    verifyResult.holder === ZERO_ADDRESS &&
+    !verifyResult.revoked;
 
   return (
     <main>
       <div className="page-header">
         <h1>Certificate Verification</h1>
-        <p className="hint">Token #{params.tokenId} — read directly from the Certificate contract.</p>
+        <p className="hint">
+          Token #{params.tokenId} — read directly from the Certificate contract.
+        </p>
       </div>
 
       <div className="card">

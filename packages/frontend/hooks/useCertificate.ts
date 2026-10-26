@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-} from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import type { Address } from "viem";
 import { deployments } from "rewardrelay-shared";
 import { mstMainnet } from "@/lib/chains";
@@ -47,9 +42,7 @@ export type VerifyResult = {
 function useCertificateContract(): DeployedContract | undefined {
   const { chainId } = useAccount();
   const network = chainId === mstMainnet.id ? "mainnet" : "testnet";
-  return (deployments as Record<string, any>)[network]?.Certificate as
-    | DeployedContract
-    | undefined;
+  return (deployments as Record<string, any>)[network]?.Certificate as DeployedContract | undefined;
 }
 
 /**
@@ -67,10 +60,11 @@ export function useCertificate(tokenId?: bigint) {
     ? { address: contract.address, abi: contract.abi }
     : { address: undefined, abi: undefined };
 
-  const {
-    data: name,
-    isLoading: isNameLoading,
-  } = useReadContract({ ...base, functionName: "name", query: { enabled } });
+  const { data: name, isLoading: isNameLoading } = useReadContract({
+    ...base,
+    functionName: "name",
+    query: { enabled },
+  });
 
   const {
     data: owner,
@@ -94,10 +88,11 @@ export function useCertificate(tokenId?: bigint) {
   });
   useLogReadError("isIssuer()", issuerError, contract?.address, network);
 
-  const {
-    data: symbol,
-    isLoading: isSymbolLoading,
-  } = useReadContract({ ...base, functionName: "symbol", query: { enabled } });
+  const { data: symbol, isLoading: isSymbolLoading } = useReadContract({
+    ...base,
+    functionName: "symbol",
+    query: { enabled },
+  });
 
   const {
     data: totalSupply,
@@ -145,10 +140,9 @@ export function useCertificate(tokenId?: bigint) {
     error: writeError,
   } = useWriteContract();
 
-  const {
-    isLoading: isConfirming,
-    isSuccess: isConfirmed,
-  } = useWaitForTransactionReceipt({ hash: writeData });
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: writeData,
+  });
 
   const issue = (to: Address, certHash: `0x${string}`, tokenURI_: string) => {
     if (!contract) return;
@@ -160,11 +154,7 @@ export function useCertificate(tokenId?: bigint) {
     });
   };
 
-  const batchIssue = (
-    to: Address[],
-    certHashes: `0x${string}`[],
-    tokenURIs: string[],
-  ) => {
+  const batchIssue = (to: Address[], certHashes: `0x${string}`[], tokenURIs: string[]) => {
     if (!contract) return;
     writeContract({
       address: contract.address,

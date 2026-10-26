@@ -18,7 +18,7 @@ async function main() {
   }
 
   for (const [name, info] of Object.entries(
-    forNetwork as Record<string, { address: string; constructorArguments: unknown[] }>
+    forNetwork as Record<string, { address: string; constructorArguments: unknown[] }>,
   )) {
     console.log(`Verifying ${name} at ${info.address} on ${network}...`);
     try {
@@ -27,11 +27,12 @@ async function main() {
         constructorArguments: info.constructorArguments ?? [],
       });
       console.log(`✓ ${name} verified`);
-    } catch (error: any) {
-      if (error?.message?.toLowerCase().includes("already verified")) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.toLowerCase().includes("already verified")) {
         console.log(`✓ ${name} already verified`);
       } else {
-        console.error(`✖ Failed to verify ${name}:`, error?.message ?? error);
+        console.error(`✖ Failed to verify ${name}:`, message);
       }
     }
   }

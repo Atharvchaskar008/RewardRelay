@@ -8,7 +8,7 @@
     "build": "hardhat compile && tsc --noEmit",
     "test": "hardhat test",
     "coverage": "hardhat coverage",
-    "lint": "solhint \"contracts/**/*.sol\"",
+    "lint": "solhint \"contracts/**/*.sol\" && eslint . --ext .ts",
     "deploy:testnet": "hardhat run scripts/deploy.ts --network mstTestnet",
     "deploy:mainnet": "hardhat run scripts/deploy.ts --network mstMainnet",
     "verify:testnet": "hardhat run scripts/verify.ts --network mstTestnet",

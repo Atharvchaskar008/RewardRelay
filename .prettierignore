@@ -1,0 +1,15 @@
+node_modules
+artifacts
+cache
+coverage
+coverage.json
+typechain-types
+.next
+package-lock.json
+
+# private files, never committed
+docs
+harness.md
+
+# rewritten for the submission in H15
+README.md

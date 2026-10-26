@@ -1,7 +1,7 @@
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
 export async function deployAll(hre: HardhatRuntimeEnvironment) {
-  const { ethers } = await import("hardhat");
+  const { ethers } = hre;
 
   const [deployer] = await ethers.getSigners();
 

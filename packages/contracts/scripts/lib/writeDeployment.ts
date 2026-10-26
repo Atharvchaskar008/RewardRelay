@@ -8,15 +8,7 @@ type ContractRecord = Record<
 type Deployments = Record<string, ContractRecord>;
 
 const DEPLOYMENTS_JSON = path.join(__dirname, "..", "..", "deployments.json");
-const SHARED_CONTRACTS_TS = path.join(
-  __dirname,
-  "..",
-  "..",
-  "..",
-  "shared",
-  "src",
-  "contracts.ts"
-);
+const SHARED_CONTRACTS_TS = path.join(__dirname, "..", "..", "..", "shared", "src", "contracts.ts");
 
 function readDeployments(): Deployments {
   if (!fs.existsSync(DEPLOYMENTS_JSON)) return {};
@@ -38,6 +30,6 @@ export function writeDeploymentAddresses(network: string, deployed: ContractReco
 export const deployments = ${JSON.stringify(all, null, 2)} as const;
 
 export type NetworkName = keyof typeof deployments;
-`
+`,
   );
 }
