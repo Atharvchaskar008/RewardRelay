@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "dist"
+  },
+  "include": [
+    "./scripts",
+    "./test",
+    "./typechain-types",
+    "./deploy.config.ts",
+    "./hardhat.config.ts"
+  ]
+}

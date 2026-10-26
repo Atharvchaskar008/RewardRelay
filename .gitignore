@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+
+# build and tool output
+.next/
+artifacts/
+cache/
+coverage/
+coverage.json
+typechain-types/
+*.tsbuildinfo
+
+# env files and secrets (only the committed examples are allowed)
+.env*
+!.env.example
+
+# logs
+*.log
+
+# vercel
+.vercel/
+
+# local-only deployment records
+deployments/*.local.json
