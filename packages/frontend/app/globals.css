@@ -1,0 +1,273 @@
+:root {
+  color-scheme: light dark;
+  --bg: #0e151b;
+  --surface: #141d25;
+  --surface-raised: #182129;
+  --ink: #e8edef;
+  --ink-soft: #9aabb4;
+  --line: #26323c;
+  --accent: #e58a52;
+  --success: #6fcf97;
+  --error: #e27272;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.page-header .hint {
+  margin-top: 0.5rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.hint {
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.85em;
+}
+
+.wallet {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.wallet-address {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 0.4rem 0.7rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+button {
+  font: inherit;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.network-switcher {
+  margin-top: 1rem;
+}
+
+.network-warning {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(226, 114, 114, 0.12);
+  border: 1px solid rgba(226, 114, 114, 0.4);
+  color: var(--ink);
+  font-size: 0.875rem;
+}
+
+.card {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.card-header {
+  margin-bottom: 1.25rem;
+}
+
+input,
+textarea {
+  font: inherit;
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  width: 100%;
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus,
+button:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875rem;
+}
+
+.break {
+  word-break: break-all;
+}
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 560px) {
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+.stat-value {
+  margin: 0.2rem 0 0;
+  font-weight: 600;
+}
+
+.status-success {
+  color: var(--success);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.status-error {
+  color: var(--error);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-valid {
+  background: rgba(111, 207, 151, 0.15);
+  border: 1px solid rgba(111, 207, 151, 0.4);
+  color: var(--success);
+}
+
+.badge-revoked {
+  background: rgba(226, 114, 114, 0.15);
+  border: 1px solid rgba(226, 114, 114, 0.4);
+  color: var(--error);
+}
+
+.nft-preview {
+  display: grid;
+  grid-template-columns: 176px 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 560px) {
+  .nft-preview {
+    grid-template-columns: 1fr;
+  }
+}
+
+.qr-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.qr-code {
+  display: block;
+  border-radius: 4px;
+}
+
+.qr-placeholder {
+  border-radius: 4px;
+  background: var(--surface-raised);
+}
+
+.nft-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sdk-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
