@@ -234,7 +234,11 @@ abstract contract RelayEscrow is
 
     /// @inheritdoc IRelayEscrow
     function confirmReceipt(uint256 id) external nonReentrant {
-        Deal storage deal = _dealIn(id, Status.Delivered);
+        Deal storage deal = _existingDeal(id);
+        Status status = deal.status;
+        // Delivered: early confirmation (T7). Disputed: the seeker concedes the dispute (T11).
+        if (status != Status.Delivered && status != Status.Disputed)
+            revert InvalidStatus(id, status);
         if (msg.sender != deal.seeker) revert NotSeeker(id, msg.sender);
         _complete(id, deal, true);
     }
@@ -259,6 +263,53 @@ abstract contract RelayEscrow is
         emit Refunded(id, seeker, amount);
         SBT.recordFault(deal.sharer);
         _payout(id, seeker, amount);
+    }
+
+    // ------------------------------------------------------------------------------------------------
+    // Disputes
+    // ------------------------------------------------------------------------------------------------
+
+    /// @inheritdoc IRelayEscrow
+    function raiseDispute(uint256 id, bytes32 evidenceHash) external {
+        Deal storage deal = _dealIn(id, Status.Delivered);
+        if (msg.sender != deal.seeker) revert NotSeeker(id, msg.sender);
+        if (block.timestamp >= deal.releaseAt) revert DisputeWindowClosed(id, deal.releaseAt);
+        if (evidenceHash == bytes32(0)) revert EvidenceRequired();
+
+        deal.status = Status.Disputed;
+        deal.disputeOpenedAt = uint64(block.timestamp);
+        emit DisputeRaised(id, msg.sender, evidenceHash);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function addEvidence(uint256 id, bytes32 evidenceHash) external {
+        Deal storage deal = _dealIn(id, Status.Disputed);
+        if (msg.sender != deal.sharer && msg.sender != deal.seeker) revert NotParty(id, msg.sender);
+        uint64 closesAt = deal.disputeOpenedAt + deal.policy.disputeWindow;
+        if (block.timestamp > closesAt) revert EvidenceWindowClosed(id, closesAt);
+        if (evidenceHash == bytes32(0)) revert EvidenceRequired();
+
+        emit EvidenceAdded(id, msg.sender, evidenceHash);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function resolveDispute(
+        uint256 id,
+        uint16 seekerShareBps,
+        Party faultParty
+    ) external nonReentrant onlyRole(ARBITER_ROLE) {
+        Deal storage deal = _dealIn(id, Status.Disputed);
+        if (msg.sender == deal.sharer || msg.sender == deal.seeker) revert ArbiterIsParty(id);
+        if (seekerShareBps > BPS) revert InvalidShareBps(seekerShareBps);
+        _settleDispute(id, deal, seekerShareBps, faultParty, msg.sender);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function defaultResolve(uint256 id) external nonReentrant {
+        Deal storage deal = _dealIn(id, Status.Disputed);
+        uint64 availableAt = deal.disputeOpenedAt + deal.arbiterTimeout;
+        if (block.timestamp < availableAt) revert ArbiterTimeoutNotReached(id, availableAt);
+        _settleDispute(id, deal, BPS / 2, Party.None, address(0));
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -479,6 +530,66 @@ abstract contract RelayEscrow is
         _payout(id, sharer, sharerPayout);
         _payout(id, seeker, seekerPayout);
         _payout(id, _treasury, fee);
+    }
+
+    /// @dev Resolved (T12, T13). `arbiter == address(0)` marks the default ruling, which charges no fee.
+    function _settleDispute(
+        uint256 id,
+        Deal storage deal,
+        uint16 seekerShareBps,
+        Party faultParty,
+        address arbiter
+    ) internal {
+        deal.status = Status.Resolved;
+        (uint256 sharerPayout, uint256 seekerPayout, uint256 fee) = _disputePayouts(
+            deal,
+            seekerShareBps,
+            faultParty,
+            arbiter != address(0)
+        );
+
+        emit DisputeResolved(
+            id,
+            arbiter,
+            seekerShareBps,
+            faultParty,
+            sharerPayout,
+            seekerPayout,
+            fee
+        );
+        if (faultParty == Party.Sharer) SBT.recordFault(deal.sharer);
+        else if (faultParty == Party.Seeker) SBT.recordFault(deal.seeker);
+        _payout(id, deal.sharer, sharerPayout);
+        _payout(id, deal.seeker, seekerPayout);
+        _payout(id, _treasury, fee);
+    }
+
+    /// @dev Money table of SPEC.md §3: the seeker gets `Pk = P * share / 10000`, the sharer `P - Pk`
+    /// minus the fee (charged on the sharer's share only); the at-fault party's deposit goes to the other
+    /// party, otherwise both deposits are returned.
+    function _disputePayouts(
+        Deal storage deal,
+        uint16 seekerShareBps,
+        Party faultParty,
+        bool chargeFee
+    ) internal view returns (uint256 sharerPayout, uint256 seekerPayout, uint256 fee) {
+        uint256 price = deal.price;
+        seekerPayout = _bps(price, seekerShareBps);
+        sharerPayout = price - seekerPayout;
+        if (chargeFee) {
+            fee = _bps(sharerPayout, deal.feeBps);
+            sharerPayout -= fee;
+        }
+
+        uint256 deposits = uint256(deal.sharerDeposit) + deal.seekerDeposit;
+        if (faultParty == Party.Sharer) {
+            seekerPayout += deposits;
+        } else if (faultParty == Party.Seeker) {
+            sharerPayout += deposits;
+        } else {
+            sharerPayout += deal.sharerDeposit;
+            seekerPayout += deal.seekerDeposit;
+        }
     }
 
     /// @dev Sends `amount` of deal `id` to `to` while keeping the solvency invariant. Implemented by the
