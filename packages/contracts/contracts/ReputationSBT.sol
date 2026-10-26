@@ -4,6 +4,8 @@ pragma solidity 0.8.24;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IERC5192} from "./interfaces/IERC5192.sol";
 import {IReputationSBT} from "./interfaces/IReputationSBT.sol";
 
@@ -217,6 +219,25 @@ contract ReputationSBT is ERC721, AccessControl, IReputationSBT {
         return _pairSeen[_pairKey(a, b)];
     }
 
+    /// @notice Fully on-chain metadata: a base64 `data:` URI with the badge name, tier and completed deals.
+    /// @dev No external URI and no user-supplied strings, so the JSON cannot be tampered with or injected.
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        Stats storage stats = _stats[_requireOwned(tokenId)];
+        // JSON is written with single-quoted Solidity strings so its own quotes need no escaping.
+        /* solhint-disable quotes */
+        bytes memory json = abi.encodePacked(
+            '{"name":"RewardRelay Trust Badge",',
+            '"description":"Soulbound reputation badge for RewardRelay deals on MST Blockchain.",',
+            '"attributes":[{"trait_type":"Tier","value":"',
+            _tierName(_tierFor(stats)),
+            '"},{"trait_type":"Completed deals","display_type":"number","value":',
+            Strings.toString(stats.completed),
+            "}]}"
+        );
+        /* solhint-enable quotes */
+        return string.concat("data:application/json;base64,", Base64.encode(json));
+    }
+
     /// @notice ERC-165: ERC-721, ERC-721 Metadata, AccessControl, ERC-5192 (`0xb45a3c0e`) and
     /// IReputationSBT.
     function supportsInterface(
@@ -273,6 +294,12 @@ contract ReputationSBT is ERC721, AccessControl, IReputationSBT {
             stats.completed >= rule.minCompleted &&
             stats.uniqueCounterparties >= rule.minUniqueCounterparties &&
             stats.disputesLost <= rule.maxDisputesLost;
+    }
+
+    function _tierName(uint8 tier) private pure returns (string memory) {
+        if (tier == VERIFIED) return "Verified";
+        if (tier == TRUSTED) return "Trusted";
+        return "New";
     }
 
     /// @dev Order-independent key of an address pair.
