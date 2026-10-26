@@ -318,7 +318,7 @@ interface IRelayEscrow {
     function setPolicy(uint8 category, Policy calldata policy) external;
 
     /// @notice Sets the protocol fee in basis points (new listings only). POLICY_ADMIN_ROLE, `<= 500`.
-    function setFeeBps(uint16 feeBps) external;
+    function setFeeBps(uint16 newFeeBps) external;
 
     /// @notice Sets the sharer deposit by tier and the seeker deposit, in basis points of the price
     /// (new listings only). POLICY_ADMIN_ROLE, each `<= 10000`.
@@ -329,7 +329,7 @@ interface IRelayEscrow {
     function setArbiterTimeout(uint32 timeout) external;
 
     /// @notice Sets the fee receiver. DEFAULT_ADMIN_ROLE, non-zero.
-    function setTreasury(address treasury) external;
+    function setTreasury(address newTreasury) external;
 
     /// @notice Blocks new commitments (createListing, acceptListing). PAUSER_ROLE.
     function pause() external;
