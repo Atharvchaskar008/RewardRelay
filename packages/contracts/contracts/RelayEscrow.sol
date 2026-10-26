@@ -246,6 +246,21 @@ abstract contract RelayEscrow is
         _complete(id, deal, false);
     }
 
+    /// @inheritdoc IRelayEscrow
+    function claimTimeout(uint256 id) external nonReentrant {
+        Deal storage deal = _dealIn(id, Status.Locked);
+        if (block.timestamp <= deal.deliverBy) revert DeliveryWindowOpen(id, deal.deliverBy);
+
+        // Refunded (T6): the seeker gets the price, its own deposit and the sharer's deposit.
+        deal.status = Status.Refunded;
+        address seeker = deal.seeker;
+        uint256 amount = uint256(deal.price) + deal.seekerDeposit + deal.sharerDeposit;
+
+        emit Refunded(id, seeker, amount);
+        SBT.recordFault(deal.sharer);
+        _payout(id, seeker, amount);
+    }
+
     // ------------------------------------------------------------------------------------------------
     // Policy registry
     // ------------------------------------------------------------------------------------------------
