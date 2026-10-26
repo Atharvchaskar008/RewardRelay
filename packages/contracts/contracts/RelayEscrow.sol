@@ -187,6 +187,66 @@ abstract contract RelayEscrow is
     }
 
     // ------------------------------------------------------------------------------------------------
+    // Deal lifecycle
+    // ------------------------------------------------------------------------------------------------
+
+    /// @inheritdoc IRelayEscrow
+    function acceptListing(uint256 id) external payable nonReentrant whenNotPaused {
+        Deal storage deal = _dealIn(id, Status.Listed);
+        if (msg.sender == deal.sharer) revert SharerCannotAccept(id);
+        _requireTrust(msg.sender, deal.price);
+        uint64 eventTime = deal.eventTime;
+        if (eventTime != 0 && block.timestamp >= eventTime) revert EventPassed(id, eventTime);
+        uint256 expected = uint256(deal.price) + deal.seekerDeposit;
+        if (msg.value != expected) revert IncorrectPayment(expected, msg.value);
+
+        deal.seeker = msg.sender;
+        _totalEscrowed += msg.value;
+
+        if (deal.policy.dealType == DealType.BuyForYou) {
+            uint64 deliverBy = uint64(block.timestamp) + deal.policy.deliveryWindow;
+            deal.status = Status.Locked;
+            deal.deliverBy = deliverBy;
+            emit DealLocked(id, msg.sender, msg.value, deliverBy);
+        } else {
+            // Pass-on: the code is already sealed in the vault, so the deal counts as delivered.
+            uint64 releaseAt = _releaseTime(deal);
+            deal.status = Status.Delivered;
+            deal.releaseAt = releaseAt;
+            emit DealLocked(id, msg.sender, msg.value, 0);
+            emit Delivered(id, bytes32(0), releaseAt);
+        }
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function markDelivered(uint256 id, bytes32 proofHash) external {
+        Deal storage deal = _dealIn(id, Status.Locked);
+        if (msg.sender != deal.sharer) revert NotSharer(id, msg.sender);
+        if (block.timestamp > deal.deliverBy) revert DeliveryWindowClosed(id, deal.deliverBy);
+        if (proofHash == bytes32(0)) revert ProofRequired();
+
+        uint64 releaseAt = _releaseTime(deal);
+        deal.status = Status.Delivered;
+        deal.proofHash = proofHash;
+        deal.releaseAt = releaseAt;
+        emit Delivered(id, proofHash, releaseAt);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function confirmReceipt(uint256 id) external nonReentrant {
+        Deal storage deal = _dealIn(id, Status.Delivered);
+        if (msg.sender != deal.seeker) revert NotSeeker(id, msg.sender);
+        _complete(id, deal, true);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function release(uint256 id) external nonReentrant {
+        Deal storage deal = _dealIn(id, Status.Delivered);
+        if (block.timestamp < deal.releaseAt) revert ReleaseNotDue(id, deal.releaseAt);
+        _complete(id, deal, false);
+    }
+
+    // ------------------------------------------------------------------------------------------------
     // Policy registry
     // ------------------------------------------------------------------------------------------------
 
@@ -378,6 +438,32 @@ abstract contract RelayEscrow is
             deal.termsHash,
             deal.codeFingerprint
         );
+    }
+
+    /// @dev `max(now + releaseDelay, eventTime + eventBuffer)`. With no event, `eventTime + eventBuffer`
+    /// is at most 30 days after the epoch, so the first term always wins.
+    function _releaseTime(Deal storage deal) internal view returns (uint64) {
+        uint64 afterDelivery = uint64(block.timestamp) + deal.policy.releaseDelay;
+        uint64 afterEvent = deal.eventTime + deal.policy.eventBuffer;
+        return afterDelivery > afterEvent ? afterDelivery : afterEvent;
+    }
+
+    /// @dev Completed (T7, T8, T11): sharer `P - fee + Ds`, seeker `Dk`, treasury `fee`; both badges
+    /// gain a completed deal. Status and amounts are final before any external call.
+    function _complete(uint256 id, Deal storage deal, bool confirmedBySeeker) internal {
+        deal.status = Status.Completed;
+        address sharer = deal.sharer;
+        address seeker = deal.seeker;
+        uint256 price = deal.price;
+        uint256 fee = _bps(price, deal.feeBps);
+        uint256 sharerPayout = price - fee + deal.sharerDeposit;
+        uint256 seekerPayout = deal.seekerDeposit;
+
+        emit Completed(id, sharer, seeker, sharerPayout, seekerPayout, fee, confirmedBySeeker);
+        SBT.recordSuccess(sharer, seeker, price);
+        _payout(id, sharer, sharerPayout);
+        _payout(id, seeker, seekerPayout);
+        _payout(id, _treasury, fee);
     }
 
     /// @dev Sends `amount` of deal `id` to `to` while keeping the solvency invariant. Implemented by the
