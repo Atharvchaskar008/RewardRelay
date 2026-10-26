@@ -347,10 +347,10 @@ contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, Pausable, 
     // ------------------------------------------------------------------------------------------------
 
     /// @inheritdoc IRelayEscrow
-    function setFeeBps(uint16 feeBps_) external onlyRole(POLICY_ADMIN_ROLE) {
-        if (feeBps_ > MAX_FEE_BPS) revert FeeTooHigh(feeBps_);
-        _feeBps = feeBps_;
-        emit FeeBpsSet(feeBps_);
+    function setFeeBps(uint16 newFeeBps) external onlyRole(POLICY_ADMIN_ROLE) {
+        if (newFeeBps > MAX_FEE_BPS) revert FeeTooHigh(newFeeBps);
+        _feeBps = newFeeBps;
+        emit FeeBpsSet(newFeeBps);
     }
 
     /// @inheritdoc IRelayEscrow
@@ -377,10 +377,10 @@ contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, Pausable, 
     }
 
     /// @inheritdoc IRelayEscrow
-    function setTreasury(address treasury_) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (treasury_ == address(0)) revert ZeroAddress();
-        _treasury = treasury_;
-        emit TreasurySet(treasury_);
+    function setTreasury(address newTreasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (newTreasury == address(0)) revert ZeroAddress();
+        _treasury = newTreasury;
+        emit TreasurySet(newTreasury);
     }
 
     /// @inheritdoc IRelayEscrow
@@ -572,12 +572,15 @@ contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, Pausable, 
     /// @dev Whether `account` could accept the listed `deal` right now.
     function _canAccept(address account, Deal storage deal) internal view returns (bool) {
         if (paused() || (deal.eventTime != 0 && block.timestamp >= deal.eventTime)) return false;
+        // Only the badge flag and the limit matter here; the history counters are not needed.
+        // slither-disable-next-line unused-return
         (bool badge, , , , , uint256 limit) = SBT.trustOf(account);
         return badge && deal.price <= limit;
     }
 
     /// @dev Requires a badge and `price <= maxDealValue(account)`; returns the account's tier.
     function _requireTrust(address account, uint256 price) internal view returns (uint8 tier) {
+        // slither-disable-next-line unused-return
         (bool badge, uint8 currentTier, , , , uint256 limit) = SBT.trustOf(account);
         if (!badge) revert NoTrustBadge(account);
         if (price > limit) revert DealValueAboveLimit(account, price, limit);
@@ -597,6 +600,8 @@ contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, Pausable, 
         _useCheckedNonce(sharer, auth.nonce);
 
         bytes32 digest = _hashListingAuth(sharer, fingerprint, auth.nonce, auth.deadline);
+        // The third value only details a recover error, which is already rejected below.
+        // slither-disable-next-line unused-return
         (address signer, ECDSA.RecoverError recoverError, ) = ECDSA.tryRecover(
             digest,
             auth.signature

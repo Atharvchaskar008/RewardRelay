@@ -260,4 +260,68 @@ Unknown ids revert with `DealNotFound`. The backend maps these to its UI actions
 
 ## 11. Gas
 
-Recorded in H4 (hardhat-gas-reporter, local network, 1 gwei).
+hardhat-gas-reporter 1.0.10 on the local network (Shanghai rules, solc 0.8.24, optimizer 200 runs),
+measured over the badge, smoke and lifecycle suites (`npm run contracts:gas`). Cost column: gas × 1 gwei,
+the fixed MST gas price.
+
+| Contract       | Function         | Min     | Max     | Avg       | Cost at 1 gwei (avg) | Notes                                                                             |
+| -------------- | ---------------- | ------- | ------- | --------- | -------------------- | --------------------------------------------------------------------------------- |
+| RelayEscrow    | `createListing`  | 204,674 | 312,091 | 243,815   | 0.000244 MSTC        | min = Buy-for-you; max = Pass-on with EIP-712 check and fingerprint write         |
+| RelayEscrow    | `acceptListing`  | 69,033  | 74,048  | 69,638    | 0.000070 MSTC        |                                                                                   |
+| RelayEscrow    | `markDelivered`  | 61,559  | 61,569  | 61,560    | 0.000062 MSTC        |                                                                                   |
+| RelayEscrow    | `confirmReceipt` | 104,432 | 194,663 | 187,114   | 0.000187 MSTC        | includes `recordSuccess` and three pushed payouts; max = first deal of a new pair |
+| RelayEscrow    | `release`        | —       | —       | 197,140   | 0.000197 MSTC        | same settlement, paid by a keeper                                                 |
+| RelayEscrow    | `claimTimeout`   | —       | —       | 77,520    | 0.000078 MSTC        | includes `recordFault`                                                            |
+| RelayEscrow    | `raiseDispute`   | —       | —       | 33,792    | 0.000034 MSTC        |                                                                                   |
+| RelayEscrow    | `addEvidence`    | 29,028  | 31,165  | 30,097    | 0.000030 MSTC        | event only                                                                        |
+| RelayEscrow    | `resolveDispute` | 75,075  | 104,540 | 92,815    | 0.000093 MSTC        |                                                                                   |
+| RelayEscrow    | `defaultResolve` | —       | —       | 62,417    | 0.000062 MSTC        |                                                                                   |
+| RelayEscrow    | `cancelListing`  | 42,588  | 44,304  | 42,931    | 0.000043 MSTC        |                                                                                   |
+| RelayEscrow    | `setPolicy`      | 36,619  | 53,767  | 46,869    | 0.000047 MSTC        |                                                                                   |
+| ReputationSBT  | `mint`           | —       | —       | 74,247    | 0.000074 MSTC        |                                                                                   |
+| ReputationSBT  | `recordSuccess`  | 55,075  | 145,348 | 88,956    | 0.000089 MSTC        | max = first deal for both users and the pair                                      |
+| ReputationSBT  | `recordFault`    | —       | —       | 31,150    | 0.000031 MSTC        |                                                                                   |
+| ReputationSBT  | `setTierLimits`  | 41,295  | 92,763  | 81,326    | 0.000081 MSTC        |                                                                                   |
+| **Deployment** | RelayEscrow      |         |         | 4,250,002 | 0.00425 MSTC         | 7.1% of the block gas limit; runtime 18,440 bytes                                 |
+| **Deployment** | ReputationSBT    |         |         | 2,474,851 | 0.00247 MSTC         | runtime 10,336 bytes                                                              |
+
+A complete Buy-for-you deal (list, accept, deliver, confirm) costs about 523,000 gas = 0.00052 MSTC across
+both parties. Deploying and configuring both contracts (roles, six category policies, limits, deposits,
+fee) is about 7.4 M gas = 0.0074 tMSTC, well inside the 0.05 tMSTC deployment budget.
+
+---
+
+## 12. Static analysis
+
+Slither 0.11.6 (102 detectors), run with `npm run slither -w contracts` (config `slither.config.json`:
+dependencies and `contracts/mocks` excluded, fails on medium or high). 32 contracts analysed.
+
+| Impact        | Detector            | Count                    | Disposition                                                                                                                                                                                                                                                                                                                         |
+| ------------- | ------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| High          | —                   | 0                        | —                                                                                                                                                                                                                                                                                                                                   |
+| Medium        | `unused-return`     | 3 (suppressed in source) | False positives: tuple destructuring deliberately drops `trustOf`'s history counters in `_requireTrust`/`_canAccept` and `tryRecover`'s error argument in `_consumeListingAuth`; every value that matters is checked. Each line carries a `slither-disable-next-line` with the reason.                                              |
+| Low           | `timestamp`         | 12                       | By design: every window is ≥ 1 minute with strict, non-overlapping comparisons (§2.2); a block producer's few seconds of freedom cannot change an outcome in practice.                                                                                                                                                              |
+| Low           | `reentrancy-benign` | 3                        | `_complete`, `_settleDispute`, `claimTimeout` write accounting after calling the trusted, immutable badge contract and between payouts. All run under `nonReentrant`, status is final before the first call, and `totalEscrowed` is lowered before each push so I1 holds during every callback (tested with re-entering receivers). |
+| Low           | `events-maths`      | 1                        | False positive: `createListing` emits `ListingCreated` through `_emitListingCreated` (kept out of line to avoid stack-too-deep).                                                                                                                                                                                                    |
+| Informational | `assembly`          | 1                        | `_payout` uses a 30 000-gas `call` that copies no return data, so a receiver cannot make the escrow pay for a large revert payload.                                                                                                                                                                                                 |
+| Informational | `low-level-calls`   | 1                        | `withdraw` must send native MSTC; the balance is zeroed first and failure reverts.                                                                                                                                                                                                                                                  |
+| Informational | `naming-convention` | 2                        | `SBT` (immutable, solhint naming rule) and `LISTING_AUTH_TYPEHASH` (EIP-712 convention).                                                                                                                                                                                                                                            |
+
+Fixed during the analysis: `shadowing-local` (Low, 2) — the interface parameters of `setFeeBps` and
+`setTreasury` shadowed the `feeBps()`/`treasury()` getters; renamed to `newFeeBps`/`newTreasury`
+(selectors unchanged).
+
+---
+
+## 13. Verification summary
+
+| Suite                             | Cases                | What it proves                                                                                                                                        |
+| --------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ReputationSBT.test.ts`           | 34                   | minting, soulbound transfer/approval paths, ERC-165/5192, tiers with unique-counterparty gating, faults, outcome accounting, administration, metadata |
+| `RelayEscrow.smoke.test.ts`       | 1                    | both deal types end to end with `solvencyDelta() == 0` after every step                                                                               |
+| `RelayEscrow.lifecycle.test.ts`   | 36                   | harness scenarios 1, 3, 4, 5, 6, 9, cancellation, views and the §8 table                                                                              |
+| `RelayEscrow.adversarial.test.ts` | 28                   | scenarios 2, 7, 8, 10 with a real attacker contract, plus input validation                                                                            |
+| `RelayEscrow.invariant.test.ts`   | 1 (300 random steps) | I1–I4 after every step of a seeded random walk (seed 20261027; also run with seeds 1, 42, 777)                                                        |
+
+Coverage (solidity-coverage 0.8.17, mocks and interfaces excluded): **100% statements, 100% branches,
+100% functions, 100% lines** on both RelayEscrow and ReputationSBT.
