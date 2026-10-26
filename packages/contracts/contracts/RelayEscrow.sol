@@ -57,6 +57,10 @@ abstract contract RelayEscrow is
     /// @notice Furthest event time a listing may name.
     uint64 public constant MAX_EVENT_HORIZON = 365 days;
 
+    /// @notice Gas forwarded with each pushed payout. Enough for a wallet's receive hook, too little to
+    /// re-enter anything useful; a receiver that needs more is paid through {withdraw}.
+    uint256 public constant PAYOUT_GAS_STIPEND = 30_000;
+
     uint16 internal constant BPS = 10_000;
     uint16 private constant DEFAULT_FEE_BPS = 200;
     uint16 private constant DEFAULT_SEEKER_DEPOSIT_BPS = 500;
@@ -310,6 +314,24 @@ abstract contract RelayEscrow is
         uint64 availableAt = deal.disputeOpenedAt + deal.arbiterTimeout;
         if (block.timestamp < availableAt) revert ArbiterTimeoutNotReached(id, availableAt);
         _settleDispute(id, deal, BPS / 2, Party.None, address(0));
+    }
+
+    // ------------------------------------------------------------------------------------------------
+    // Payouts
+    // ------------------------------------------------------------------------------------------------
+
+    /// @inheritdoc IRelayEscrow
+    function withdraw() external nonReentrant {
+        uint256 amount = _withdrawable[msg.sender];
+        if (amount == 0) revert NothingToWithdraw();
+
+        _withdrawable[msg.sender] = 0;
+        _totalWithdrawable -= amount;
+        emit Withdrawn(msg.sender, amount);
+
+        // All gas is forwarded: the balance is already zeroed and the call is the last step.
+        (bool sent, ) = msg.sender.call{value: amount}("");
+        if (!sent) revert TransferFailed(msg.sender, amount);
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -592,9 +614,25 @@ abstract contract RelayEscrow is
         }
     }
 
-    /// @dev Sends `amount` of deal `id` to `to` while keeping the solvency invariant. Implemented by the
-    /// push-with-pull-fallback payout.
-    function _payout(uint256 id, address to, uint256 amount) internal virtual;
+    /// @dev Push payout with pull fallback. `totalEscrowed` drops before the call, so the solvency
+    /// invariant holds while the receiver runs; a failed push (reverting receiver, out of stipend) is
+    /// credited to `withdrawable[to]` instead of blocking the settlement. No return data is copied, so a
+    /// receiver cannot make the escrow pay for a large revert payload.
+    function _payout(uint256 id, address to, uint256 amount) internal {
+        if (amount == 0) return;
+        _totalEscrowed -= amount;
+
+        bool sent;
+        // solhint-disable-next-line no-inline-assembly
+        assembly ("memory-safe") {
+            sent := call(PAYOUT_GAS_STIPEND, to, amount, 0, 0, 0, 0)
+        }
+        if (!sent) {
+            _withdrawable[to] += amount;
+            _totalWithdrawable += amount;
+            emit PayoutDeferred(id, to, amount);
+        }
+    }
 
     /// @dev Bounds of SPEC.md §6. Pass-on deals are delivered on accept, so they have no delivery window.
     function _isValidPolicy(Policy calldata policy) internal pure returns (bool) {
