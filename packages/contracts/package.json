@@ -13,7 +13,8 @@
     "deploy:mainnet": "hardhat run scripts/deploy.ts --network mstMainnet",
     "verify:testnet": "hardhat run scripts/verify.ts --network mstTestnet",
     "verify:mainnet": "hardhat run scripts/verify.ts --network mstMainnet",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "deployer:generate": "ts-node scripts/generate-deployer.ts"
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.0.2"

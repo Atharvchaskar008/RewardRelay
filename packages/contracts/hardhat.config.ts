@@ -13,13 +13,13 @@ const accounts = deployerKey ? [deployerKey] : [];
 
 const MST_TESTNET = {
   chainId: 91562037,
-  rpcUrl: process.env.MST_TESTNET_RPC_URL ?? "https://testnetrpc.mstblockchain.com",
+  rpcUrl: process.env.MST_TESTNET_RPC_URL || "https://testnetrpc.mstblockchain.com",
   explorerUrl: "https://testnet.mstscan.com",
 };
 
 const MST_MAINNET = {
   chainId: 4646,
-  rpcUrl: process.env.MST_MAINNET_RPC_URL ?? "https://mariorpc.mstblockchain.com",
+  rpcUrl: process.env.MST_MAINNET_RPC_URL || "https://mariorpc.mstblockchain.com",
   explorerUrl: "https://mstscan.com",
 };
 
@@ -56,8 +56,8 @@ const config: HardhatUserConfig = {
   // mstscan is a Blockscout instance: any non-empty API key is accepted.
   etherscan: {
     apiKey: {
-      mstTestnet: process.env.MSTSCAN_API_KEY ?? "blockscout",
-      mstMainnet: process.env.MSTSCAN_API_KEY ?? "blockscout",
+      mstTestnet: process.env.MSTSCAN_API_KEY || "blockscout",
+      mstMainnet: process.env.MSTSCAN_API_KEY || "blockscout",
     },
     customChains: [
       {
