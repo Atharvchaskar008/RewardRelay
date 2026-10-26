@@ -4,6 +4,9 @@ pragma solidity 0.8.24;
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
 import {IRelayEscrow} from "./interfaces/IRelayEscrow.sol";
 import {IReputationSBT} from "./interfaces/IReputationSBT.sol";
 
@@ -16,7 +19,14 @@ import {IReputationSBT} from "./interfaces/IReputationSBT.sol";
 ///
 /// Solvency (I1): `address(this).balance == totalEscrowed + totalWithdrawable` before and after every
 /// external call; `totalEscrowed` is reduced right before each payout is sent.
-abstract contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, Pausable {
+abstract contract RelayEscrow is
+    IRelayEscrow,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable,
+    EIP712,
+    Nonces
+{
     // ------------------------------------------------------------------------------------------------
     // Roles and bounds
     // ------------------------------------------------------------------------------------------------
@@ -29,6 +39,11 @@ abstract contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, P
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
     /// @notice Pauses and unpauses new commitments.
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+
+    /// @inheritdoc IRelayEscrow
+    bytes32 public constant LISTING_AUTH_TYPEHASH = keccak256(
+        "ListingAuth(address sharer,bytes32 fingerprint,uint256 nonce,uint256 deadline)"
+    );
 
     /// @notice Highest protocol fee: 5%.
     uint16 public constant MAX_FEE_BPS = 500;
@@ -74,7 +89,12 @@ abstract contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, P
     /// @param treasury_ Fee receiver.
     /// @param verifier Server signer for Pass-on authorisations (VERIFIER_ROLE).
     /// @param admin Receives DEFAULT_ADMIN_ROLE, POLICY_ADMIN_ROLE and PAUSER_ROLE.
-    constructor(IReputationSBT sbt_, address treasury_, address verifier, address admin) {
+    constructor(
+        IReputationSBT sbt_,
+        address treasury_,
+        address verifier,
+        address admin
+    ) EIP712("RewardRelay", "1") {
         if (
             address(sbt_) == address(0) ||
             treasury_ == address(0) ||
@@ -101,6 +121,72 @@ abstract contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, P
     }
 
     // ------------------------------------------------------------------------------------------------
+    // Listings
+    // ------------------------------------------------------------------------------------------------
+
+    /// @inheritdoc IRelayEscrow
+    function createListing(
+        uint8 category,
+        uint256 price,
+        uint64 eventTime,
+        bytes32 termsHash,
+        bytes32 codeFingerprint,
+        ListingAuthorization calldata auth
+    ) external payable nonReentrant whenNotPaused returns (uint256 id) {
+        Policy memory policy = _policies[category];
+        if (!policy.active) revert PolicyInactive(category);
+        if (price == 0 || price > type(uint128).max) revert InvalidPrice();
+        if (termsHash == bytes32(0)) revert TermsRequired();
+        if (
+            eventTime != 0 &&
+            (eventTime <= block.timestamp || eventTime > block.timestamp + MAX_EVENT_HORIZON)
+        ) revert InvalidEventTime(eventTime);
+
+        uint8 tier = _requireTrust(msg.sender, price);
+        uint256 sharerDeposit = _bps(price, _sharerDepositBps[tier]);
+        if (msg.value != sharerDeposit) revert IncorrectPayment(sharerDeposit, msg.value);
+
+        if (policy.dealType == DealType.PassOn) {
+            _consumeListingAuth(msg.sender, codeFingerprint, auth);
+        } else if (codeFingerprint != bytes32(0)) {
+            revert FingerprintNotAllowed();
+        }
+
+        unchecked {
+            id = ++_dealCount; // cannot overflow: one id per transaction
+        }
+        Deal storage deal = _deals[id];
+        deal.sharer = msg.sender;
+        deal.status = Status.Listed;
+        deal.category = category;
+        deal.feeBps = _feeBps;
+        deal.arbiterTimeout = _arbiterTimeout;
+        deal.price = uint128(price);
+        deal.sharerDeposit = uint128(sharerDeposit);
+        deal.seekerDeposit = uint128(_bps(price, _seekerDepositBps));
+        deal.eventTime = eventTime;
+        deal.policy = policy;
+        deal.termsHash = termsHash;
+        deal.codeFingerprint = codeFingerprint;
+
+        _totalEscrowed += msg.value;
+        _emitListingCreated(id, deal);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function cancelListing(uint256 id) external nonReentrant {
+        Deal storage deal = _dealIn(id, Status.Listed);
+        if (msg.sender != deal.sharer) revert NotSharer(id, msg.sender);
+
+        deal.status = Status.Cancelled;
+        // Nothing was sold and the authorisation nonce is spent, so the code may be listed again.
+        if (deal.codeFingerprint != bytes32(0)) _usedFingerprints[deal.codeFingerprint] = false;
+
+        emit ListingCancelled(id, msg.sender);
+        _payout(id, msg.sender, deal.sharerDeposit);
+    }
+
+    // ------------------------------------------------------------------------------------------------
     // Policy registry
     // ------------------------------------------------------------------------------------------------
 
@@ -117,6 +203,36 @@ abstract contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, P
     // ------------------------------------------------------------------------------------------------
     // Views
     // ------------------------------------------------------------------------------------------------
+
+    /// @inheritdoc IRelayEscrow
+    function requiredSharerDeposit(address sharer, uint256 price) external view returns (uint256) {
+        return _bps(price, _sharerDepositBps[SBT.tierOf(sharer)]);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function requiredSeekerDeposit(uint256 price) external view returns (uint256) {
+        return _bps(price, _seekerDepositBps);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function nonces(address sharer) public view override(IRelayEscrow, Nonces) returns (uint256) {
+        return super.nonces(sharer);
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function domainSeparator() external view returns (bytes32) {
+        return _domainSeparatorV4();
+    }
+
+    /// @inheritdoc IRelayEscrow
+    function hashListingAuth(
+        address sharer,
+        bytes32 fingerprint,
+        uint256 nonce,
+        uint256 deadline
+    ) external view returns (bytes32) {
+        return _hashListingAuth(sharer, fingerprint, nonce, deadline);
+    }
 
     /// @inheritdoc IRelayEscrow
     function getDeal(uint256 id) external view returns (Deal memory) {
@@ -204,6 +320,69 @@ abstract contract RelayEscrow is IRelayEscrow, AccessControl, ReentrancyGuard, P
         deal = _existingDeal(id);
         if (deal.status != expected) revert InvalidStatus(id, deal.status);
     }
+
+    /// @dev Requires a badge and `price <= maxDealValue(account)`; returns the account's tier.
+    function _requireTrust(address account, uint256 price) internal view returns (uint8 tier) {
+        (bool badge, uint8 currentTier, , , , uint256 limit) = SBT.trustOf(account);
+        if (!badge) revert NoTrustBadge(account);
+        if (price > limit) revert DealValueAboveLimit(account, price, limit);
+        return currentTier;
+    }
+
+    /// @dev Pass-on: unused fingerprint, unexpired deadline, the sharer's current nonce and a signature
+    /// by a VERIFIER_ROLE holder over the EIP-712 ListingAuth. Consumes the nonce, marks the fingerprint.
+    function _consumeListingAuth(
+        address sharer,
+        bytes32 fingerprint,
+        ListingAuthorization calldata auth
+    ) internal {
+        if (fingerprint == bytes32(0)) revert FingerprintRequired();
+        if (_usedFingerprints[fingerprint]) revert FingerprintAlreadyUsed(fingerprint);
+        if (block.timestamp > auth.deadline) revert AuthorizationExpired(auth.deadline);
+        _useCheckedNonce(sharer, auth.nonce);
+
+        bytes32 digest = _hashListingAuth(sharer, fingerprint, auth.nonce, auth.deadline);
+        (address signer, ECDSA.RecoverError recoverError, ) = ECDSA.tryRecover(
+            digest,
+            auth.signature
+        );
+        if (recoverError != ECDSA.RecoverError.NoError || !hasRole(VERIFIER_ROLE, signer)) {
+            revert InvalidAuthorization();
+        }
+        _usedFingerprints[fingerprint] = true;
+    }
+
+    function _hashListingAuth(
+        address sharer,
+        bytes32 fingerprint,
+        uint256 nonce,
+        uint256 deadline
+    ) internal view returns (bytes32) {
+        return
+            _hashTypedDataV4(
+                keccak256(abi.encode(LISTING_AUTH_TYPEHASH, sharer, fingerprint, nonce, deadline))
+            );
+    }
+
+    /// @dev Separate function so the 10-field event does not exhaust createListing's stack.
+    function _emitListingCreated(uint256 id, Deal storage deal) internal {
+        emit ListingCreated(
+            id,
+            deal.sharer,
+            deal.category,
+            deal.policy.dealType,
+            deal.price,
+            deal.sharerDeposit,
+            deal.seekerDeposit,
+            deal.eventTime,
+            deal.termsHash,
+            deal.codeFingerprint
+        );
+    }
+
+    /// @dev Sends `amount` of deal `id` to `to` while keeping the solvency invariant. Implemented by the
+    /// push-with-pull-fallback payout.
+    function _payout(uint256 id, address to, uint256 amount) internal virtual;
 
     /// @dev Bounds of SPEC.md §6. Pass-on deals are delivered on accept, so they have no delivery window.
     function _isValidPolicy(Policy calldata policy) internal pure returns (bool) {
