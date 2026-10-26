@@ -6,11 +6,11 @@ import { writeDeploymentAddresses } from "./lib/writeDeployment";
 async function main() {
   const network = hre.network.name;
 
-  if (!process.env.PRIVATE_KEY) {
-    throw new Error("PRIVATE_KEY not set. Copy .env.example to .env.local and set it.");
+  if (!process.env.DEPLOYER_KEY) {
+    throw new Error("DEPLOYER_KEY not set. Copy .env.example to .env and set it.");
   }
 
-  if (network === "mainnet") {
+  if (network === "mstMainnet") {
     console.log("\n🔴 DEPLOYING TO MAINNET");
     console.log(`Chain ID: ${hre.network.config.chainId}\n`);
     const promptSync = promptSyncFactory({ sigint: true });
