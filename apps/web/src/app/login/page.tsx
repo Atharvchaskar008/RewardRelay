@@ -7,12 +7,14 @@ import { Card, ErrorText, Money, Page } from "@/components/ui";
 import { useMe, useWallet, validatePin } from "@/client/sdk";
 import { firebaseConfigured } from "@/client/config";
 import { sendOtp } from "@/client/firebase";
+import { toE164 } from "@/client/phone";
 import { useSession } from "@/app/providers";
 
 /** Phone OTP (Firebase) → PIN → embedded wallet linked to the phone, Trust Badge and test MSTC. */
 export default function LoginPage() {
   const { ready, user } = useSession();
   const [phone, setPhone] = useState("+91");
+  const [sentTo, setSentTo] = useState("");
   const [code, setCode] = useState("");
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
   const [error, setError] = useState<unknown>(null);
@@ -55,9 +57,11 @@ export default function LoginPage() {
               className="primary"
               disabled={busy}
               onClick={() =>
-                run(async () =>
-                  setConfirmation(await sendOtp(phone.replace(/\s+/g, ""), "recaptcha")),
-                )
+                run(async () => {
+                  const number = toE164(phone);
+                  setConfirmation(await sendOtp(number, "recaptcha"));
+                  setSentTo(number);
+                })
               }
             >
               Send code
@@ -65,7 +69,7 @@ export default function LoginPage() {
           </Card>
         ) : (
           <Card>
-            <label htmlFor="code">6-digit code sent to {phone}</label>
+            <label htmlFor="code">6-digit code sent to {sentTo}</label>
             <input
               id="code"
               inputMode="numeric"
@@ -75,9 +79,19 @@ export default function LoginPage() {
             <button
               className="primary"
               disabled={busy}
-              onClick={() => run(() => confirmation.confirm(code))}
+              onClick={() => run(() => confirmation.confirm(code.replace(/\D/g, "")))}
             >
               Verify
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                setConfirmation(null);
+                setCode("");
+                setError(null);
+              }}
+            >
+              Change number
             </button>
           </Card>
         )}
