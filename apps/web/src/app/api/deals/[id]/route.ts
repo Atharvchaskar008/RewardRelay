@@ -1,3 +1,4 @@
+import { afterResponse } from "@/server/background";
 import { releaseOnVisit } from "@/server/cron/release";
 import { withRoute } from "@/server/http";
 import { syncDealIndex } from "@/server/deals/dealIndex";
@@ -13,16 +14,17 @@ export const GET = withRoute(
   { name: "deals.get", auth: "optional", rateLimit: { capacity: 120, refillPerMinute: 120 } },
   async ({ params, user }) => {
     const id = dealIdParam(params.id);
-    const wallet = user ? await walletOf(user.uid) : null;
-    const deal = await readDealOrThrow(id);
-    const view = await buildDealView(id, user ? { uid: user.uid, wallet } : null, deal);
-    await syncDealIndex(
-      view.id,
-      deal,
-      view.role === "seeker" && user ? { seekerUid: user.uid } : {},
+    // The deal and the caller's wallet are read alongside everything else the view needs.
+    const dealCall = readDealOrThrow(id);
+    const viewer = user ? walletOf(user.uid).then((wallet) => ({ uid: user.uid, wallet })) : null;
+    const view = await buildDealView(id, viewer, dealCall);
+    const deal = await dealCall;
+    // Keeping the Firestore index in step with the chain does not need to delay the response.
+    await afterResponse("deals.sync_index", () =>
+      syncDealIndex(view.id, deal, view.role === "seeker" && user ? { seekerUid: user.uid } : {}),
     );
-    // Release-on-visit: a due deal is released in the background; the cron remains the guarantee.
-    if (view.nextAction === "RELEASE_AVAILABLE") releaseOnVisit(view.id);
+    // Release-on-visit: a due deal is released after the response; the cron remains the guarantee.
+    if (view.nextAction === "RELEASE_AVAILABLE") await releaseOnVisit(view.id);
     return view;
   },
 );

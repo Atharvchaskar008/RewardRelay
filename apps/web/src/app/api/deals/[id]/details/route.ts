@@ -16,6 +16,6 @@ export const POST = withRoute(
 
 /** GET /api/deals/:id/details (sharer, while Locked or Delivered) → decrypted; access is logged. */
 export const GET = withRoute(
-  { name: "deals.details.get", rateLimit: { capacity: 30, refillPerMinute: 30 } },
+  { name: "deals.details.get", strict: true, rateLimit: { capacity: 30, refillPerMinute: 30 } },
   async ({ user, params }) => readDetails(user!, params.id),
 );

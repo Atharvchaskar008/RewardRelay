@@ -17,7 +17,8 @@ import { serverEnv } from "../env";
 import { AppError } from "../errors";
 import { requireLinkedUser } from "../identity/users";
 import { repos, type ListingDoc } from "../repositories";
-import { transaction } from "../repositories/collection";
+import { runQuery, transaction } from "../repositories/collection";
+import { withDeadline } from "../deadline";
 import { syncDealIndex } from "../deals/dealIndex";
 import { readDealOrThrow } from "../deals/read";
 import { TIER_NAMES, money, type Money } from "../views/user";
@@ -146,7 +147,7 @@ export async function registerListing(uid: string, input: ListingInput): Promise
     );
   });
 
-  const trust = await readTrust(user.address);
+  const trust = await readTrust(user.address, { fresh: true });
   return listingView(doc, DealStatus.Listed, trust);
 }
 
@@ -218,11 +219,15 @@ export async function listListings(query: {
   if (query.status === "open")
     firestoreQuery = firestoreQuery.where("status", "==", STATUS_NAMES[DealStatus.Listed]);
   if (query.cursor) {
-    const cursorDoc = await repos.listings.ref(query.cursor).get();
+    const cursorDoc = await withDeadline(
+      repos.listings.ref(query.cursor).get(),
+      undefined,
+      "firestore.get listing cursor",
+    );
     if (!cursorDoc.exists) throw new AppError("VALIDATION_FAILED", { message: "Invalid cursor." });
     firestoreQuery = firestoreQuery.startAfter(cursorDoc);
   }
-  const snapshot = await firestoreQuery.get();
+  const snapshot = await runQuery(firestoreQuery, "firestore.query listings");
   const docs = snapshot.docs.map((doc) => doc.data());
 
   // The chain decides the status; Firestore's cached value only narrows the query.

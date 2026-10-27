@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "../firebaseAdmin";
 import { errorFields, log } from "../log";
 import { repos } from "../repositories";
-import { transaction } from "../repositories/collection";
+import { runQuery, transaction } from "../repositories/collection";
 import { storeFor } from "../files/store";
 import { proofDocSchema } from "./proof";
 import { privateDocs } from "./privateDocs";
@@ -17,12 +17,14 @@ export async function purgeExpiredPrivateData(
   options: { now?: number; limit?: number; retentionMs?: number } = {},
 ): Promise<string[]> {
   const cutoff = (options.now ?? Date.now()) - (options.retentionMs ?? PII_RETENTION_MS);
-  const due = await repos.deals
-    .query()
-    .where("piiPurgedAt", "==", null)
-    .where("terminalAt", "<=", cutoff)
-    .limit(options.limit ?? 25)
-    .get();
+  const due = await runQuery(
+    repos.deals
+      .query()
+      .where("piiPurgedAt", "==", null)
+      .where("terminalAt", "<=", cutoff)
+      .limit(options.limit ?? 25),
+    "firestore.query deals to purge",
+  );
   const purged: string[] = [];
   for (const snapshot of due.docs) {
     const dealId = snapshot.id;

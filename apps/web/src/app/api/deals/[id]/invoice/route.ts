@@ -11,7 +11,7 @@ const EXTENSIONS: Record<string, string> = {
 
 /** GET /api/deals/:id/invoice → the decrypted invoice file, for the deal's parties only. */
 export const GET = withRoute(
-  { name: "deals.invoice.get", rateLimit: { capacity: 20, refillPerMinute: 10 } },
+  { name: "deals.invoice.get", strict: true, rateLimit: { capacity: 20, refillPerMinute: 10 } },
   async ({ user, params }) => {
     const { dealId, bytes, contentType } = await readInvoice(user!, params.id);
     return new Response(new Uint8Array(bytes), {

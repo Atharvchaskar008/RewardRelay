@@ -1,4 +1,5 @@
 import "server-only";
+import { withDeadline } from "../deadline";
 import { db } from "../firebaseAdmin";
 
 /**
@@ -8,7 +9,7 @@ import { db } from "../firebaseAdmin";
  */
 export async function acquireLease(name: string, holder: string, ttlMs: number): Promise<boolean> {
   const ref = db().doc(`locks/${name}`);
-  return db().runTransaction(async (tx) => {
+  const claim = db().runTransaction(async (tx) => {
     const snapshot = await tx.get(ref);
     const now = Date.now();
     const current = snapshot.data() as { holder: string; expiresAt: number } | undefined;
@@ -16,12 +17,14 @@ export async function acquireLease(name: string, holder: string, ttlMs: number):
     tx.set(ref, { holder, acquiredAt: now, expiresAt: now + ttlMs });
     return true;
   });
+  return withDeadline(claim, undefined, "firestore.lease acquire");
 }
 
 export async function releaseLease(name: string, holder: string): Promise<void> {
   const ref = db().doc(`locks/${name}`);
-  await db().runTransaction(async (tx) => {
+  const release = db().runTransaction(async (tx) => {
     const snapshot = await tx.get(ref);
     if (snapshot.get("holder") === holder) tx.delete(ref);
   });
+  await withDeadline(release, undefined, "firestore.lease release");
 }

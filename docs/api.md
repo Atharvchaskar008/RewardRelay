@@ -30,7 +30,7 @@ reports. All API responses are `Cache-Control: no-store`. Bigints are serialised
 
 | Header                                         | When                                                                                                                                                                                                                                                                               |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Authorization: Bearer <Firebase ID token>`    | every route except the public ones (§2); the token is verified with revocation checks                                                                                                                                                                                              |
+| `Authorization: Bearer <Firebase ID token>`    | every route except the public ones (§2); writes and private reads check revocation on every call, other reads at most once a minute                                                                                                                                                |
 | `Idempotency-Key: <8-128 chars [A-Za-z0-9_-]>` | every route marked **idem** (required). Same key + same request → the stored response is replayed (`Idempotent-Replayed: true`); same key + different request → `CONFLICT`; a failed request releases the key. The SDK generates keys and reuses them on its single network retry. |
 | `X-Cron-Secret`                                | `/api/cron/release` only                                                                                                                                                                                                                                                           |
 
@@ -57,9 +57,18 @@ The SDK throws `ApiError {code, status, message, requestId, details}`. Transacti
 
 ### Rate limits (token bucket per user, per IP when anonymous)
 
+Writes and private reads are counted across instances (Firestore); other reads per instance.
+
 challenge 10/min · link-wallet 5/min · backup PUT 5 burst + 2/min · backup GET **5 per hour** ·
 codes/listings 10/min · deal reads 120/min · details/proof writes 10 burst + 5/min · listings feed
 60/min (IP) · health 30/min (IP) · admin 30/min · resolve 10/min.
+
+### Timing
+
+Every response has a [`Server-Timing`](https://www.w3.org/TR/server-timing/) header with the route
+phases (`auth`, `limit`, `idem`, `app`), the busy time per backend (`db` Firestore, `chain` MST RPC,
+`identity` Firebase Auth, with the number of calls) and the `total`, in milliseconds. The same
+numbers are in the `timing` field of the `api.request` log line.
 
 ---
 

@@ -17,6 +17,7 @@ import {
 } from "@rewardrelay/shared";
 import {
   escrowContract,
+  escrowPaused,
   explorerAddressUrl,
   explorerTxUrl,
   readDealEvents,
@@ -25,6 +26,7 @@ import {
   type OnChainDeal,
   type TrustSummary,
 } from "../chain";
+import { withDeadline } from "../deadline";
 import { errorFields, log } from "../log";
 import { repos, type ListingDoc } from "../repositories";
 import { chainNow, readDealOrThrow } from "../deals/read";
@@ -156,8 +158,8 @@ async function acceptBlockFor(
   if (!viewer) return "SIGN_IN";
   if (!viewer.wallet) return "NO_WALLET";
   const [trust, paused] = await Promise.all([
-    readTrust(viewer.wallet),
-    escrowContract().read.paused(),
+    readTrust(viewer.wallet, { fresh: true }),
+    escrowPaused(),
   ]);
   if (paused) return "PAUSED";
   if (!trust.hasBadge) return "NO_BADGE";
@@ -165,26 +167,49 @@ async function acceptBlockFor(
   return null;
 }
 
+type Viewer = { uid: string; wallet: Address | null } | null;
+
+/** The timeline is secondary: a slow event scan must not hold up the whole deal view. */
+const TIMELINE_DEADLINE_MS = 5_000;
+
+/** Starts `work` now; a rejection stays observed until the caller awaits it. */
+function started<T>(work: Promise<T>): Promise<T> {
+  work.catch(() => undefined);
+  return work;
+}
+
+/**
+ * The deal room view model. The viewer and the deal may be passed as promises so that everything
+ * that does not depend on them (chain time, the listing, the timeline) runs alongside their lookup.
+ */
 export async function buildDealView(
   id: bigint,
-  viewer: { uid: string; wallet: Address | null } | null,
-  preloaded?: OnChainDeal,
+  viewer: Viewer | Promise<Viewer>,
+  preloaded?: OnChainDeal | Promise<OnChainDeal>,
 ): Promise<DealView> {
-  const deal = preloaded ?? (await readDealOrThrow(id));
-  const role = roleOf(deal, viewer?.wallet ?? null);
+  const nowCall = started(chainNow());
+  const listingCall = started(repos.listings.get(id.toString()));
+  const eventsCall = withDeadline(
+    readDealEvents(id),
+    TIMELINE_DEADLINE_MS,
+    "chain.deal events",
+  ).catch((error): DealEvent[] => {
+    log("warn", "deals.timeline_failed", { dealId: id.toString(), ...errorFields(error) });
+    return [];
+  });
+
+  const [deal, who] = await Promise.all([preloaded ?? readDealOrThrow(id), viewer]);
+  const role = roleOf(deal, who?.wallet ?? null);
   const hasSeeker = deal.seeker !== zeroAddress;
   const counterpart =
     role === "sharer" ? (hasSeeker ? getAddress(deal.seeker) : null) : getAddress(deal.sharer);
 
   const [now, listing, counterpartTrust, acceptBlock, events, detailsSent] = await Promise.all([
-    chainNow(),
-    repos.listings.get(id.toString()),
+    nowCall,
+    listingCall,
     counterpart ? readTrust(counterpart) : Promise.resolve(null),
-    role === "visitor" && deal.status === 0 ? acceptBlockFor(deal, viewer) : Promise.resolve(null),
-    readDealEvents(id).catch((error): DealEvent[] => {
-      log("warn", "deals.timeline_failed", { dealId: id.toString(), ...errorFields(error) });
-      return [];
-    }),
+    role === "visitor" && deal.status === 0 ? acceptBlockFor(deal, who) : Promise.resolve(null),
+    eventsCall,
     deliveryDetailsSent(id, deal, role),
   ]);
 

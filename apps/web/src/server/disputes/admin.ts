@@ -5,6 +5,7 @@ import { DealStatus, relayEscrowAbi } from "@rewardrelay/shared";
 import {
   escrowDeployBlock,
   explorerTxUrl,
+  invalidateTrust,
   publicClient,
   readDeal,
   readDealEvents,
@@ -22,6 +23,7 @@ import { AppError } from "../errors";
 import { storeFor } from "../files/store";
 import { errorFields, log } from "../log";
 import { repos } from "../repositories";
+import { retrying } from "../retry";
 import { txManager } from "../signer";
 import { dealIdParam } from "../validation/common";
 import { buildDealView, type DealView } from "../views/deal";
@@ -247,18 +249,32 @@ export async function resolveDispute(
   }
   if (result.status !== "success")
     throw new AppError("TX_FAILED", { details: { hash: result.hash } });
+  invalidateTrust(getAddress(deal.sharer));
+  invalidateTrust(getAddress(deal.seeker));
 
+  // The ruling is final on-chain from here: a failed bookkeeping write must not turn it into an
+  // error (a retry would only meet "already settled"). The audit record is retried and, if it still
+  // fails, logged with everything needed to restore it.
   const auditId = randomUUID();
   const now = Date.now();
-  await repos.audit.create(auditId, {
-    kind: "dispute.resolve",
+  const audit = {
+    kind: "dispute.resolve" as const,
     dealId,
     adminUid,
     ruling: { seekerShareBps: ruling.seekerShareBps, faultParty: ruling.faultParty },
     reason: ruling.reason,
     txHash: result.hash,
     at: now,
-  });
+  };
+  await retrying(() => repos.audit.set(auditId, audit)).catch((error) =>
+    log("error", "audit.write_failed", {
+      auditId,
+      dealId,
+      txHash: result.hash,
+      ruling: audit.ruling,
+      ...errorFields(error),
+    }),
+  );
   await repos.disputes
     .update(dealId, { status: "resolved", resolvedAt: now, updatedAt: now })
     .catch(() => undefined);

@@ -49,7 +49,13 @@ export function db(): Firestore {
   if (!firestore) {
     const instance = getFirestore(firebaseApp()) as Firestore & { [CONFIGURED]?: true };
     if (!instance[CONFIGURED]) {
-      instance.settings({ ignoreUndefinedProperties: true });
+      // REST instead of gRPC against the real service: no channel set-up on a serverless cold start
+      // (Firebase's advice for functions; streaming calls, which this app does not make, still use
+      // gRPC). The emulator keeps gRPC: the SDK's REST client asks it for Google credentials.
+      instance.settings({
+        ignoreUndefinedProperties: true,
+        preferRest: !serverEnv().firebaseEmulator,
+      });
       instance[CONFIGURED] = true;
     }
     firestore = instance;

@@ -1,13 +1,13 @@
 import "server-only";
 import { getAddress, type Address, type Hex } from "viem";
 import { reputationSbtAbi } from "@rewardrelay/shared";
-import { sbtContract } from "../chain";
+import { invalidateTrust, sbtContract } from "../chain";
 import { keyring } from "../crypto";
 import { serverEnv } from "../env";
 import { AppError } from "../errors";
 import { errorFields, log } from "../log";
 import { repos } from "../repositories";
-import { transaction } from "../repositories/collection";
+import { runQuery, transaction } from "../repositories/collection";
 import type { AuthUser } from "../services";
 import { txManager } from "../signer";
 import { buildUserView, type UserView } from "../views/user";
@@ -41,8 +41,13 @@ export async function linkWallet(
 
   const phoneHash = keyring().phoneHash(user.phoneNumber);
   await claimIdentity(user.uid, phoneHash, address);
-  await ensureBadge(user.uid, address);
-  await ensureTopup(user.uid, address);
+  // Different server wallets (verifier, funder): the mint and the top-up are sent side by side.
+  // The top-up never throws; a failed mint is reported once the top-up has settled too.
+  const [badge] = await Promise.allSettled([
+    ensureBadge(user.uid, address),
+    ensureTopup(user.uid, address),
+  ]);
+  if (badge.status === "rejected") throw badge.reason;
 
   return buildUserView(address, await repos.users.get(user.uid));
 }
@@ -128,6 +133,7 @@ async function ensureBadge(uid: string, wallet: Address): Promise<void> {
     });
     if (result.status !== "success")
       throw new AppError("TX_FAILED", { details: { hash: result.hash } });
+    invalidateTrust(wallet);
     await repos.users.update(uid, {
       badge: { status: "minted", txHash: result.hash, at: Date.now() },
       updatedAt: Date.now(),
@@ -180,7 +186,10 @@ async function ensureTopup(uid: string, wallet: Address): Promise<void> {
  * per run. Returns how many were sent.
  */
 export async function retryFailedTopups(limit: number): Promise<number> {
-  const failed = await repos.users.query().where("topup.status", "==", "failed").limit(limit).get();
+  const failed = await runQuery(
+    repos.users.query().where("topup.status", "==", "failed").limit(limit),
+    "firestore.query failed top-ups",
+  );
   let sent = 0;
   for (const doc of failed.docs) {
     const wallet = doc.data().wallet;

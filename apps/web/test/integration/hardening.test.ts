@@ -6,6 +6,9 @@ import { POST as resolveRoute } from "@/app/api/admin/disputes/[id]/resolve/rout
 import { GET as adminListRoute } from "@/app/api/admin/disputes/route";
 import { POST as evidenceRoute } from "@/app/api/disputes/[id]/evidence/route";
 import { POST as rpcRoute } from "@/app/api/rpc/[network]/route";
+import { POST as challengeRoute } from "@/app/api/auth/challenge/route";
+import { GET as meRoute } from "@/app/api/me/route";
+import { adminAuth } from "@/server/firebaseAdmin";
 import {
   callRoute,
   fakePhone,
@@ -125,6 +128,34 @@ describe("admin conflict of interest", () => {
       params: { id: id.toString(), fileId: "any-file" },
     });
     expect(file.status).toBe(403);
+  });
+});
+
+describe("session revocation", () => {
+  const challenge = (token: string) =>
+    callRoute(challengeRoute, {
+      token,
+      body: { address: "0x000000000000000000000000000000000000dEaD" },
+    });
+  // A token issued in the same second as the revocation still counts as valid (Firebase compares
+  // seconds), so each revocation happens a little over a second after sign-in.
+  const pause = () => new Promise((resolve) => setTimeout(resolve, 1_100));
+
+  it("refuses a revoked session on writes at once and on reads without a recent check", async () => {
+    const user = await signInWithPhone(fakePhone());
+    // Authenticated (no wallet yet, so 404).
+    expect((await callRoute(meRoute, { token: user.idToken })).status).toBe(404);
+    await pause();
+    await adminAuth().revokeRefreshTokens(user.uid);
+    expect((await challenge(user.idToken)).status).toBe(401);
+
+    // A reader whose revocation was not checked recently is refused too. (Reusing a recent check for
+    // up to a minute is covered by the RevocationCache unit test: under the emulator the Admin SDK
+    // always checks revocation itself.)
+    const reader = await signInWithPhone(fakePhone());
+    await pause();
+    await adminAuth().revokeRefreshTokens(reader.uid);
+    expect((await callRoute(meRoute, { token: reader.idToken })).status).toBe(401);
   });
 });
 

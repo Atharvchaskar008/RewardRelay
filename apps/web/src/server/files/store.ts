@@ -3,7 +3,9 @@ import { randomUUID } from "crypto";
 import { keyring, type EncryptedBlob } from "../crypto";
 import { serverEnv } from "../env";
 import { AppError } from "../errors";
+import { withDeadline } from "../deadline";
 import { db } from "../firebaseAdmin";
+import { track } from "../timing";
 
 /**
  * Uploaded files (invoices, dispute evidence). Every file is envelope-encrypted before it is stored
@@ -89,16 +91,21 @@ export class FirestoreFileStore implements FileStore {
       size: bytes.length,
       createdAt: Date.now(),
     });
-    await batch.commit();
+    await withDeadline(track("db", batch.commit()), undefined, "firestore.file write");
     return { fileId, backend: "firestore", contentType, size: bytes.length };
   }
 
   async get(scope: string, file: StoredFile): Promise<Buffer> {
     const header = db().doc(`${scope}/files/${file.fileId}`);
-    const meta = (await header.get()).data() as
-      { sealed: EncryptedBlob; chunks: number } | undefined;
+    const meta = (
+      await withDeadline(track("db", header.get()), undefined, "firestore.file header")
+    ).data() as { sealed: EncryptedBlob; chunks: number } | undefined;
     if (!meta) throw new AppError("NOT_FOUND", { message: "The file is no longer available." });
-    const parts = await header.collection("chunks").orderBy("index").get();
+    const parts = await withDeadline(
+      track("db", header.collection("chunks").orderBy("index").get()),
+      undefined,
+      "firestore.file chunks",
+    );
     if (parts.size !== meta.chunks)
       throw new AppError("INTERNAL", { message: "The file is incomplete." });
     const ciphertext = Buffer.concat(

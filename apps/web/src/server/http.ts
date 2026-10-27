@@ -5,14 +5,19 @@ import type { z } from "zod";
 import { AppError, toAppError } from "./errors";
 import { errorFields, log } from "./log";
 import { routeServices, type AuthUser, type RateLimitRule } from "./services";
+import { markPhase, runWithTiming, serverTimingHeader, timingSummary } from "./timing";
 
 /**
  * The one wrapper every API route goes through:
- * request ID → Firebase ID token (checkRevoked) → admin check → rate limit → zod validation
- * (query + JSON body) → idempotency → handler → envelope / error mapping → structured log.
+ * request ID → Firebase ID token → admin check → rate limit → zod validation (query + JSON body)
+ * → idempotency → handler → envelope / error mapping → structured log.
+ *
+ * Reads (GET/HEAD) and writes are checked differently: a write verifies that the session was not
+ * revoked on every request and is rate-limited across instances (Firestore); a read reuses a
+ * revocation check for up to a minute and is rate-limited per instance (memory).
  *
  * Responses: `{ ok: true, data }` or `{ ok: false, error: { code, message, requestId, details? } }`,
- * always `Cache-Control: no-store` and an `X-Request-Id` header.
+ * always `Cache-Control: no-store`, an `X-Request-Id` header and a `Server-Timing` header.
  */
 
 export type ApiEnvelope<T> =
@@ -56,8 +61,13 @@ export interface RouteOptions<B extends Schema, Q extends Schema> {
   name: string;
   /** Default "required". */
   auth?: "required" | "optional" | "none";
-  /** Restrict to ADMIN_UIDS (implies auth). */
+  /** Restrict to ADMIN_UIDS (implies auth and strict). */
   admin?: boolean;
+  /**
+   * Apply the write-grade checks to a read: revocation checked on every request and the shared
+   * (Firestore) rate limit. Use for reads that return private data (details, codes, backups).
+   */
+  strict?: boolean;
   body?: B;
   query?: Q;
   /** Token bucket per uid (or per IP when anonymous). Default 30 burst / 30 per minute. */
@@ -145,24 +155,45 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
 ): RouteHandler {
   const authMode = options.admin ? "required" : (options.auth ?? "required");
 
-  return async (req, context) => {
+  return (req, context) => runWithTiming(() => handle(req, context));
+
+  async function handle(
+    req: NextRequest,
+    context: { params: Promise<Record<string, string>> },
+  ): Promise<NextResponse> {
     const started = Date.now();
     const headerId = req.headers.get("x-request-id");
     const requestId = headerId && REQUEST_ID.test(headerId) ? headerId : randomUUID();
     const ipTag = shortHash(clientIp(req));
+    // Light checks only for reads that return no private data.
+    const isRead =
+      (req.method === "GET" || req.method === "HEAD") && !options.strict && !options.admin;
     let user: AuthUser | null = null;
     let idempotencyScope: string | undefined;
     const services = routeServices();
+    const timingHeaders = (): Record<string, string> => {
+      const value = serverTimingHeader(Date.now() - started);
+      return value ? { "Server-Timing": value } : {};
+    };
+    const logRequest = (level: "info" | "error", fields: Record<string, unknown>) =>
+      log(level, "api.request", {
+        route: options.name,
+        requestId,
+        uidTag: user ? shortHash(user.uid) : undefined,
+        durationMs: Date.now() - started,
+        timing: timingSummary(),
+        ...fields,
+      });
 
     try {
       const params: Record<string, string> = (await context?.params) ?? {};
-      // 1. Authentication (Firebase ID token, revocation checked).
+      // 1. Authentication (Firebase ID token; revocation checked on every write).
       if (authMode !== "none") {
         const header = req.headers.get("authorization") ?? "";
         const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
         if (token) {
           try {
-            user = await services.verifyIdToken(token);
+            user = await services.verifyIdToken(token, { strict: !isRead });
           } catch (error) {
             // An outage (deadline) is not an expired session.
             if (error instanceof AppError && error.code === "INTERNAL") throw error;
@@ -174,6 +205,7 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
         } else if (authMode === "required") {
           throw new AppError("AUTH_REQUIRED");
         }
+        markPhase("auth");
       }
       if (options.admin && (!user || !services.isAdmin(user.uid))) throw new AppError("FORBIDDEN");
 
@@ -181,10 +213,14 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
       if (options.rateLimit !== false) {
         const rule = options.rateLimit ?? DEFAULT_RATE_LIMIT;
         const subject = user ? `uid:${user.uid}` : `ip:${ipTag}`;
-        const decision = await services.rateLimiter.consume(`${options.name}|${subject}`, rule);
+        const limiter = isRead
+          ? (services.readRateLimiter ?? services.rateLimiter)
+          : services.rateLimiter;
+        const decision = await limiter.consume(`${options.name}|${subject}`, rule);
         if (!decision.allowed) {
           throw new AppError("RATE_LIMITED", { retryAfter: decision.retryAfter });
         }
+        markPhase("limit");
       }
 
       // 3. Validation.
@@ -207,16 +243,12 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
         const scope = `${options.name}|${user?.uid ?? `ip:${ipTag}`}|${key}`;
         const requestHash = shortHash(toJson({ query, body, params }));
         const begun = await services.idempotency.begin(scope, requestHash);
+        markPhase("idem");
         if (begun.state === "replay") {
-          log("info", "api.request", {
-            route: options.name,
-            requestId,
-            status: begun.response.status,
-            replayed: true,
-            durationMs: Date.now() - started,
-          });
+          logRequest("info", { status: begun.response.status, replayed: true });
           return jsonResponse(begun.response.body, begun.response.status, requestId, {
             "Idempotent-Replayed": "true",
+            ...timingHeaders(),
           });
         }
         idempotencyScope = scope;
@@ -232,17 +264,14 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
         params,
         ipTag,
       });
+      markPhase("app");
       // A raw Response (file download) passes through with the standard headers added.
       if (output instanceof Response) {
         output.headers.set("X-Request-Id", requestId);
         if (!output.headers.has("Cache-Control")) output.headers.set("Cache-Control", "no-store");
-        log("info", "api.request", {
-          route: options.name,
-          requestId,
-          status: output.status,
-          uidTag: user ? shortHash(user.uid) : undefined,
-          durationMs: Date.now() - started,
-        });
+        for (const [name, value] of Object.entries(timingHeaders()))
+          output.headers.set(name, value);
+        logRequest("info", { status: output.status });
         return output as unknown as NextResponse;
       }
       const result = isRouteResult(output) ? output : respond(output);
@@ -263,24 +292,17 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
           });
         }
       }
-      log("info", "api.request", {
-        route: options.name,
-        requestId,
-        status: result.status,
-        uidTag: user ? shortHash(user.uid) : undefined,
-        durationMs: Date.now() - started,
+      logRequest("info", { status: result.status });
+      return jsonResponse(payload, result.status, requestId, {
+        ...result.headers,
+        ...timingHeaders(),
       });
-      return jsonResponse(payload, result.status, requestId, result.headers);
     } catch (thrown) {
       const error = toAppError(thrown);
       if (idempotencyScope)
         await services.idempotency.abandon(idempotencyScope).catch(() => undefined);
-      log(error.status >= 500 ? "error" : "info", "api.request", {
-        route: options.name,
-        requestId,
+      logRequest(error.status >= 500 ? "error" : "info", {
         status: error.status,
-        uidTag: user ? shortHash(user.uid) : undefined,
-        durationMs: Date.now() - started,
         ...errorFields(error),
       });
       const envelope: ApiEnvelope<never> = {
@@ -292,12 +314,10 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
           ...(error.details ? { details: error.details } : {}),
         },
       };
-      return jsonResponse(
-        toJson(envelope),
-        error.status,
-        requestId,
-        error.retryAfter ? { "Retry-After": String(error.retryAfter) } : {},
-      );
+      return jsonResponse(toJson(envelope), error.status, requestId, {
+        ...(error.retryAfter ? { "Retry-After": String(error.retryAfter) } : {}),
+        ...timingHeaders(),
+      });
     }
-  };
+  }
 }

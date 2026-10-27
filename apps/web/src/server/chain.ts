@@ -12,16 +12,19 @@ import {
 } from "viem";
 import { getAbiItem, pad, parseEventLogs, toEventSelector, toHex, type AbiEvent } from "viem";
 import { chainById, deployments, relayEscrowAbi, reputationSbtAbi } from "@rewardrelay/shared";
+import { TtlCache } from "./cache";
 import { serverEnv, type ServerEnv } from "./env";
+import { track } from "./timing";
 
 /**
  * Read access to MST through viem. The chain definition comes from packages/shared and is pointed
  * at the configured RPC URL, so the same code serves MST Testnet and a local Hardhat node.
  */
 
-const RPC_TIMEOUT_MS = 10_000;
-const RPC_RETRIES = 3;
-const RPC_RETRY_DELAY_MS = 300;
+/** Per attempt; with the retries a read fails within about 25 s instead of hanging a request. */
+const RPC_TIMEOUT_MS = 8_000;
+const RPC_RETRIES = 2;
+const RPC_RETRY_DELAY_MS = 250;
 
 export function mstChain(env: ServerEnv = serverEnv()): Chain {
   const known = chainById(env.MST_CHAIN_ID);
@@ -35,15 +38,24 @@ export function mstChain(env: ServerEnv = serverEnv()): Chain {
   });
 }
 
-/** HTTP transport with timeout and exponential retry (viem retries network errors and 5xx/429). */
+/**
+ * HTTP transport with timeout and exponential retry (viem retries network errors and 5xx/429).
+ * Every call is reported to the request timing as `chain`.
+ */
 export function rpcTransport(env: ServerEnv = serverEnv()): Transport {
-  return http(env.MST_RPC_URL, {
+  const inner = http(env.MST_RPC_URL, {
     timeout: RPC_TIMEOUT_MS,
     retryCount: RPC_RETRIES,
     retryDelay: RPC_RETRY_DELAY_MS,
     // MST has no Multicall3; concurrent reads are grouped into JSON-RPC batches instead.
     batch: { batchSize: 25, wait: 10 },
   });
+  return ((params) => {
+    const transport = inner(params);
+    const request: typeof transport.request = (args, options) =>
+      track("chain", transport.request(args, options));
+    return { ...transport, request };
+  }) as Transport;
 }
 
 let client: PublicClient | undefined;
@@ -85,10 +97,50 @@ export function readDeal(id: bigint): Promise<OnChainDeal> {
   return escrowContract().read.getDeal([id]);
 }
 
-export async function readTrust(account: Address): Promise<TrustSummary> {
-  const [hasBadge, tier, completed, disputesLost, relayPoints, maxDealValue] =
-    await sbtContract().read.trustOf([account]);
-  return { hasBadge, tier, completed, disputesLost, relayPoints, maxDealValue };
+/**
+ * Trust summaries change only when a deal ends; displays of other people's badges (feed, deal room,
+ * badge page) reuse a read for a few seconds. A user's own view and limit checks read fresh.
+ */
+const trustCache = new TtlCache<TrustSummary>({ ttlMs: 5_000, max: 5_000 });
+
+export function readTrust(
+  account: Address,
+  options: { fresh?: boolean } = {},
+): Promise<TrustSummary> {
+  const load = async (): Promise<TrustSummary> => {
+    const [hasBadge, tier, completed, disputesLost, relayPoints, maxDealValue] =
+      await sbtContract().read.trustOf([account]);
+    return { hasBadge, tier, completed, disputesLost, relayPoints, maxDealValue };
+  };
+  const key = account.toLowerCase();
+  return options.fresh ? trustCache.refresh(key, load) : trustCache.get(key, load);
+}
+
+/** Call after the server itself changes an account's badge (mint, ruling). */
+export function invalidateTrust(account: Address): void {
+  trustCache.invalidate(account.toLowerCase());
+}
+
+const pausedCache = new TtlCache<boolean>({ ttlMs: 10_000, max: 1 });
+
+/** Whether new escrow commitments are paused (exits never are). */
+export function escrowPaused(): Promise<boolean> {
+  return pausedCache.get("paused", () => escrowContract().read.paused());
+}
+
+export interface LatestBlock {
+  number: bigint;
+  timestamp: number;
+}
+
+/** MST makes a block about every 3 s, so the latest block is shared for up to 1.5 s. */
+const latestCache = new TtlCache<LatestBlock>({ ttlMs: 1_500, max: 1 });
+
+export function latestBlock(): Promise<LatestBlock> {
+  return latestCache.get("latest", async () => {
+    const block = await publicClient().getBlock({ blockTag: "latest" });
+    return { number: block.number, timestamp: Number(block.timestamp) };
+  });
 }
 
 export async function readNextAction(id: bigint, account: Address): Promise<number> {
@@ -164,16 +216,51 @@ const DEAL_EVENT_TOPICS = DEAL_EVENTS.map((name) =>
   toEventSelector(getAbiItem({ abi: relayEscrowAbi, name }) as AbiEvent),
 );
 
-/** Every escrow event of one deal, with block timestamps. */
-export async function readDealEvents(id: bigint): Promise<DealEvent[]> {
-  const client = publicClient();
-  const logs = await client.request({
+/** A block's timestamp never changes. */
+const blockTimes = new TtlCache<number>({ ttlMs: Number.POSITIVE_INFINITY, max: 20_000 });
+
+function blockTime(blockNumber: bigint): Promise<number> {
+  return blockTimes.get(blockNumber.toString(), async () =>
+    Number((await publicClient().getBlock({ blockNumber })).timestamp),
+  );
+}
+
+/**
+ * Deal events are append-only, so each deal keeps the events read so far and a block they are known
+ * to be complete up to; a later read only scans from there (REORG_MARGIN blocks back, so a short
+ * reorganisation is picked up) to the node's latest block, so a new event is never missed.
+ */
+const REORG_MARGIN = 3n;
+const DEAL_EVENT_CACHE_MAX = 2_000;
+const dealEvents = new Map<string, { events: DealEvent[]; scannedTo: bigint }>();
+const dealEventsInFlight = new Map<string, Promise<DealEvent[]>>();
+
+/** Every escrow event of one deal, oldest first, with block timestamps. */
+export function readDealEvents(id: bigint): Promise<DealEvent[]> {
+  const key = id.toString();
+  const pending = dealEventsInFlight.get(key);
+  if (pending) return pending;
+  const call = scanDealEvents(id, key).finally(() => dealEventsInFlight.delete(key));
+  dealEventsInFlight.set(key, call);
+  return call;
+}
+
+async function scanDealEvents(id: bigint, key: string): Promise<DealEvent[]> {
+  // A lower bound of the head (shared for up to 1.5 s): the scan below reads to "latest", so every
+  // block up to `known` is covered by it.
+  const known = (await latestBlock()).number;
+  const cached = dealEvents.get(key);
+
+  const deployBlock = escrowDeployBlock();
+  const resume = cached ? cached.scannedTo - REORG_MARGIN + 1n : deployBlock;
+  const fromBlock = resume > deployBlock ? resume : deployBlock;
+  const logs = await publicClient().request({
     method: "eth_getLogs",
     params: [
       {
         address: serverEnv().ESCROW_ADDRESS,
         topics: [DEAL_EVENT_TOPICS, pad(toHex(id), { size: 32 })],
-        fromBlock: toHex(escrowDeployBlock()),
+        fromBlock: toHex(fromBlock),
         toBlock: "latest",
       },
     ],
@@ -183,22 +270,38 @@ export async function readDealEvents(id: bigint): Promise<DealEvent[]> {
     logs: logs as never,
     eventName: [...DEAL_EVENTS],
   });
-  const blocks = [...new Set(parsed.map((log) => log.blockNumber))];
-  const timestamps = new Map<bigint, number>();
-  await mapLimit(blocks, 5, async (blockNumber) => {
-    const block = await client.getBlock({ blockNumber });
-    timestamps.set(blockNumber, Number(block.timestamp));
-  });
-  return parsed.map((log) => ({
+  const fresh = await mapLimit(parsed, 5, async (log) => ({
     name: log.eventName,
     args: log.args as Record<string, unknown>,
     blockNumber: log.blockNumber,
     transactionHash: log.transactionHash,
-    timestamp: timestamps.get(log.blockNumber) ?? 0,
+    timestamp: await blockTime(log.blockNumber),
   }));
+  const events = [
+    ...(cached?.events.filter((event) => event.blockNumber < fromBlock) ?? []),
+    ...fresh,
+  ];
+
+  dealEvents.delete(key);
+  if (dealEvents.size >= DEAL_EVENT_CACHE_MAX) {
+    const oldest = dealEvents.keys().next().value;
+    if (oldest !== undefined) dealEvents.delete(oldest);
+  }
+  dealEvents.set(key, { events, scannedTo: known });
+  return events;
 }
 
-/** Test hook: drop the cached client (after the environment changes). */
+/** Test hook: drop the cached client and every chain cache (after the environment changes). */
 export function resetChainClientForTests(): void {
   client = undefined;
+  resetChainCaches();
+}
+
+/** Drops every cached chain read (tests that move the local chain's clock call this). */
+export function resetChainCaches(): void {
+  trustCache.invalidate();
+  pausedCache.invalidate();
+  latestCache.invalidate();
+  blockTimes.invalidate();
+  dealEvents.clear();
 }

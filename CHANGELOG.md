@@ -6,8 +6,37 @@ All notable changes to RewardRelay are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **Faster API** (production build against Firebase and MST Testnet, median of warm requests): deal
+  page 1.5 s → 0.29 s, `/api/me` 0.88 s → 0.32 s, my deals 0.86 s → 0.32 s, health 1.36 s → 0.30 s,
+  listings feed 0.25 s → 0.05 s. Reads that do not depend on each other run side by side; block
+  timestamps and deal events are cached (events are rescanned only from the last scanned block); the
+  latest block, the pause flag and other users' badges are reused for a few seconds; the deal index
+  sync and release-on-visit run after the response; the health checks run in parallel; Firestore uses
+  REST instead of gRPC against the real service (faster cold starts).
+- Reads that return no private data check session revocation at most once a minute per user and are
+  rate-limited per instance; writes, admin routes and private reads keep the per-request checks.
+- Wallet setup mints the Trust Badge and sends the welcome top-up at the same time (about half the
+  wait).
+- The browser SDK checks for transaction receipts every second instead of every 4 s.
+
+### Added
+
+- A `Server-Timing` header on every API response (route phases and busy time per backend) and the
+  same timing in the request log.
+- Testing guide (`docs/testing.md`), demo walkthrough (`docs/demo.md`), this changelog and a Code of
+  Conduct.
+
 ### Fixed
 
+- Firestore queries, the file store, the keeper's lease and Firebase Auth lookups now have the 8 s
+  deadline, and a timeout names the operation in the logs; an MST RPC read fails within about 25 s
+  instead of about 40 s.
+- Release-on-visit is no longer cut off when a serverless response ends.
+- A dispute ruling that succeeded on-chain is no longer reported as failed when its audit record
+  cannot be written at once (the write is retried, then logged in full).
+- The in-memory rate limiter drops refilled buckets, so its memory no longer grows with every caller.
 - Phone sign-in shows the actual reason when Firebase rejects a request, and accepts a mobile number
   typed with a repeated `+91`, a leading `0` or spaces; the code screen shows the number used and has
   a "Change number" button.
@@ -20,11 +49,6 @@ All notable changes to RewardRelay are recorded here. The format follows
   instead of HTTP 403, so the wallet stops retrying them on every transaction.
 - The keeper retries welcome top-ups that failed before broadcast (for example when the funder wallet
   was empty at sign-up).
-
-### Added
-
-- Testing guide (`docs/testing.md`), demo walkthrough (`docs/demo.md`), this changelog and a Code of
-  Conduct.
 
 ### Removed
 

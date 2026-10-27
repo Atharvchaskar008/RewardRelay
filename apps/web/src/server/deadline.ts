@@ -11,7 +11,22 @@ import { AppError } from "./errors";
  */
 export const BACKEND_DEADLINE_MS = 8_000;
 
-export function withDeadline<T>(work: Promise<T>, ms: number = BACKEND_DEADLINE_MS): Promise<T> {
+/** Raised when a backend call misses its deadline; `operation` names the call in the logs. */
+export class DeadlineExceeded extends Error {
+  constructor(
+    readonly operation: string,
+    readonly ms: number,
+  ) {
+    super(`${operation} did not answer within ${ms} ms`);
+    this.name = "DeadlineExceeded";
+  }
+}
+
+export function withDeadline<T>(
+  work: Promise<T>,
+  ms: number = BACKEND_DEADLINE_MS,
+  operation = "backend call",
+): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_, reject) => {
     timer = setTimeout(
@@ -19,6 +34,7 @@ export function withDeadline<T>(work: Promise<T>, ms: number = BACKEND_DEADLINE_
         reject(
           new AppError("INTERNAL", {
             message: "RewardRelay is temporarily unavailable. Please try again shortly.",
+            cause: new DeadlineExceeded(operation, ms),
           }),
         ),
       ms,

@@ -42,46 +42,53 @@ export async function healthReport(): Promise<HealthReport> {
   const env = serverEnv();
   const client = publicClient();
 
-  const chain = await withTimeout(client.getBlock({ blockTag: "latest" }), "RPC")
-    .then((block) => ({
-      ok: true,
-      chainId: env.MST_CHAIN_ID,
-      latestBlock: block.number.toString(),
-      blockTime: new Date(Number(block.timestamp) * 1000).toISOString(),
-    }))
-    .catch((error) => ({
-      ok: false,
-      chainId: env.MST_CHAIN_ID,
-      latestBlock: null,
-      blockTime: null,
-      error: String(errorFields(error).errorMessage ?? "unreachable"),
-    }));
-
-  const firestore = await withTimeout(db().doc("health/ping").get(), "Firestore")
-    .then(() => ({ ok: true }))
-    .catch((error) => ({
-      ok: false,
-      error: String(errorFields(error).errorMessage ?? "unreachable"),
-    }));
-
   // Roles that share a key are reported once (the releaser falls back to the funder).
-  const seen = new Set<string>();
-  const roles: SignerRole[] = ["verifier", "funder", "releaser"];
-  const signers: HealthReport["signers"] = [];
-  for (const role of roles) {
+  const managers = new Map<string, { role: SignerRole; manager: ReturnType<typeof txManager> }>();
+  for (const role of ["verifier", "funder", "releaser"] as SignerRole[]) {
     const manager = txManager(role);
-    if (seen.has(manager.address)) continue;
-    seen.add(manager.address);
-    const balance = chain.ok
-      ? await withTimeout(manager.balance(), "balance").catch(() => null)
-      : null;
-    signers.push({
-      role,
-      address: manager.address,
-      balanceMstc: balance === null ? null : formatEther(balance),
-      low: balance !== null && balance < env.SIGNER_LOW_BALANCE_WEI,
-    });
+    if (!managers.has(manager.address)) managers.set(manager.address, { role, manager });
   }
+
+  // The checks are independent, so they run side by side.
+  const [chain, firestore, balances] = await Promise.all([
+    withTimeout(client.getBlock({ blockTag: "latest" }), "RPC")
+      .then((block) => ({
+        ok: true,
+        chainId: env.MST_CHAIN_ID,
+        latestBlock: block.number.toString(),
+        blockTime: new Date(Number(block.timestamp) * 1000).toISOString(),
+      }))
+      .catch((error) => ({
+        ok: false,
+        chainId: env.MST_CHAIN_ID,
+        latestBlock: null,
+        blockTime: null,
+        error: String(errorFields(error).errorMessage ?? "unreachable"),
+      })),
+    withTimeout(db().doc("health/ping").get(), "Firestore")
+      .then(() => ({ ok: true }))
+      .catch((error) => ({
+        ok: false,
+        error: String(errorFields(error).errorMessage ?? "unreachable"),
+      })),
+    Promise.all(
+      [...managers.values()].map(({ manager }) =>
+        withTimeout(manager.balance(), "balance").catch(() => null),
+      ),
+    ),
+  ]);
+
+  const signers: HealthReport["signers"] = [...managers.values()].map(
+    ({ role, manager }, index) => {
+      const balance = chain.ok ? balances[index] : null;
+      return {
+        role,
+        address: manager.address,
+        balanceMstc: balance === null ? null : formatEther(balance),
+        low: balance !== null && balance < env.SIGNER_LOW_BALANCE_WEI,
+      };
+    },
+  );
 
   const status = !chain.ok
     ? "down"

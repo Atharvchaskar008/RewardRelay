@@ -49,6 +49,8 @@ export interface TxOutcome {
 }
 
 const RECEIPT_TIMEOUT_MS = 120_000;
+/** MST makes a block about every 3 s; viem's default 4 s polling would add up to 4 s per transaction. */
+const POLLING_MS = 1_000;
 
 export function viemChain(config: ChainConfig): Chain {
   const known = chainById(config.chainId);
@@ -68,8 +70,12 @@ export function chainContext(config: ChainConfig, account: Account): ChainContex
   return {
     config,
     chain,
-    publicClient: createPublicClient({ chain, transport }) as PublicClient,
-    walletClient: createWalletClient({ account, chain, transport }),
+    publicClient: createPublicClient({
+      chain,
+      transport,
+      pollingInterval: POLLING_MS,
+    }) as PublicClient,
+    walletClient: createWalletClient({ account, chain, transport, pollingInterval: POLLING_MS }),
     account,
   };
 }
@@ -90,7 +96,11 @@ export async function injectedChainContext(
   return {
     config,
     chain,
-    publicClient: createPublicClient({ chain, transport: http(config.rpcUrl) }) as PublicClient,
+    publicClient: createPublicClient({
+      chain,
+      transport: http(config.rpcUrl),
+      pollingInterval: POLLING_MS,
+    }) as PublicClient,
     walletClient,
     account: address,
   };

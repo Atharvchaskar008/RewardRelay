@@ -58,7 +58,7 @@ export function money(wei: bigint): Money {
 
 export async function buildUserView(address: Address, user?: UserDoc): Promise<UserView> {
   const [trust, balance, withdrawable] = await Promise.all([
-    readTrust(address),
+    readTrust(address, { fresh: true }),
     publicClient().getBalance({ address }),
     escrowContract().read.withdrawable([address]),
   ]);

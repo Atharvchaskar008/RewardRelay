@@ -1,6 +1,7 @@
 import { parseEventLogs, zeroHash, type Hex } from "viem";
 import { inrToWei, relayEscrowAbi } from "@rewardrelay/shared";
 import { listingTermsHash } from "@/common/terms";
+import { resetChainCaches } from "@/server/chain";
 import { callRoute, chainFixture, type onboard } from "./integration";
 
 /** On-chain deal actions from a test user's wallet, plus listing publication through the API. */
@@ -143,13 +144,17 @@ export async function openBuyForYou(
   return id;
 }
 
-/** Advances the local chain's clock and mines a block. */
+/**
+ * Advances the local chain's clock and mines a block. The server shares the latest block for a
+ * moment, which a jump of minutes in a millisecond would outrun, so its chain caches are dropped.
+ */
 export async function increaseTime(user: User, seconds: number) {
   await user.publicClient.request({
     method: "evm_increaseTime" as never,
     params: [seconds] as never,
   });
   await user.publicClient.request({ method: "evm_mine" as never, params: [] as never });
+  resetChainCaches();
 }
 
 /** Opens a Buy-for-you deal, pays it, submits an order proof via the API and marks it delivered. */

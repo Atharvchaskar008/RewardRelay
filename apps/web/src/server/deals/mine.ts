@@ -2,6 +2,7 @@ import "server-only";
 import { DealStatus, STATUS_LABELS, STATUS_NAMES } from "@rewardrelay/shared";
 import { readDeals } from "../chain";
 import { repos } from "../repositories";
+import { runQuery } from "../repositories/collection";
 
 export interface MyDealItem {
   dealId: string;
@@ -14,8 +15,14 @@ export interface MyDealItem {
 /** The caller's deals (as sharer or seeker) from the index, newest first, statuses read from chain. */
 export async function myDeals(uid: string): Promise<{ items: MyDealItem[] }> {
   const [asSharer, asSeeker] = await Promise.all([
-    repos.deals.query().where("sharerUid", "==", uid).limit(50).get(),
-    repos.deals.query().where("seekerUid", "==", uid).limit(50).get(),
+    runQuery(
+      repos.deals.query().where("sharerUid", "==", uid).limit(50),
+      "firestore.query deals by sharer",
+    ),
+    runQuery(
+      repos.deals.query().where("seekerUid", "==", uid).limit(50),
+      "firestore.query deals by seeker",
+    ),
   ]);
   const roles = new Map<string, "sharer" | "seeker">();
   for (const doc of asSharer.docs) roles.set(doc.id, "sharer");

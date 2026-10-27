@@ -1,5 +1,5 @@
 import "server-only";
-import { publicClient, readDeal, type OnChainDeal } from "../chain";
+import { latestBlock, readDeal, type OnChainDeal } from "../chain";
 import { AppError } from "../errors";
 import { revertName } from "../signer";
 
@@ -14,8 +14,7 @@ export async function readDealOrThrow(id: bigint): Promise<OnChainDeal> {
   }
 }
 
-/** Latest block timestamp: the clock the contract's guards use (seconds). */
+/** Latest block timestamp: the clock the contract's guards use (seconds; shared for up to 1.5 s). */
 export async function chainNow(): Promise<number> {
-  const block = await publicClient().getBlock({ blockTag: "latest" });
-  return Number(block.timestamp);
+  return (await latestBlock()).timestamp;
 }

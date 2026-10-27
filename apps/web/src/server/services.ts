@@ -4,6 +4,7 @@ import { serverEnv } from "./env";
 import { adminAuth } from "./firebaseAdmin";
 import { withDeadline } from "./deadline";
 import { FirestoreIdempotencyStore, FirestoreRateLimiter } from "./stores";
+import { track } from "./timing";
 
 /**
  * The pluggable dependencies of the route wrapper. Production uses Firebase Auth and Firestore;
@@ -50,11 +51,21 @@ export interface IdempotencyStore {
 }
 
 export interface RouteServices {
-  verifyIdToken(token: string): Promise<AuthUser>;
+  /**
+   * Verifies a Firebase ID token. `strict` (writes and private reads) checks revocation and disabled
+   * accounts on every call; otherwise that check is reused for up to REVOCATION_CHECK_TTL_MS.
+   */
+  verifyIdToken(token: string, options?: { strict?: boolean }): Promise<AuthUser>;
   isAdmin(uid: string): boolean;
+  /** Shared across instances: writes and private reads. */
   rateLimiter: RateLimiter;
+  /** Per instance, for reads without private data; `rateLimiter` when absent. */
+  readRateLimiter?: RateLimiter;
   idempotency: IdempotencyStore;
 }
+
+/** How long a light read may rely on an earlier revocation / disabled-account check of the same user. */
+export const REVOCATION_CHECK_TTL_MS = 60_000;
 
 /** Token-bucket arithmetic shared by every rate limiter. */
 export function takeToken(
@@ -79,14 +90,34 @@ export const IDEMPOTENCY_PENDING_TTL_MS = 2 * 60_000;
 export const IDEMPOTENCY_TTL_MS = 24 * 60 * 60_000;
 
 export class MemoryRateLimiter implements RateLimiter {
-  private readonly buckets = new Map<string, { tokens: number; updatedAt: number }>();
-  constructor(private readonly now: () => number = Date.now) {}
+  /** `fullAt`: when the bucket is full again, i.e. indistinguishable from a missing one. */
+  private readonly buckets = new Map<
+    string,
+    { tokens: number; updatedAt: number; fullAt: number }
+  >();
+  private consumed = 0;
+  constructor(
+    private readonly now: () => number = Date.now,
+    /** Full buckets are dropped every `pruneEvery` calls, so memory stays bounded by active callers. */
+    private readonly pruneEvery = 1_000,
+  ) {}
 
   async consume(key: string, rule: RateLimitRule): Promise<RateLimitDecision> {
     const at = this.now();
+    if (++this.consumed % this.pruneEvery === 0) this.prune(at);
     const { tokens, decision } = takeToken(this.buckets.get(key), rule, at);
-    this.buckets.set(key, { tokens, updatedAt: at });
+    const fullAt = at + Math.ceil(((rule.capacity - tokens) / rule.refillPerMinute) * 60_000);
+    this.buckets.set(key, { tokens, updatedAt: at, fullAt });
     return decision;
+  }
+
+  /** Number of tracked buckets (for tests and diagnostics). */
+  get size(): number {
+    return this.buckets.size;
+  }
+
+  private prune(at: number): void {
+    for (const [key, bucket] of this.buckets) if (bucket.fullAt <= at) this.buckets.delete(key);
   }
 }
 
@@ -126,10 +157,65 @@ export const idempotencyMismatch = () =>
 export const idempotencyBusy = () =>
   new AppError("CONFLICT", { message: "The same request is still being processed." });
 
+/** What the revocation check needs from Firebase Auth's user record. */
+export interface RevocationRecord {
+  tokensValidAfterTime?: string;
+  disabled: boolean;
+}
+
+/**
+ * Revocation state per user for light reads: the same rule Firebase applies with `checkRevoked`
+ * (a token issued before `tokensValidAfterTime`, or a disabled account, is rejected), with the user
+ * record looked up at most once per `ttlMs`. Bounded so a flood of users cannot grow it without
+ * limit.
+ */
+export class RevocationCache {
+  private readonly states = new Map<
+    string,
+    { checkedAt: number; validSince: number; disabled: boolean }
+  >();
+
+  constructor(
+    private readonly lookup: (uid: string) => Promise<RevocationRecord>,
+    private readonly options: { ttlMs?: number; max?: number; now?: () => number } = {},
+  ) {}
+
+  /** Throws when the token (issued at `authTimeSeconds`) was revoked or the account is disabled. */
+  async assertActive(uid: string, authTimeSeconds: number): Promise<void> {
+    const now = (this.options.now ?? Date.now)();
+    let state = this.states.get(uid);
+    if (!state || now - state.checkedAt > (this.options.ttlMs ?? REVOCATION_CHECK_TTL_MS)) {
+      const record = await this.lookup(uid);
+      state = {
+        checkedAt: now,
+        validSince: record.tokensValidAfterTime
+          ? new Date(record.tokensValidAfterTime).getTime()
+          : 0,
+        disabled: record.disabled,
+      };
+      if (this.states.size >= (this.options.max ?? 10_000)) this.states.clear();
+      this.states.set(uid, state);
+    }
+    if (state.disabled) throw new Error("auth/user-disabled");
+    if (authTimeSeconds * 1000 < state.validSince) throw new Error("auth/id-token-revoked");
+  }
+}
+
 function createDefaultServices(): RouteServices {
+  const revocations = new RevocationCache((uid) =>
+    withDeadline(track("identity", adminAuth().getUser(uid)), undefined, "auth.getUser"),
+  );
   return {
-    async verifyIdToken(token) {
-      const decoded = await withDeadline(adminAuth().verifyIdToken(token, true));
+    async verifyIdToken(token, options = {}) {
+      const strict = options.strict ?? true;
+      // Strict: Firebase checks revocation itself (one Auth call). Light: the signature and expiry
+      // are checked locally with cached keys, and revocation through the per-user cache.
+      const decoded = await withDeadline(
+        track("identity", adminAuth().verifyIdToken(token, strict)),
+        undefined,
+        "auth.verifyIdToken",
+      );
+      if (!strict) await revocations.assertActive(decoded.uid, decoded.auth_time);
       return {
         uid: decoded.uid,
         phoneNumber: decoded.phone_number ?? null,
@@ -138,6 +224,7 @@ function createDefaultServices(): RouteServices {
     },
     isAdmin: (uid) => serverEnv().ADMIN_UIDS.includes(uid),
     rateLimiter: new FirestoreRateLimiter(),
+    readRateLimiter: new MemoryRateLimiter(),
     idempotency: new FirestoreIdempotencyStore(),
   };
 }

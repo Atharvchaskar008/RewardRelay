@@ -7,9 +7,11 @@ import { chainNow } from "../deals/read";
 import { purgeExpiredPrivateData } from "../deals/retention";
 import { serverEnv } from "../env";
 import { AppError } from "../errors";
+import { afterResponse } from "../background";
 import { retryFailedTopups } from "../identity/onboarding";
 import { errorFields, log } from "../log";
 import { repos } from "../repositories";
+import { runQuery } from "../repositories/collection";
 import { txManager, type TxResult } from "../signer";
 import { acquireLease, releaseLease } from "./lease";
 
@@ -69,12 +71,14 @@ async function act(action: Action, id: bigint): Promise<TxResult | "already-sett
 }
 
 async function refreshIndex(): Promise<number> {
-  const snapshot = await repos.deals
-    .query()
-    .where("status", "in", OPEN_STATUSES)
-    .orderBy("updatedAt", "asc")
-    .limit(REFRESH_BATCH)
-    .get();
+  const snapshot = await runQuery(
+    repos.deals
+      .query()
+      .where("status", "in", OPEN_STATUSES)
+      .orderBy("updatedAt", "asc")
+      .limit(REFRESH_BATCH),
+    "firestore.query open deals",
+  );
   const ids = snapshot.docs.map((doc) => doc.id);
   const deals = await readDeals(ids.map(BigInt));
   const pairs = ids.map((dealId, index) => [dealId, deals[index]] as const);
@@ -109,12 +113,14 @@ export async function runReleaseCron(): Promise<CronSummary> {
     const outOfTime = () => Date.now() - started > TIME_BUDGET_MS;
     let actions = 0;
 
-    const due = await repos.deals
-      .query()
-      .where("status", "==", STATUS_NAMES[DealStatus.Delivered])
-      .where("releaseAt", "<=", now * 1000)
-      .limit(MAX_ACTIONS_PER_RUN)
-      .get();
+    const due = await runQuery(
+      repos.deals
+        .query()
+        .where("status", "==", STATUS_NAMES[DealStatus.Delivered])
+        .where("releaseAt", "<=", now * 1000)
+        .limit(MAX_ACTIONS_PER_RUN),
+      "firestore.query due releases",
+    );
     for (const doc of due.docs) {
       if (actions >= MAX_ACTIONS_PER_RUN || outOfTime()) break;
       const id = BigInt(doc.id);
@@ -138,11 +144,13 @@ export async function runReleaseCron(): Promise<CronSummary> {
       await syncDealIndex(doc.id, await readDeal(id));
     }
 
-    const disputes = await repos.deals
-      .query()
-      .where("status", "==", STATUS_NAMES[DealStatus.Disputed])
-      .limit(MAX_ACTIONS_PER_RUN)
-      .get();
+    const disputes = await runQuery(
+      repos.deals
+        .query()
+        .where("status", "==", STATUS_NAMES[DealStatus.Disputed])
+        .limit(MAX_ACTIONS_PER_RUN),
+      "firestore.query open disputes",
+    );
     for (const doc of disputes.docs) {
       if (actions >= MAX_ACTIONS_PER_RUN || outOfTime()) break;
       const id = BigInt(doc.id);
@@ -185,16 +193,19 @@ export async function runReleaseCron(): Promise<CronSummary> {
 const inFlight = new Set<string>();
 
 /**
- * Release-on-visit: when a viewed deal is due, release it in the background (the response does not
- * wait). Best effort only: the cron remains the guarantee, and the UI also offers the button.
+ * Release-on-visit: when a viewed deal is due, release it after the response is sent (the response
+ * does not wait; on Vercel the function stays alive until the release is mined). Best effort only:
+ * the cron remains the guarantee, and the UI also offers the button.
  */
-export function releaseOnVisit(dealId: string): void {
+export async function releaseOnVisit(dealId: string): Promise<void> {
   if (inFlight.has(dealId)) return;
   inFlight.add(dealId);
-  void act("release", BigInt(dealId))
-    .then(async () => syncDealIndex(dealId, await readDeal(BigInt(dealId))))
-    .catch((error) =>
-      log("warn", "deals.release_on_visit_failed", { dealId, ...errorFields(error) }),
-    )
-    .finally(() => inFlight.delete(dealId));
+  await afterResponse("deals.release_on_visit", async () => {
+    try {
+      await act("release", BigInt(dealId));
+      await syncDealIndex(dealId, await readDeal(BigInt(dealId)));
+    } finally {
+      inFlight.delete(dealId);
+    }
+  });
 }

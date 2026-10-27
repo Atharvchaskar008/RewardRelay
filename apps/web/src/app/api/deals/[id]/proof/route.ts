@@ -42,6 +42,6 @@ export const POST = withRoute(
 
 /** GET /api/deals/:id/proof (either party, once delivered; sharer also while Locked). */
 export const GET = withRoute(
-  { name: "deals.proof.get", rateLimit: { capacity: 30, refillPerMinute: 30 } },
+  { name: "deals.proof.get", strict: true, rateLimit: { capacity: 30, refillPerMinute: 30 } },
   async ({ user, params }) => readProof(user!, params.id),
 );

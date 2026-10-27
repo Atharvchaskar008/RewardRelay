@@ -74,7 +74,7 @@ export const PUT = withRoute(
 
 /** GET /api/wallet/backup → the encrypted blob (restore). Limited to 5 per hour per user. */
 export const GET = withRoute(
-  { name: "wallet.backup.get", rateLimit: { capacity: 5, refillPerMinute: 5 / 60 } },
+  { name: "wallet.backup.get", strict: true, rateLimit: { capacity: 5, refillPerMinute: 5 / 60 } },
   async ({ user }) => {
     const backup = await repos.walletBackups.get(user!.uid);
     if (!backup) throw new AppError("NOT_FOUND", { message: "No wallet backup was found." });
