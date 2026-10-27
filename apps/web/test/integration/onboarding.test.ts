@@ -6,6 +6,7 @@ import { GET as meRoute } from "@/app/api/me/route";
 import { GET as getBackupRoute, PUT as putBackupRoute } from "@/app/api/wallet/backup/route";
 import { EmbeddedWallet, MemoryKeyStore, decryptPrivateKey } from "@/client/wallet";
 import { adminAuth, db } from "@/server/firebaseAdmin";
+import { retryFailedTopups } from "@/server/identity/onboarding";
 import type { UserView } from "@/server/views/user";
 import {
   balanceOf,
@@ -214,6 +215,24 @@ describe("welcome top-up", () => {
     const user = (await db().collection("users").doc(uid).get()).data();
     expect(user?.topup?.status).toBe("sent");
     expect(user?.badge?.status).toBe("minted");
+  });
+
+  it("is retried by the keeper after a failure, and only once", async () => {
+    const { idToken, uid } = await signInWithPhone(fakePhone());
+    const wallet = privateKeyToAccount(generatePrivateKey());
+    expect((await link(idToken, wallet)).status).toBe(200);
+    const amount = BigInt(env.TOPUP_WEI);
+    expect(await balanceOf(wallet.address)).toBe(amount);
+
+    // As if the funder had been empty at sign-up: the claim was recorded as failed, nothing sent.
+    const user = db().collection("users").doc(uid);
+    await user.update({ topup: { status: "failed", amountWei: env.TOPUP_WEI, at: Date.now() } });
+    expect(await retryFailedTopups(5)).toBeGreaterThanOrEqual(1);
+    expect(await balanceOf(wallet.address)).toBe(2n * amount);
+    expect((await user.get()).data()?.topup?.status).toBe("sent");
+
+    await retryFailedTopups(5);
+    expect(await balanceOf(wallet.address)).toBe(2n * amount);
   });
 
   it("replays the stored response for a repeated Idempotency-Key", async () => {

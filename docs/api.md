@@ -226,8 +226,8 @@ Create one job at cron-job.org (free):
 | Notify on failure | on (non-2xx)                                                 |
 
 Each run refreshes the deal index, releases due deals, applies default rulings and purges expired
-private data (details, proofs, files 7 days after a deal ends). Overlapping runs are safe (Firestore
-lease). Watch `/api/health`: `signers[].low` turns true when a server wallet needs MSTC.
+private data (details, proofs, files 7 days after a deal ends), and retries welcome top-ups that failed
+before broadcast (e.g. the funder was empty at sign-up). Overlapping runs are safe (Firestore lease). Watch `/api/health`: `signers[].low` turns true when a server wallet needs MSTC.
 
 ---
 
