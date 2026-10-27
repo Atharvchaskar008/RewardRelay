@@ -35,7 +35,7 @@ const SEEKER_DEPOSIT = (PRICE * 500n) / BPS; // 5%
 const FEE = (PRICE * FEE_BPS) / BPS; // 2%
 const HELD = PRICE + SHARER_DEPOSIT + SEEKER_DEPOSIT;
 
-/** SPEC.md §3 money table for Resolved deals, written independently of the contract. */
+/** docs/protocol.md §3 money table for Resolved deals, written independently of the contract. */
 function disputeSplit(shareBps: bigint, fault: Party, chargeFee: boolean) {
   const seekerPrice = (PRICE * shareBps) / BPS;
   const sharerPrice = PRICE - seekerPrice;
@@ -800,7 +800,7 @@ describe("RelayEscrow lifecycle", function () {
   });
 
   describe("nextActionFor", function () {
-    it("follows SPEC.md §8 for listed, locked and delivered deals", async function () {
+    it("follows docs/protocol.md §8 for listed, locked and delivered deals", async function () {
       const f = await loadFixture(deployEscrowFixture);
       const { escrow, sharer, seeker, carol, outsider, keeper } = f;
       const action = (id: bigint, who: { address: string }) =>

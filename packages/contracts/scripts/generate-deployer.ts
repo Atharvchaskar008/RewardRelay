@@ -2,7 +2,7 @@
  * Creates packages/contracts/.env with a fresh DEPLOYER_KEY (only when none is set yet) and prints the
  * deployer ADDRESS. The private key is written to the local, git-ignored .env file and never printed.
  *
- * Usage: npm run deployer:generate -w contracts
+ * Usage: npm run deployer:generate -w @rewardrelay/contracts
  */
 import fs from "fs";
 import path from "path";

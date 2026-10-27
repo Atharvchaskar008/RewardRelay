@@ -12,13 +12,13 @@ import { explorerUrl, formatMstc, loadCaps, sendTx, spentSoFar } from "./lib/tx"
  * Trust Badges, then a Buy-for-you deal runs list → accept → deliver → confirm. Prints explorer links
  * and asserts the final state (Completed, badges updated, solvencyDelta() == 0).
  *
- * Wallets: the server signer key is read from packages/frontend/.env (VERIFIER_PRIVATE_KEY). On public
+ * Wallets: the server signer key is read from apps/web/.env (VERIFIER_PRIVATE_KEY). On public
  * networks the sharer/seeker keys persist in packages/contracts/.env (SMOKE_SHARER_KEY/SMOKE_SEEKER_KEY,
  * generated on first use, never printed); local runs use throwaway wallets.
  */
 
 const ENV_PATH = path.join(__dirname, "..", ".env");
-const FRONTEND_ENV_PATH = path.join(__dirname, "..", "..", "frontend", ".env");
+const FRONTEND_ENV_PATH = path.join(__dirname, "..", "..", "..", "apps", "web", ".env");
 
 function weiEnv(name: string, fallback: string): bigint {
   const value = process.env[name]?.trim() || fallback;
@@ -51,7 +51,7 @@ function serverSignerKey(): string {
     ? dotenv.parse(fs.readFileSync(FRONTEND_ENV_PATH))
     : ({} as Record<string, string>);
   const key = process.env.VERIFIER_PRIVATE_KEY?.trim() || parsed.VERIFIER_PRIVATE_KEY?.trim();
-  if (!key) throw new Error("VERIFIER_PRIVATE_KEY is not set (packages/frontend/.env).");
+  if (!key) throw new Error("VERIFIER_PRIVATE_KEY is not set (apps/web/.env).");
   return key;
 }
 
