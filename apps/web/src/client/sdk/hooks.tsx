@@ -25,10 +25,12 @@ import {
   onboardWallet,
   restoreWallet,
   runDealAction,
+  sendDeliveryDetails,
   type DealAction,
   type DealActionInput,
   type SdkContext,
 } from "./flows";
+import type { DeliveryDetails } from "./types";
 
 /**
  * React bindings of the SDK. Wrap the app in <RewardRelayProvider> (with a Firebase ID-token getter)
@@ -185,5 +187,15 @@ export function useDealAction(id: string) {
       void queryClient.invalidateQueries({ queryKey: ["me"] });
       void queryClient.invalidateQueries({ queryKey: ["listings"] });
     },
+  });
+}
+
+/** Seeker of a paid Buy-for-you deal: sends the delivery address when it was not sent with PAY. */
+export function useSendDeliveryDetails(id: string) {
+  const sdk = useSdkContext();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (details: DeliveryDetails) => sendDeliveryDetails(sdk(), id, details),
+    onSuccess: (deal) => queryClient.setQueryData(["deal", id], deal),
   });
 }

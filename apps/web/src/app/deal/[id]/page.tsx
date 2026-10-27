@@ -8,6 +8,7 @@ import {
   useDeal,
   useDealAction,
   useRewardRelay,
+  useSendDeliveryDetails,
   useWallet,
   type DealAction,
   type DealActionInput,
@@ -82,12 +83,7 @@ function DealRoom({ deal }: { deal: DealView }) {
   const action = useDealAction(deal.id);
   const { user } = useSession();
   const [pin, setPin] = useState("");
-  const [details, setDetails] = useState<DeliveryDetails>({
-    name: "",
-    phone: "",
-    addressLines: [""],
-    pincode: "",
-  });
+  const [details, setDetails] = useState<DeliveryDetails>(EMPTY_DETAILS);
   const [orderId, setOrderId] = useState("");
   const [notes, setNotes] = useState("");
   const [invoice, setInvoice] = useState<File | undefined>();
@@ -181,33 +177,7 @@ function DealRoom({ deal }: { deal: DealView }) {
         )}
 
         {deal.nextAction === "PAY" && deal.type === "BuyForYou" && (
-          <>
-            <h2>Deliver to</h2>
-            <input
-              placeholder="Full name"
-              value={details.name}
-              onChange={(e) => setDetails({ ...details, name: e.target.value })}
-            />
-            <input
-              placeholder="Mobile number"
-              inputMode="tel"
-              value={details.phone}
-              onChange={(e) => setDetails({ ...details, phone: e.target.value })}
-            />
-            <textarea
-              placeholder="Address (one line per row)"
-              value={details.addressLines.join("\n")}
-              onChange={(e) =>
-                setDetails({ ...details, addressLines: e.target.value.split("\n").slice(0, 4) })
-              }
-            />
-            <input
-              placeholder="PIN code"
-              inputMode="numeric"
-              value={details.pincode}
-              onChange={(e) => setDetails({ ...details, pincode: e.target.value })}
-            />
-          </>
+          <DeliveryForm value={details} onChange={setDetails} />
         )}
         {deal.nextAction === "MARK_DELIVERED" && (
           <>
@@ -239,7 +209,7 @@ function DealRoom({ deal }: { deal: DealView }) {
               run(deal.nextAction, {
                 details:
                   deal.nextAction === "PAY" && deal.type === "BuyForYou"
-                    ? { ...details, addressLines: details.addressLines.filter(Boolean) }
+                    ? cleanDetails(details)
                     : undefined,
                 proof:
                   deal.nextAction === "MARK_DELIVERED"
@@ -315,6 +285,7 @@ function DealRoom({ deal }: { deal: DealView }) {
         <ErrorText error={error} />
       </Card>
 
+      <MissingDeliveryDetails deal={deal} />
       <PrivatePanels deal={deal} />
 
       <Card>
@@ -333,6 +304,87 @@ function DealRoom({ deal }: { deal: DealView }) {
         </p>
       </Card>
     </Page>
+  );
+}
+
+const EMPTY_DETAILS: DeliveryDetails = { name: "", phone: "", addressLines: [""], pincode: "" };
+
+/** Trims every address line and drops the empty ones. */
+const cleanDetails = (details: DeliveryDetails): DeliveryDetails => ({
+  ...details,
+  addressLines: details.addressLines.map((line) => line.trim()).filter(Boolean),
+});
+
+function DeliveryForm({
+  value,
+  onChange,
+}: {
+  value: DeliveryDetails;
+  onChange: (details: DeliveryDetails) => void;
+}) {
+  return (
+    <>
+      <h2>Deliver to</h2>
+      <input
+        placeholder="Full name"
+        value={value.name}
+        onChange={(e) => onChange({ ...value, name: e.target.value })}
+      />
+      <input
+        placeholder="Mobile number"
+        inputMode="tel"
+        value={value.phone}
+        onChange={(e) => onChange({ ...value, phone: e.target.value })}
+      />
+      <textarea
+        placeholder="Address (one line per row)"
+        value={value.addressLines.join("\n")}
+        onChange={(e) =>
+          onChange({ ...value, addressLines: e.target.value.split("\n").slice(0, 4) })
+        }
+      />
+      <input
+        placeholder="PIN code"
+        inputMode="numeric"
+        value={value.pincode}
+        onChange={(e) => onChange({ ...value, pincode: e.target.value })}
+      />
+    </>
+  );
+}
+
+/**
+ * A paid Buy-for-you deal without a delivery address (e.g. the details failed after the payment):
+ * the seeker can send it here, and the sharer is told to wait for it.
+ */
+function MissingDeliveryDetails({ deal }: { deal: DealView }) {
+  const send = useSendDeliveryDetails(deal.id);
+  const [details, setDetails] = useState<DeliveryDetails>(EMPTY_DETAILS);
+  if (deal.deliveryDetailsSent !== false || deal.status !== "Locked") return null;
+  if (deal.role === "sharer") {
+    return (
+      <Card>
+        <p className="muted">
+          The Seeker has not sent the delivery address yet. Wait for it before placing the order.
+        </p>
+      </Card>
+    );
+  }
+  return (
+    <Card>
+      <p>
+        <strong>Send your delivery address</strong> so the Sharer can place the order.
+      </p>
+      <DeliveryForm value={details} onChange={setDetails} />
+      <button
+        className="primary"
+        disabled={send.isPending}
+        onClick={() => send.mutate(cleanDetails(details))}
+      >
+        {send.isPending ? "Sending…" : "Send delivery details"}
+      </button>
+      <ErrorText error={send.error} />
+    </Card>
   );
 }
 

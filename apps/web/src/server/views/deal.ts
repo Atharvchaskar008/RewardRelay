@@ -1,5 +1,6 @@
 import "server-only";
 import { getAddress, zeroAddress, type Address, type Hash, type Hex } from "viem";
+import { z } from "zod";
 import {
   STATUS_LABELS,
   STATUS_NAMES,
@@ -10,7 +11,7 @@ import {
   type ActionReason,
   type CategoryKey,
   type DealRole,
-  type DealStatus,
+  DealStatus,
   type NextAction,
   type SecondaryAction,
 } from "@rewardrelay/shared";
@@ -27,6 +28,7 @@ import {
 import { errorFields, log } from "../log";
 import { repos, type ListingDoc } from "../repositories";
 import { chainNow, readDealOrThrow } from "../deals/read";
+import { privateDocs } from "../deals/privateDocs";
 import { TIER_NAMES, money, type Money } from "./user";
 
 /** The deal room's view model: everything the UI needs, with no blockchain logic left to do. */
@@ -79,6 +81,11 @@ export interface DealView {
   };
   sharer: Address;
   seeker: Address | null;
+  /**
+   * Buy-for-you, for the two parties while the order is being placed (Locked or Delivered): whether
+   * the seeker has sent the delivery address. `null` when it does not apply.
+   */
+  deliveryDetailsSent: boolean | null;
   counterpartTrust: TrustView | null;
   listing: Pick<ListingDoc, "title" | "description" | "faceValueInr" | "priceInr" | "terms"> | null;
   hashes: { termsHash: Hex; codeFingerprint: Hex; proofHash: Hex };
@@ -107,6 +114,22 @@ const TIMELINE_LABELS: Record<string, (args: Record<string, unknown>) => string>
 
 const iso = (seconds: bigint | number) =>
   Number(seconds) > 0 ? new Date(Number(seconds) * 1000).toISOString() : null;
+
+/** Only the existence of deals/{id}/private/details matters here; the encrypted fields are ignored. */
+const detailsMarker = z.object({ submittedAt: z.number() });
+
+async function deliveryDetailsSent(
+  id: bigint,
+  deal: OnChainDeal,
+  role: DealRole,
+): Promise<boolean | null> {
+  const applies =
+    deal.policy.dealType === 0 &&
+    role !== "visitor" &&
+    (deal.status === DealStatus.Locked || deal.status === DealStatus.Delivered);
+  if (!applies) return null;
+  return Boolean(await privateDocs(id.toString(), detailsMarker).get("details"));
+}
 
 function trustView(address: Address, trust: TrustSummary): TrustView {
   return {
@@ -153,7 +176,7 @@ export async function buildDealView(
   const counterpart =
     role === "sharer" ? (hasSeeker ? getAddress(deal.seeker) : null) : getAddress(deal.sharer);
 
-  const [now, listing, counterpartTrust, acceptBlock, events] = await Promise.all([
+  const [now, listing, counterpartTrust, acceptBlock, events, detailsSent] = await Promise.all([
     chainNow(),
     repos.listings.get(id.toString()),
     counterpart ? readTrust(counterpart) : Promise.resolve(null),
@@ -162,6 +185,7 @@ export async function buildDealView(
       log("warn", "deals.timeline_failed", { dealId: id.toString(), ...errorFields(error) });
       return [];
     }),
+    deliveryDetailsSent(id, deal, role),
   ]);
 
   const action = computeNextAction({
@@ -213,6 +237,7 @@ export async function buildDealView(
     },
     sharer: getAddress(deal.sharer),
     seeker: hasSeeker ? getAddress(deal.seeker) : null,
+    deliveryDetailsSent: detailsSent,
     counterpartTrust:
       counterpart && counterpartTrust ? trustView(counterpart, counterpartTrust) : null,
     listing: listing

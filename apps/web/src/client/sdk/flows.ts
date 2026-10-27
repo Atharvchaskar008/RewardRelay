@@ -5,6 +5,7 @@ import {
   type NextAction,
   type SecondaryAction,
 } from "@rewardrelay/shared";
+import { deliveryDetailsProblem } from "@/common/deliveryDetails";
 import { listingTermsHash } from "@/common/terms";
 import type { EmbeddedWallet } from "@/client/wallet";
 import type { ApiClient } from "./api";
@@ -151,12 +152,32 @@ export async function deliverOrder(
 // Seeker
 // ---------------------------------------------------------------------------------------------
 
-/** acceptListing with price + deposit; for Buy-for-you also sends the delivery details. */
+/**
+ * acceptListing with price + deposit; for Buy-for-you also sends the delivery details, which are
+ * checked first so a payment is never locked without a valid address.
+ */
 export async function payForDeal(sdk: SdkContext, dealId: string, details?: DeliveryDetails) {
+  const before = await sdk.api.deals.get(dealId);
+  const needsDetails = before.type === "BuyForYou";
+  if (needsDetails) {
+    const problem = deliveryDetailsProblem(details);
+    if (problem) throw new ChainError(problem);
+  }
   const outcome = await tx.acceptListing(sdk.chain, BigInt(dealId));
-  const deal = await sdk.api.deals.get(dealId);
-  if (deal.type === "BuyForYou" && details) await sdk.api.deals.submitDetails(dealId, details);
-  return { tx: outcome, deal };
+  if (needsDetails && details) await sdk.api.deals.submitDetails(dealId, details);
+  return { tx: outcome, deal: await sdk.api.deals.get(dealId) };
+}
+
+/** Seeker of a paid Buy-for-you deal: sends (or corrects) the delivery address. */
+export async function sendDeliveryDetails(
+  sdk: SdkContext,
+  dealId: string,
+  details: DeliveryDetails,
+): Promise<DealView> {
+  const problem = deliveryDetailsProblem(details);
+  if (problem) throw new ChainError(problem);
+  await sdk.api.deals.submitDetails(dealId, details);
+  return sdk.api.deals.get(dealId);
 }
 
 /** Seeker opens a dispute: evidence to the API → raiseDispute(evidenceHash). */

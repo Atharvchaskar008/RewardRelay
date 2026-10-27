@@ -11,6 +11,7 @@ import {
   onboardWallet,
   restoreWallet,
   runDealAction,
+  sendDeliveryDetails,
   tx,
   type SdkContext,
 } from "@/client/sdk";
@@ -194,6 +195,49 @@ describe("SDK end to end", () => {
     expect((own as ChainError).message).toMatch(/your own listing/);
     await runDealAction(asha.sdk, await asha.sdk.api.deals.get(listing.dealId), "CANCEL");
     expect((await asha.sdk.api.deals.get(listing.dealId)).status).toBe("Cancelled");
+  });
+
+  it("never takes a Buy-for-you payment without an address, and recovers a paid deal without one", async () => {
+    const { listing } = await listBuyForYou(asha.sdk, {
+      title: "Rs 30 off groceries",
+      description: "",
+      category: "food",
+      faceValueInr: 120,
+      priceInr: 90,
+    });
+    const balance = () =>
+      rahul.sdk.chain.publicClient.getBalance({ address: rahul.wallet.getAccount().address });
+    const before = await balance();
+
+    // Paying with an empty form is refused before anything is signed.
+    const empty = { name: "", phone: "", addressLines: [], pincode: "" };
+    await expect(
+      runDealAction(rahul.sdk, { id: listing.dealId }, "PAY", { details: empty }),
+    ).rejects.toMatchObject({ name: "ChainError", message: "Enter the full name for delivery." });
+    await expect(runDealAction(rahul.sdk, { id: listing.dealId }, "PAY")).rejects.toMatchObject({
+      name: "ChainError",
+      message: "Enter the delivery address first.",
+    });
+    expect(await balance()).toBe(before);
+    expect((await rahul.sdk.api.deals.get(listing.dealId)).status).toBe("Listed");
+
+    // A deal paid without the details (e.g. the details call failed after the payment).
+    await tx.acceptListing(rahul.sdk.chain, BigInt(listing.dealId));
+    expect(await rahul.sdk.api.deals.get(listing.dealId)).toMatchObject({
+      status: "Locked",
+      deliveryDetailsSent: false,
+    });
+    expect((await asha.sdk.api.deals.get(listing.dealId)).deliveryDetailsSent).toBe(false);
+
+    const sent = await sendDeliveryDetails(rahul.sdk, listing.dealId, {
+      name: "Rahul Verma",
+      phone: "+919876543210",
+      addressLines: ["Flat 12, Lotus Residency", "Pimpri, Pune"],
+      pincode: " 411018 ",
+    });
+    expect(sent.deliveryDetailsSent).toBe(true);
+    const details = await asha.sdk.api.deals.getDetails(listing.dealId);
+    expect(details.details).toMatchObject({ name: "Rahul Verma", pincode: "411018" });
   });
 
   it("restores the wallet on a new device from the encrypted backup", async () => {
