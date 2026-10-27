@@ -3,7 +3,7 @@ import { DealStatus } from "./protocol";
 /**
  * The UI's single primary button per deal, derived only from on-chain state, the caller's role and
  * the current time (all times in seconds). Secondary actions are extra buttons (cancel, dispute,
- * evidence, concession, default ruling). Mirrors RelayEscrow's guards exactly; see SPEC.md §2.
+ * evidence, concession, default ruling). Mirrors RelayEscrow's guards exactly; see docs/protocol.md §2.
  */
 
 export type DealRole = "sharer" | "seeker" | "visitor";

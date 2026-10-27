@@ -2,20 +2,27 @@
   "name": "rewardrelay",
   "version": "0.1.0",
   "private": true,
+  "description": "A trusted buy-it-for-me marketplace for unused rewards, on MST Blockchain.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Atharvchaskar008/RewardRelay.git"
+  },
   "workspaces": [
     "packages/shared",
     "packages/contracts",
-    "packages/frontend"
+    "apps/web"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present && npm run format:check",
     "test": "npm run test --workspaces --if-present",
-    "dev": "concurrently -k -n chain,web -c blue,green \"npm run dev -w contracts\" \"npm run dev -w frontend\"",
-    "compile": "npm run compile -w contracts",
-    "contracts:test": "npm run test -w contracts",
-    "contracts:coverage": "npm run coverage -w contracts",
-    "contracts:gas": "npm run gas -w contracts",
+    "test:integration": "npm run test:integration -w @rewardrelay/web",
+    "dev": "concurrently -k -n chain,web -c blue,green \"npm run dev -w @rewardrelay/contracts\" \"npm run dev -w @rewardrelay/web\"",
+    "compile": "npm run compile -w @rewardrelay/contracts",
+    "contracts:test": "npm run test -w @rewardrelay/contracts",
+    "contracts:coverage": "npm run coverage -w @rewardrelay/contracts",
+    "contracts:gas": "npm run gas -w @rewardrelay/contracts",
     "clean": "npm run clean --workspaces --if-present",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -31,7 +38,7 @@
     "typescript": "^5.5.4"
   },
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=22"
   },
   "packageManager": "npm@11.3.0",
   "overrides": {
