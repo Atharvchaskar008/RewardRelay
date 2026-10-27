@@ -34,7 +34,7 @@ for Firebase, testnet and Vercel setup.
 | `packages/contracts` | Hardhat project: `RelayEscrow`, `ReputationSBT`, deploy/configure/verify/smoke scripts, deployment records                                               |
 | `packages/shared`    | Code shared by contracts scripts and the app: ABIs, deployed addresses, chain config, protocol enums, money and listing rules                            |
 | `docs/`              | Architecture, API, protocol specification and deployment guides                                                                                          |
-| `.github/`           | CI workflow, Dependabot, issue and pull-request templates                                                                                                |
+| `.github/`           | CI workflow, issue and pull-request templates                                                                                                            |
 
 ## Scripts (run from the repository root)
 

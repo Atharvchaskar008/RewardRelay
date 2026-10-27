@@ -55,7 +55,7 @@ packages/
 ├── contracts/           Solidity contracts, Hardhat tests, deployment scripts and records
 └── shared/              ABIs, addresses, chain config and protocol rules shared by everything
 docs/                    Architecture, API, protocol specification, deployment
-.github/                 CI, Dependabot, issue and pull-request templates
+.github/                 CI, issue and pull-request templates
 ```
 
 ## Quick start
