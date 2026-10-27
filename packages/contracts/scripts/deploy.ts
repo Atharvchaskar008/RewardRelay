@@ -190,7 +190,7 @@ async function main() {
   console.log(`Recorded spend on ${network}: ${formatMstc(spendWei)}`);
   if (!isLocalNetwork(network))
     console.log(
-      `\nNext: npm run configure:${network === "mstTestnet" ? "testnet" : "mainnet"} -w contracts`,
+      `\nNext: npm run configure:${network === "mstTestnet" ? "testnet" : "mainnet"} -w @rewardrelay/contracts`,
     );
 }
 

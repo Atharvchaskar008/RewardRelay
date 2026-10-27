@@ -1,4 +1,4 @@
-/** Root ESLint config for the Node/TypeScript packages (contracts, shared). The frontend has its own. */
+/** Root ESLint config for the Node/TypeScript packages (contracts, shared). The web app has its own. */
 module.exports = {
   root: true,
   parser: "@typescript-eslint/parser",

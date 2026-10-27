@@ -1,0 +1,42 @@
+{
+  "name": "@rewardrelay/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RewardRelay web app: Next.js UI, API routes, server modules and client SDK.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "npx -y firebase-tools@15.34.1 emulators:exec --project demo-rewardrelay --only auth,firestore \"cross-env VITEST_SUITE=emulator vitest run\""
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.59.0",
+    "@vercel/blob": "^2.8.2",
+    "firebase": "^13.1.0",
+    "firebase-admin": "^14.5.0",
+    "next": "^15.5.28",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@rewardrelay/shared": "*",
+    "server-only": "^0.0.1",
+    "viem": "^2.21.19",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "@types/node": "^20.16.10",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.5.28",
+    "typescript": "^5.5.4",
+    "vitest": "^3.2.7"
+  }
+}
