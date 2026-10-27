@@ -1,4 +1,4 @@
-import { type Address, type Hex } from "viem";
+import { createWalletClient, custom, type Address, type EIP1193Provider, type Hex } from "viem";
 import {
   categoryByKey,
   inrToWei,
@@ -11,7 +11,7 @@ import type { EmbeddedWallet } from "@/client/wallet";
 import type { ApiClient } from "./api";
 import * as tx from "./chain";
 import type { ChainContext, TxOutcome } from "./chain";
-import { ChainError } from "./errors";
+import { ChainError, toChainError } from "./errors";
 import type {
   DealView,
   DeliveryDetails,
@@ -58,9 +58,39 @@ export async function onboardWallet(
     address: account.address,
     message: challenge.message,
     signature,
+    walletKind: "embedded",
   });
   await api.wallet.putBackup(await wallet.exportBackup());
   return view;
+}
+
+/**
+ * Links a browser wallet (BridgeKey, MetaMask, …) to the phone-verified account instead of a device
+ * wallet: the wallet shares its account and signs the server's challenge (no transaction, no gas).
+ * There is no backup: the wallet itself holds the key.
+ */
+export async function onboardInjectedWallet(
+  api: ApiClient,
+  provider: EIP1193Provider,
+): Promise<{ view: UserView; address: Address }> {
+  const address = await tx.requestWalletAddress(provider);
+  const challenge = await api.auth.challenge(address);
+  let signature: Hex;
+  try {
+    signature = await createWalletClient({ transport: custom(provider) }).signMessage({
+      account: address,
+      message: challenge.message,
+    });
+  } catch (error) {
+    throw toChainError(error);
+  }
+  const view = await api.auth.linkWallet({
+    address,
+    message: challenge.message,
+    signature,
+    walletKind: "injected",
+  });
+  return { view, address };
 }
 
 /** On a new device: downloads the encrypted backup and restores it with the PIN. */

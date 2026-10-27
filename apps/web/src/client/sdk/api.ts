@@ -125,8 +125,12 @@ export function createApiClient(options: ApiClientOptions) {
     auth: {
       challenge: (address: string) =>
         request<Challenge>("POST", "/api/auth/challenge", { body: { address } }),
-      linkWallet: (input: { address: string; message: string; signature: string }) =>
-        request<UserView>("POST", "/api/auth/link-wallet", { body: input, idempotent: true }),
+      linkWallet: (input: {
+        address: string;
+        message: string;
+        signature: string;
+        walletKind?: "embedded" | "injected";
+      }) => request<UserView>("POST", "/api/auth/link-wallet", { body: input, idempotent: true }),
     },
 
     /** The signed-in user, or null before a wallet is linked. */

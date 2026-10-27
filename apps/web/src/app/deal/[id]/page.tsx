@@ -7,6 +7,7 @@ import { Banner, Card, ErrorText, ExplorerLink, Money, Page } from "@/components
 import {
   useDeal,
   useDealAction,
+  useMe,
   useRewardRelay,
   useSendDeliveryDetails,
   useWallet,
@@ -107,7 +108,9 @@ function DealRoom({ deal }: { deal: DealView }) {
   }
 
   const evidence = { claim, text: evidenceText, files };
-  const needsPin = !wallet.unlocked && user;
+  const me = useMe();
+  const needsBrowserWallet = !wallet.unlocked && me.data?.walletKind === "injected";
+  const needsPin = !wallet.unlocked && user && !needsBrowserWallet;
   const actionable = deal.nextAction !== "WAIT" && deal.nextAction !== "NONE";
 
   return (
@@ -163,6 +166,11 @@ function DealRoom({ deal }: { deal: DealView }) {
 
       <Card>
         {!actionable && <p>{REASONS[deal.actionReason ?? ""] ?? ""}</p>}
+        {needsBrowserWallet && (actionable || deal.secondaryActions.length > 0) && (
+          <p className="muted">
+            Your account signs with a browser wallet. <Link href="/login">Connect it</Link> first.
+          </p>
+        )}
         {needsPin && (actionable || deal.secondaryActions.length > 0) && (
           <>
             <label htmlFor="pin">Wallet PIN</label>

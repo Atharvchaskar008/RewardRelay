@@ -51,8 +51,9 @@ for Firebase, testnet and Vercel setup.
 ## Workflow
 
 1. Branch from `main`: `feat/<topic>`, `fix/<topic>`, `docs/<topic>`, `chore/<topic>`.
-2. Commit with [Conventional Commits](https://www.conventionalcommits.org/) (`feat(sdk): …`,
-   `fix(api): …`, `docs: …`), one logical change per commit.
+2. Write short, plain commit messages: two to four words that say what changed ("Testnet
+   deployment", "Faster deal pages"), without prefixes such as `feat:` or `fix:`. Keep each commit
+   to one change.
 3. Add a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) for any user-visible change.
 4. Open a pull request; CI must be green (lint, tests, build, integration tests).
 5. Merge with a merge commit once CI passes; never force-push `main`.

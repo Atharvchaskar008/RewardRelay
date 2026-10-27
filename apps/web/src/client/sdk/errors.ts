@@ -110,7 +110,7 @@ export function toChainError(error: unknown, hash?: string): ChainError {
     );
   }
   if (text.includes("user rejected") || text.includes("denied")) {
-    return new ChainError("You cancelled the transaction.", "UserRejected", hash, error);
+    return new ChainError("You cancelled the request in your wallet.", "UserRejected", hash, error);
   }
   if (text.includes("timed out") || text.includes("timeout")) {
     return new ChainError(

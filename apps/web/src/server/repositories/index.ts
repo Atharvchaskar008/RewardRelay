@@ -28,9 +28,15 @@ export const encryptedBlobSchema = z.object({
 export const dealTypeSchema = z.enum(["BuyForYou", "PassOn"]);
 
 /** users/{uid}: one verified phone ↔ one wallet. */
+/** How the user signs: the PIN-encrypted device wallet, or a browser wallet (BridgeKey, MetaMask). */
+export const walletKindSchema = z.enum(["embedded", "injected"]);
+export type WalletKind = z.infer<typeof walletKindSchema>;
+
 export const userSchema = z.object({
   uid: z.string().min(1),
   wallet: evmAddress,
+  /** Absent on accounts created before browser wallets were supported: "embedded". */
+  walletKind: walletKindSchema.optional(),
   phoneHash: hex32,
   createdAt: millis,
   updatedAt: millis,

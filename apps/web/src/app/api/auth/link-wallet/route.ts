@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { withRoute } from "@/server/http";
 import { linkWallet } from "@/server/identity/onboarding";
+import { walletKindSchema } from "@/server/repositories";
 import { addressInput, signatureInput } from "@/server/validation/common";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * POST /api/auth/link-wallet {address, message, signature} (Idempotency-Key required)
+ * POST /api/auth/link-wallet {address, message, signature, walletKind?} (Idempotency-Key required)
  * Verified phone + signed challenge → user record, Trust Badge, one welcome top-up → user view.
  */
 export const POST = withRoute(
@@ -19,6 +20,7 @@ export const POST = withRoute(
       address: addressInput,
       message: z.string().min(1).max(2_000),
       signature: signatureInput,
+      walletKind: walletKindSchema.default("embedded"),
     }),
     rateLimit: { capacity: 5, refillPerMinute: 5 },
   },

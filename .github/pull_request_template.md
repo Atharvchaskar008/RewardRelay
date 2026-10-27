@@ -11,7 +11,7 @@
 
 ## Checklist
 
-- [ ] Conventional Commit messages (`feat:`, `fix:`, `docs:` …)
+- [ ] Short, plain commit messages (two to four words, no `feat:`-style prefixes)
 - [ ] No secrets, `.env` files or private notes in the diff
 - [ ] Docs updated (`docs/`, package READMEs) if behaviour or setup changed
 - [ ] `CHANGELOG.md` updated under **Unreleased** for user-visible changes

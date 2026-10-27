@@ -41,8 +41,9 @@ soulbound **Trust Badge** that raises the user's deal limit.
   automatic release, refunds and dispute payouts are enforced by the contract.
 - **Portable reputation.** `ReputationSBT` (ERC-5192) records completed deals, unique counterparties
   and lost disputes; any MST app can read `trustOf(address)`.
-- **Web2 onboarding.** Phone sign-in, a PIN-protected embedded wallet and a gas top-up: users never
-  handle a seed phrase.
+- **Web2 onboarding, web3 optional.** Phone sign-in, a PIN-protected embedded wallet and a gas
+  top-up, so users never handle a seed phrase; crypto users can link **BridgeKey or MetaMask** instead
+  and approve every deal in their own wallet.
 - **Privacy by design.** Addresses, order proofs and codes are envelope-encrypted off-chain; only their
   hashes go on-chain, and every read re-checks the deal's on-chain state.
 

@@ -8,6 +8,8 @@ import { readDealOrThrow } from "@/server/deals/read";
 import { buildDealView } from "@/server/views/deal";
 
 export const dynamic = "force-dynamic";
+/** A due deal is released after the response; the function stays alive until it is mined. */
+export const maxDuration = 60;
 
 /** GET /api/deals/:id → the deal room view model for the caller (signed in or not). */
 export const GET = withRoute(

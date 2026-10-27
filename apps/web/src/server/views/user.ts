@@ -9,7 +9,7 @@ import {
   readTrust,
 } from "../chain";
 import { serverEnv } from "../env";
-import type { UserDoc } from "../repositories";
+import type { UserDoc, WalletKind } from "../repositories";
 
 /** The signed-in user's view, always re-read from the chain (Firestore only adds onboarding state). */
 
@@ -23,6 +23,8 @@ export interface Money {
 
 export interface UserView {
   address: Address;
+  /** "injected": the user signs with a browser wallet and has no PIN backup. */
+  walletKind: WalletKind;
   mstscanUrl: string;
   badge: {
     hasBadge: boolean;
@@ -66,6 +68,7 @@ export async function buildUserView(address: Address, user?: UserDoc): Promise<U
   const balanceMoney = money(balance);
   return {
     address,
+    walletKind: user?.walletKind ?? "embedded",
     mstscanUrl: explorerAddressUrl(address),
     badge: {
       hasBadge: trust.hasBadge,

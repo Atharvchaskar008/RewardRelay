@@ -15,6 +15,9 @@ delivery, 10 minutes for dispute evidence**. Production windows are days (see
   new account receives a Trust Badge and a small amount of test MSTC for gas; to pay for deals,
   send the Sharer and the Seeker about 0.05 tMSTC each from any MST Testnet wallet (shown on
   **Wallet**).
+- **Crypto wallet instead of a PIN (optional).** After the code, choose **BridgeKey** or **MetaMask**
+  under "Already use a crypto wallet?": sign the link message, and approve each deal in the wallet
+  (it adds and switches to MST Testnet when asked).
 - New accounts can deal up to **₹500** (the New tier limit at the demo rate of ₹1,00,000 per MSTC).
 
 ## 1. Buy-for-you

@@ -135,7 +135,8 @@ private-key/API-token patterns and forbidden paths (`.env`, keys, service-accoun
    explorer rejects the submission although the deployed bytecode matches the build byte for byte.
 10. **Vercel Blob adapter** exists behind the file-store interface but is not exercised by the tests
     (Firestore storage is used).
-11. **EOA signatures only** for wallet linking (no ERC-1271 smart-contract wallets).
+11. **EOA signatures only** for wallet linking (no ERC-1271 smart-contract wallets); a linked browser
+    wallet (BridgeKey, MetaMask) holds its own key, so RewardRelay keeps no backup for it.
 12. **Release-on-visit** is best effort; the cron (every 2 minutes) is the guarantee.
 13. **Lighter checks on public reads** (for speed): reads that return no private data (deal views,
     feeds, `/api/me`, badges) accept a revoked session for up to a minute after the last per-user

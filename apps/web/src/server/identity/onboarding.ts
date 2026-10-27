@@ -6,7 +6,7 @@ import { keyring } from "../crypto";
 import { serverEnv } from "../env";
 import { AppError } from "../errors";
 import { errorFields, log } from "../log";
-import { repos } from "../repositories";
+import { repos, type WalletKind } from "../repositories";
 import { runQuery, transaction } from "../repositories/collection";
 import type { AuthUser } from "../services";
 import { txManager } from "../signer";
@@ -26,7 +26,7 @@ const conflict = (message: string) => new AppError("CONFLICT", { message });
 
 export async function linkWallet(
   user: AuthUser,
-  input: { address: Address; message: string; signature: Hex },
+  input: { address: Address; message: string; signature: Hex; walletKind?: WalletKind },
 ): Promise<UserView> {
   if (!user.phoneNumber) {
     throw new AppError("FORBIDDEN", { message: "Sign in with your phone number first." });
@@ -40,7 +40,7 @@ export async function linkWallet(
   });
 
   const phoneHash = keyring().phoneHash(user.phoneNumber);
-  await claimIdentity(user.uid, phoneHash, address);
+  await claimIdentity(user.uid, phoneHash, address, input.walletKind ?? "embedded");
   // Different server wallets (verifier, funder): the mint and the top-up are sent side by side.
   // The top-up never throws; a failed mint is reported once the top-up has settled too.
   const [badge] = await Promise.allSettled([
@@ -53,7 +53,12 @@ export async function linkWallet(
 }
 
 /** Transactionally binds uid ↔ phone hash ↔ wallet; any other existing binding is a CONFLICT. */
-async function claimIdentity(uid: string, phoneHash: Hex, wallet: Address): Promise<void> {
+async function claimIdentity(
+  uid: string,
+  phoneHash: Hex,
+  wallet: Address,
+  walletKind: WalletKind,
+): Promise<void> {
   const walletKey = wallet.toLowerCase();
   await transaction(async (tx) => {
     const existing = await repos.users.get(uid, tx);
@@ -75,7 +80,11 @@ async function claimIdentity(uid: string, phoneHash: Hex, wallet: Address): Prom
     if (existing) return;
 
     const now = Date.now();
-    await repos.users.create(uid, { uid, wallet, phoneHash, createdAt: now, updatedAt: now }, tx);
+    await repos.users.create(
+      uid,
+      { uid, wallet, walletKind, phoneHash, createdAt: now, updatedAt: now },
+      tx,
+    );
     await repos.phoneIndex.create(phoneHash, { uid, wallet, createdAt: now }, tx);
     await repos.walletIndex.create(walletKey, { uid, phoneHash, createdAt: now }, tx);
   });

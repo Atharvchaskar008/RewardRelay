@@ -79,11 +79,16 @@ npm run smoke:testnet -w @rewardrelay/contracts       # mints 2 badges and runs 
 ## Web app (Vercel)
 
 - Import the repository, set the **Root Directory** to `apps/web` (framework: Next.js, Node 22+).
+  `apps/web/vercel.json` runs the functions in Mumbai (`bom1`), next to Firestore in `asia-south1`.
 - Copy every variable from `apps/web/.env.example` into the project settings (server secrets are
   never prefixed with `NEXT_PUBLIC_`). Set `APP_URL` to the production origin: wallet-link messages
   name it.
 - Fund the server signers (`VERIFIER_PRIVATE_KEY` for badge mints and rulings, `FUNDER_PRIVATE_KEY`
   for welcome top-ups and releases); `GET /api/health` warns when one runs low.
+- Seed the demo marketplace (one offer per category):
+  `SEED_PHONE=<test number> SEED_CODE=<its code> SEED_PIN=<pin> SEED_API_URL=https://<domain> npm run seed:demo -w @rewardrelay/web`.
+  The first run creates and links the demo Sharer's wallet and prints its address; fund it with
+  about 0.01 tMSTC and run again.
 - Schedule the keeper: cron-job.org, `GET https://<domain>/api/cron/release` every 2 minutes with the
   header `X-Cron-Secret: <CRON_SECRET>` (details in [api.md](api.md#6-automation-cron-joborg)).
 

@@ -74,7 +74,7 @@ const nextConfig = {
   transpilePackages: ["@rewardrelay/shared"],
   // Node-only server SDK: load it from node_modules at runtime instead of bundling it.
   serverExternalPackages: ["firebase-admin"],
-  eslint: { dirs: ["src", "test"] },
+  eslint: { dirs: ["src", "test", "scripts"] },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

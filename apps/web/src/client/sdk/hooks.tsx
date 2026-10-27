@@ -17,11 +17,22 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import type { Address } from "viem";
+import type { Address, EIP1193Provider } from "viem";
 import { EmbeddedWallet } from "@/client/wallet";
+import { clearWalletChoice, loadWalletChoice, saveWalletChoice } from "@/client/walletChoice";
 import { createApiClient, type ApiClient } from "./api";
-import { chainContext, type ChainConfig } from "./chain";
 import {
+  chainContext,
+  discoverInjectedWallets,
+  injectedChainContext,
+  requestWalletAddress,
+  type ChainConfig,
+  type ChainContext,
+  type InjectedWallet,
+} from "./chain";
+import { ChainError } from "./errors";
+import {
+  onboardInjectedWallet,
   onboardWallet,
   restoreWallet,
   runDealAction,
@@ -43,10 +54,23 @@ export interface RewardRelayConfig {
   inrPerMstc: number;
 }
 
+/** A connected browser wallet (BridgeKey, MetaMask, …) and the context that signs through it. */
+export interface BrowserWalletSession {
+  name: string;
+  rdns: string;
+  address: Address;
+  provider: EIP1193Provider;
+  chain: ChainContext;
+}
+
 interface SdkState {
   config: RewardRelayConfig;
   api: ApiClient;
   wallet: EmbeddedWallet;
+  browserWallet: BrowserWalletSession | null;
+  setBrowserWallet: (session: BrowserWalletSession | null) => void;
+  /** False until a remembered browser wallet has been reconnected (or found unavailable). */
+  browserWalletReady: boolean;
 }
 
 const SdkReactContext = createContext<SdkState | null>(null);
@@ -65,7 +89,72 @@ export function RewardRelayProvider(props: {
   );
   const embedded = useMemo(() => wallet ?? new EmbeddedWallet(), [wallet]);
   const client = useMemo(() => queryClient ?? new QueryClient(), [queryClient]);
-  const value = useMemo(() => ({ config, api, wallet: embedded }), [config, api, embedded]);
+  const [browserWallet, setBrowserWallet] = useState<BrowserWalletSession | null>(null);
+  const [browserWalletReady, setBrowserWalletReady] = useState(false);
+
+  // Reconnects a remembered browser wallet without any prompt: only when the wallet still exposes
+  // the remembered account (eth_accounts). Otherwise the user reconnects from the login page.
+  useEffect(() => {
+    let live = true;
+    const choice = loadWalletChoice();
+    if (choice?.kind !== "injected") {
+      setBrowserWalletReady(true);
+      return;
+    }
+    void (async () => {
+      try {
+        const wallets = await discoverInjectedWallets();
+        const match = wallets.find((candidate) => candidate.info.rdns === choice.rdns);
+        if (!match) return;
+        const accounts = (await match.provider.request({ method: "eth_accounts" })) as string[];
+        if (!accounts.some((account) => account.toLowerCase() === choice.address.toLowerCase()))
+          return;
+        const chain = await injectedChainContext(config.chain, match.provider, choice.address);
+        if (live) {
+          setBrowserWallet({
+            name: choice.name,
+            rdns: choice.rdns,
+            address: choice.address,
+            provider: match.provider,
+            chain,
+          });
+        }
+      } catch {
+        // Stays disconnected; the login page offers to reconnect.
+      } finally {
+        if (live) setBrowserWalletReady(true);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [config.chain]);
+
+  // Switching to another account in the wallet ends the session: deals are signed only by the
+  // account linked to the phone number.
+  useEffect(() => {
+    if (!browserWallet) return;
+    const onAccounts = (accounts: string[]) => {
+      if (
+        !accounts.some((account) => account.toLowerCase() === browserWallet.address.toLowerCase())
+      )
+        setBrowserWallet(null);
+    };
+    browserWallet.provider.on?.("accountsChanged", onAccounts);
+    return () => browserWallet.provider.removeListener?.("accountsChanged", onAccounts);
+  }, [browserWallet]);
+
+  const value = useMemo(
+    () => ({
+      config,
+      api,
+      wallet: embedded,
+      browserWallet,
+      setBrowserWallet,
+      browserWalletReady,
+    }),
+    [config, api, embedded, browserWallet, browserWalletReady],
+  );
   return (
     <QueryClientProvider client={client}>
       <SdkReactContext.Provider value={value}>{children}</SdkReactContext.Provider>
@@ -79,16 +168,19 @@ export function useRewardRelay(): SdkState {
   return state;
 }
 
-/** Context for flows/transactions; requires the embedded wallet to be unlocked. */
+/**
+ * Context for flows/transactions: signs with the connected browser wallet, otherwise with the
+ * embedded wallet (which must be unlocked).
+ */
 export function useSdkContext(): () => SdkContext {
-  const { api, wallet, config } = useRewardRelay();
+  const { api, wallet, config, browserWallet } = useRewardRelay();
   return useCallback(
     () => ({
       api,
-      chain: chainContext(config.chain, wallet.getAccount()),
+      chain: browserWallet?.chain ?? chainContext(config.chain, wallet.getAccount()),
       inrPerMstc: config.inrPerMstc,
     }),
-    [api, wallet, config],
+    [api, wallet, config, browserWallet],
   );
 }
 
@@ -105,9 +197,13 @@ export interface WalletState {
   address: Address | null;
 }
 
-/** Embedded wallet lifecycle: create (+ link + backup), unlock, lock, backup, restore. */
+/**
+ * Wallet lifecycle. The embedded wallet: create (+ link + backup), unlock, lock, backup, restore. A
+ * browser wallet: connect (links it on first use), disconnect. `unlocked` means "can sign now".
+ */
 export function useWallet() {
-  const { api, wallet } = useRewardRelay();
+  const { api, wallet, config, browserWallet, setBrowserWallet, browserWalletReady } =
+    useRewardRelay();
   const queryClient = useQueryClient();
   const [state, setState] = useState<WalletState>({
     ready: false,
@@ -140,6 +236,50 @@ export function useWallet() {
 
   return {
     ...state,
+    ready: state.ready && browserWalletReady,
+    kind: browserWallet ? ("injected" as const) : ("embedded" as const),
+    unlocked: browserWallet !== null || state.unlocked,
+    address: browserWallet?.address ?? state.address,
+    /** The connected browser wallet's name (e.g. "MetaMask"), if any. */
+    browserWalletName: browserWallet?.name ?? null,
+    /**
+     * Connects a browser wallet. Without `linkedAddress` it is linked to the phone account (signs the
+     * challenge); with it, the wallet must expose that same account.
+     */
+    connectBrowserWallet: (picked: InjectedWallet, linkedAddress?: Address | null) =>
+      run(async () => {
+        let address: Address;
+        if (linkedAddress) {
+          address = await requestWalletAddress(picked.provider);
+          if (address.toLowerCase() !== linkedAddress.toLowerCase()) {
+            throw new ChainError(
+              `Choose the account linked to RewardRelay in your wallet (${linkedAddress.slice(0, 6)}…${linkedAddress.slice(-4)}).`,
+              "WrongAccount",
+            );
+          }
+        } else {
+          ({ address } = await onboardInjectedWallet(api, picked.provider));
+        }
+        const chain = await injectedChainContext(config.chain, picked.provider, address);
+        saveWalletChoice({
+          kind: "injected",
+          rdns: picked.info.rdns,
+          name: picked.info.name,
+          address,
+        });
+        setBrowserWallet({
+          name: picked.info.name,
+          rdns: picked.info.rdns,
+          address,
+          provider: picked.provider,
+          chain,
+        });
+      }),
+    /** Forgets the browser wallet on this device (the account stays linked to it). */
+    disconnectBrowserWallet: () => {
+      clearWalletChoice();
+      setBrowserWallet(null);
+    },
     /** Creates or unlocks the device wallet, links it to the phone account and uploads the backup. */
     create: (pin: string) => run(() => onboardWallet(api, wallet, pin)),
     unlock: (pin: string) => run(() => wallet.unlock(pin)),
@@ -148,6 +288,21 @@ export function useWallet() {
     restore: (pin: string) => run(() => restoreWallet(api, wallet, pin)),
     forget: () => run(() => wallet.forget()),
   };
+}
+
+/** Browser wallets available in this browser (EIP-6963, or `window.ethereum`); null while looking. */
+export function useBrowserWallets(): InjectedWallet[] | null {
+  const [wallets, setWallets] = useState<InjectedWallet[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    void discoverInjectedWallets().then((found) => {
+      if (live) setWallets(found);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return wallets;
 }
 
 /** Public listings, paginated. */

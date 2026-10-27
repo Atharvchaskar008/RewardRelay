@@ -4,13 +4,22 @@ import Link from "next/link";
 import { useState } from "react";
 import type { ConfirmationResult } from "firebase/auth";
 import { Card, ErrorText, Money, Page } from "@/components/ui";
-import { useMe, useWallet, validatePin } from "@/client/sdk";
+import {
+  useBrowserWallets,
+  useMe,
+  useWallet,
+  validatePin,
+  type InjectedWallet,
+} from "@/client/sdk";
 import { firebaseConfigured } from "@/client/config";
 import { sendOtp } from "@/client/firebase";
 import { toE164 } from "@/client/phone";
 import { useSession } from "@/app/providers";
 
-/** Phone OTP (Firebase) → PIN → embedded wallet linked to the phone, Trust Badge and test MSTC. */
+/**
+ * Phone OTP (Firebase) → a wallet linked to the phone: the PIN-protected device wallet, or a browser
+ * wallet (BridgeKey, MetaMask) → Trust Badge and test MSTC.
+ */
 export default function LoginPage() {
   const { ready, user } = useSession();
   const [phone, setPhone] = useState("+91");
@@ -111,10 +120,16 @@ function PinStep() {
   const [busy, setBusy] = useState(false);
 
   async function run(work: () => Promise<unknown>) {
+    return runWithoutPin(async () => {
+      validatePin(pin);
+      await work();
+    });
+  }
+
+  async function runWithoutPin(work: () => Promise<unknown>) {
     setBusy(true);
     setError(null);
     try {
-      validatePin(pin);
       await work();
     } catch (caught) {
       setError(caught);
@@ -131,6 +146,7 @@ function PinStep() {
         <Card>
           <p>
             Wallet <code>{me.data.address}</code>
+            {wallet.kind === "injected" && <> · signing with {wallet.browserWalletName}</>}
           </p>
           <p>
             Trust Badge: <strong>{me.data.badge.tierName}</strong> · deal limit{" "}
@@ -148,6 +164,30 @@ function PinStep() {
           </p>
         </Card>
         <Link href="/explore">Browse offers</Link>
+        {wallet.kind === "injected" && (
+          <button onClick={() => wallet.disconnectBrowserWallet()}>Disconnect wallet</button>
+        )}
+      </Page>
+    );
+  }
+
+  // An account linked to a browser wallet signs with that wallet: there is no PIN backup.
+  if (me.data?.walletKind === "injected") {
+    return (
+      <Page title="Connect your wallet">
+        <Card>
+          <p className="muted">
+            Your account is linked to a browser wallet. Connect it with the account{" "}
+            <code>{me.data.address}</code>.
+          </p>
+          <BrowserWalletPicker
+            busy={busy}
+            onPick={(picked) =>
+              runWithoutPin(() => wallet.connectBrowserWallet(picked, me.data?.address))
+            }
+          />
+        </Card>
+        <ErrorText error={error} />
       </Page>
     );
   }
@@ -191,7 +231,50 @@ function PinStep() {
         )}
         {busy && <p className="muted">Setting up your Trust Badge and test MSTC…</p>}
       </Card>
+      {!me.data && !wallet.exists && (
+        <Card>
+          <p>
+            <strong>Already use a crypto wallet?</strong> Link BridgeKey or MetaMask instead of a
+            PIN wallet: you sign once to prove it is yours, and approve every deal in your wallet.
+          </p>
+          <BrowserWalletPicker
+            busy={busy}
+            onPick={(picked) => runWithoutPin(() => wallet.connectBrowserWallet(picked))}
+          />
+        </Card>
+      )}
       <ErrorText error={error} />
     </Page>
+  );
+}
+
+/** The browser wallets found in this browser, one button each. */
+function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWallet) => void }) {
+  const wallets = useBrowserWallets();
+  if (wallets === null) return <p className="muted">Looking for wallets…</p>;
+  if (wallets.length === 0) {
+    return (
+      <p className="muted">
+        No browser wallet found. Install MetaMask, or open RewardRelay in your wallet app&apos;s
+        browser (BridgeKey).
+      </p>
+    );
+  }
+  return (
+    <div className="row">
+      {wallets.map((candidate) => (
+        <button
+          key={candidate.info.uuid}
+          disabled={props.busy}
+          onClick={() => props.onPick(candidate)}
+        >
+          {candidate.info.icon && (
+            // eslint-disable-next-line @next/next/no-img-element -- wallet icons are data: URIs
+            <img src={candidate.info.icon} alt="" width={20} height={20} />
+          )}{" "}
+          {candidate.info.name}
+        </button>
+      ))}
+    </div>
   );
 }

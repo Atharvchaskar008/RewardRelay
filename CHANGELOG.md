@@ -23,6 +23,14 @@ All notable changes to RewardRelay are recorded here. The format follows
 
 ### Added
 
+- **Browser wallets:** after phone sign-in, a user can link BridgeKey, MetaMask or any EIP-1193
+  wallet instead of a PIN wallet (it signs the link challenge, then approves each deal); MST is added
+  to the wallet with its public RPC and switched to before each transaction; the choice is remembered
+  per browser and reconnected without a prompt; the account records `walletKind` so a new device
+  asks to connect the wallet rather than for a PIN.
+- Demo data: `npm run seed:demo -w @rewardrelay/web` lists one offer per category from a demo
+  Sharer (Firebase test number), checks the balance first and never duplicates an open offer.
+- `apps/web/vercel.json` runs the functions in Mumbai (`bom1`), next to Firestore.
 - A `Server-Timing` header on every API response (route phases and busy time per backend) and the
   same timing in the request log.
 - Testing guide (`docs/testing.md`), demo walkthrough (`docs/demo.md`), this changelog and a Code of

@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import { getAddress, type Address, type EIP1193Provider } from "viem";
 import {
   ApiError,
   ChainError,
@@ -6,8 +7,10 @@ import {
   MemoryKeyStore,
   chainContext,
   createApiClient,
+  injectedChainContext,
   listBuyForYou,
   listPassOn,
+  onboardInjectedWallet,
   onboardWallet,
   restoreWallet,
   runDealAction,
@@ -23,6 +26,7 @@ import {
   useIntegrationEnv,
 } from "../helpers/integration";
 import { routerFetch } from "../helpers/router";
+import { DEMO_LISTINGS, seedDemoListings } from "../../scripts/demo-listings";
 
 /**
  * Scripted end-to-end run of both deal types using only SDK functions: the API through the SDK
@@ -238,6 +242,101 @@ describe("SDK end to end", () => {
     expect(sent.deliveryDetailsSent).toBe(true);
     const details = await asha.sdk.api.deals.getDetails(listing.dealId);
     expect(details.details).toMatchObject({ name: "Rahul Verma", pincode: "411018" });
+  });
+
+  it("links a browser wallet and signs a whole deal through it", async () => {
+    const { rpcUrl, chainId, escrow } = chainFixture();
+    const node = async (method: string, params: unknown[] = []) => {
+      const res = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+      });
+      const json = (await res.json()) as {
+        result?: unknown;
+        error?: { code: number; message: string };
+      };
+      if (json.error) throw Object.assign(new Error(json.error.message), { code: json.error.code });
+      return json.result;
+    };
+    // A browser-wallet stand-in: EIP-1193 over one of the local node's unlocked accounts, which
+    // signs messages (personal_sign) and sends transactions (eth_sendTransaction) like a wallet.
+    const address = getAddress(((await node("eth_accounts")) as Address[])[15]);
+    const provider = {
+      request: async ({ method, params }: { method: string; params?: unknown[] }) =>
+        method === "eth_requestAccounts" || method === "eth_accounts"
+          ? [address]
+          : node(method, params ?? []),
+      on: () => undefined,
+      removeListener: () => undefined,
+    } as unknown as EIP1193Provider;
+
+    const { idToken } = await signInWithPhone(fakePhone());
+    const api = createApiClient({
+      baseUrl: "http://localhost:3000",
+      getIdToken: async () => idToken,
+      fetch: routerFetch,
+    });
+    const { view } = await onboardInjectedWallet(api, provider);
+    expect(view).toMatchObject({ address, walletKind: "injected" });
+    expect(view.badge.hasBadge).toBe(true);
+    expect((await api.me())?.walletKind).toBe("injected");
+
+    const chain = await injectedChainContext(
+      { rpcUrl, chainId, escrow, explorerUrl: "http://localhost:4000" },
+      provider,
+      address,
+    );
+    const meera: SdkContext = { api, chain, inrPerMstc: RATE };
+    const { listing } = await listBuyForYou(meera, {
+      title: "Rs 200 off shoes with Bank B",
+      description: "Signed with a browser wallet",
+      category: "ecommerce",
+      faceValueInr: 250,
+      priceInr: 200,
+    });
+    let deal = await rahul.sdk.api.deals.get(listing.dealId);
+    expect(deal.sharer).toBe(address);
+    deal = (
+      await runDealAction(rahul.sdk, deal, "PAY", {
+        details: {
+          name: "Rahul Verma",
+          phone: "+919876543210",
+          addressLines: ["Flat 12, Lotus Residency"],
+          pincode: "411018",
+        },
+      })
+    ).deal;
+    const delivered = await runDealAction(meera, { id: listing.dealId }, "MARK_DELIVERED", {
+      proof: { orderId: "OD-BW-0001" },
+    });
+    expect(delivered.deal.status).toBe("Delivered");
+    const done = await runDealAction(rahul.sdk, { id: listing.dealId }, "CONFIRM");
+    expect(done.deal.status).toBe("Completed");
+    expect(done.deal.timeline.map((entry) => entry.event)).toEqual([
+      "ListingCreated",
+      "DealLocked",
+      "Delivered",
+      "Completed",
+    ]);
+  });
+
+  it("seeds the demo marketplace once; a second run lists nothing new", async () => {
+    const demo = await person("424242");
+    const sharer = demo.wallet.getAccount().address;
+    // Earlier tests move the local chain's clock ahead, so event times are based on chain time.
+    const now = Number((await demo.sdk.chain.publicClient.getBlock()).timestamp);
+    const first = await seedDemoListings(demo.sdk, sharer, { now, runSuffix: "E2E1" });
+    expect(first).toMatchObject({ skipped: [] });
+    expect(first.created).toHaveLength(DEMO_LISTINGS.length);
+    const types = await Promise.all(
+      first.created.map(async (id) => (await demo.sdk.api.deals.get(id)).type),
+    );
+    expect(types.filter((type) => type === "PassOn")).toHaveLength(1);
+
+    const again = await seedDemoListings(demo.sdk, sharer, { now, runSuffix: "E2E2" });
+    expect(again.created).toEqual([]);
+    expect(again.skipped).toHaveLength(DEMO_LISTINGS.length);
   });
 
   it("restores the wallet on a new device from the encrypted backup", async () => {

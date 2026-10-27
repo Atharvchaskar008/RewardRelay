@@ -3,6 +3,7 @@ import {
   createWalletClient,
   custom,
   defineChain,
+  getAddress,
   http,
   parseEventLogs,
   zeroHash,
@@ -40,6 +41,8 @@ export interface ChainContext {
   publicClient: PublicClient;
   walletClient: WalletClient;
   account: Account | Address;
+  /** Browser wallets only: brings the wallet onto the configured chain before a transaction. */
+  ensureChain?: () => Promise<void>;
 }
 
 export interface TxOutcome {
@@ -80,19 +83,23 @@ export function chainContext(config: ChainConfig, account: Account): ChainContex
   };
 }
 
-/** A context signing through an injected EIP-1193 wallet (switches/adds the MST chain first). */
+/**
+ * A context signing through a browser wallet (BridgeKey, MetaMask: any EIP-1193 provider). With a
+ * known (already connected) address nothing is requested on creation, so a page load never shows a
+ * wallet prompt; the wallet is brought onto the MST chain right before each transaction.
+ */
 export async function injectedChainContext(
   config: ChainConfig,
   provider: EIP1193Provider,
+  knownAddress?: Address,
 ): Promise<ChainContext> {
   const chain = viemChain(config);
-  const walletClient = createWalletClient({ chain, transport: custom(provider) });
-  const [address] = await walletClient.requestAddresses();
-  try {
-    await walletClient.switchChain({ id: chain.id });
-  } catch {
-    await walletClient.addChain({ chain });
-  }
+  const walletClient = createWalletClient({
+    chain,
+    transport: custom(provider),
+    pollingInterval: POLLING_MS,
+  });
+  const address = knownAddress ?? (await requestWalletAddress(provider));
   return {
     config,
     chain,
@@ -103,7 +110,59 @@ export async function injectedChainContext(
     }) as PublicClient,
     walletClient,
     account: address,
+    ensureChain: () => ensureWalletChain(walletClient, config),
   };
+}
+
+/** Asks a browser wallet for its account (shows the wallet's connect prompt if needed). */
+export async function requestWalletAddress(provider: EIP1193Provider): Promise<Address> {
+  try {
+    const [address] = await createWalletClient({ transport: custom(provider) }).requestAddresses();
+    if (!address) throw new ChainError("Your wallet did not share an account.", "NoAccount");
+    return getAddress(address);
+  } catch (error) {
+    throw toChainError(error);
+  }
+}
+
+/**
+ * Switches the wallet to the configured chain, adding it first when the wallet does not know it.
+ * Wallets need an absolute public RPC URL to add a chain, not the app's same-origin relay path.
+ */
+async function ensureWalletChain(walletClient: WalletClient, config: ChainConfig): Promise<void> {
+  if ((await walletClient.getChainId()) === config.chainId) return;
+  try {
+    await walletClient.switchChain({ id: config.chainId });
+  } catch (error) {
+    if (!isUnknownChain(error)) throw toChainError(error);
+    await walletClient.addChain({ chain: publicChain(config) });
+    if ((await walletClient.getChainId()) !== config.chainId)
+      await walletClient.switchChain({ id: config.chainId });
+  }
+}
+
+/** EIP-3326: 4902 means the wallet does not know the chain (some wallets wrap it in -32603). */
+function isUnknownChain(error: unknown): boolean {
+  for (
+    let current = error as { code?: unknown; cause?: unknown; message?: unknown } | undefined;
+    current;
+    current = current.cause as typeof current
+  ) {
+    if (current.code === 4902) return true;
+    if (
+      typeof current.message === "string" &&
+      /unrecognized chain|unknown chain|4902/i.test(current.message)
+    )
+      return true;
+  }
+  return false;
+}
+
+/** The chain as a wallet should add it: the public RPC from packages/shared when it is known. */
+export function publicChain(config: ChainConfig): Chain {
+  const known = chainById(config.chainId);
+  const rpcUrl = known?.rpcUrls.default.http[0] ?? config.rpcUrl;
+  return { ...viemChain(config), rpcUrls: { default: { http: [rpcUrl] } } };
 }
 
 export interface InjectedWallet {
@@ -111,7 +170,10 @@ export interface InjectedWallet {
   provider: EIP1193Provider;
 }
 
-/** EIP-6963 discovery: wallets announce themselves for `waitMs` after the request. */
+/**
+ * Browser wallets: EIP-6963 announcements (several extensions side by side) for `waitMs`, and the
+ * legacy `window.ethereum` when nothing announces itself (wallet in-app browsers, older extensions).
+ */
 export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]> {
   if (typeof window === "undefined") return Promise.resolve([]);
   const found = new Map<string, InjectedWallet>();
@@ -124,10 +186,25 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
   return new Promise((resolve) =>
     setTimeout(() => {
       window.removeEventListener("eip6963:announceProvider", onAnnounce);
+      const legacy = (window as { ethereum?: EIP1193Provider }).ethereum;
+      if (found.size === 0 && legacy) {
+        found.set(LEGACY_WALLET_ID, {
+          info: {
+            uuid: LEGACY_WALLET_ID,
+            name: "Browser wallet",
+            icon: "",
+            rdns: LEGACY_WALLET_ID,
+          },
+          provider: legacy,
+        });
+      }
       resolve([...found.values()]);
     }, waitMs),
   );
 }
+
+/** The id given to `window.ethereum` when no wallet announces itself through EIP-6963. */
+export const LEGACY_WALLET_ID = "injected";
 
 export function accountAddress(ctx: ChainContext): Address {
   return typeof ctx.account === "string" ? ctx.account : ctx.account.address;
@@ -165,6 +242,7 @@ async function sendEscrow(
   } as never;
   let hash: Hash | undefined;
   try {
+    await ctx.ensureChain?.();
     await ctx.publicClient.simulateContract(call);
     hash = await ctx.walletClient.writeContract({
       ...(call as object),
@@ -278,6 +356,7 @@ export const withdraw = (ctx: ChainContext) => sendEscrow(ctx, "withdraw", []);
 export async function sendMstc(ctx: ChainContext, to: Address, value: bigint): Promise<TxOutcome> {
   let hash: Hash | undefined;
   try {
+    await ctx.ensureChain?.();
     hash = await ctx.walletClient.sendTransaction({
       account: ctx.account,
       chain: ctx.chain,

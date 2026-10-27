@@ -94,7 +94,15 @@ function WalletScreen() {
         <button onClick={() => navigator.clipboard?.writeText(view.address)}>Copy address</button>
       </Card>
 
-      {!wallet.unlocked ? (
+      {!wallet.unlocked && view.walletKind === "injected" ? (
+        <Card>
+          <h2>Connect your wallet to send</h2>
+          <p className="muted">
+            This account signs with a browser wallet. <Link href="/login">Connect it</Link> to send
+            or withdraw.
+          </p>
+        </Card>
+      ) : !wallet.unlocked ? (
         <Card>
           <h2>Unlock to send</h2>
           <input
@@ -132,10 +140,18 @@ function WalletScreen() {
           >
             Send
           </button>
-          <div className="row">
-            <button onClick={() => run(() => wallet.backup())}>Back up wallet</button>
-            <button onClick={() => wallet.lock()}>Lock</button>
-          </div>
+          {wallet.kind === "injected" ? (
+            <div className="row">
+              <button onClick={() => wallet.disconnectBrowserWallet()}>
+                Disconnect {wallet.browserWalletName}
+              </button>
+            </div>
+          ) : (
+            <div className="row">
+              <button onClick={() => run(() => wallet.backup())}>Back up wallet</button>
+              <button onClick={() => wallet.lock()}>Lock</button>
+            </div>
+          )}
         </Card>
       )}
 

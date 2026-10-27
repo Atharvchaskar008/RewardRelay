@@ -174,7 +174,12 @@ function ListingForm() {
         card numbers, logins or OTPs.
       </label>
 
-      {!wallet.unlocked && (
+      {!wallet.unlocked && me.data?.walletKind === "injected" && (
+        <p className="muted">
+          Your account signs with a browser wallet. <Link href="/login">Connect it</Link> first.
+        </p>
+      )}
+      {!wallet.unlocked && me.data?.walletKind !== "injected" && (
         <>
           <label htmlFor="pin">Wallet PIN</label>
           <input
