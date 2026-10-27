@@ -1,3 +1,4 @@
+import { releaseOnVisit } from "@/src/server/cron/release";
 import { withRoute } from "@/src/server/http";
 import { syncDealIndex } from "@/src/server/deals/dealIndex";
 import { walletOf } from "@/src/server/identity/users";
@@ -20,6 +21,8 @@ export const GET = withRoute(
       deal,
       view.role === "seeker" && user ? { seekerUid: user.uid } : {},
     );
+    // Release-on-visit: a due deal is released in the background; the cron remains the guarantee.
+    if (view.nextAction === "RELEASE_AVAILABLE") releaseOnVisit(view.id);
     return view;
   },
 );
