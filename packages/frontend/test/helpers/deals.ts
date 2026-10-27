@@ -151,3 +151,24 @@ export async function increaseTime(user: User, seconds: number) {
   });
   await user.publicClient.request({ method: "evm_mine" as never, params: [] as never });
 }
+
+/** Opens a Buy-for-you deal, pays it, submits an order proof via the API and marks it delivered. */
+export async function deliverWithProof(
+  sharer: User,
+  seeker: User,
+  overrides: Partial<ListingInput> = {},
+): Promise<bigint> {
+  const { POST: proofRoute } = await import("@/app/api/deals/[id]/proof/route");
+  const id = await openBuyForYou(sharer, {
+    title: `Deal ${Math.random().toString(36).slice(2, 10)}`,
+    ...overrides,
+  });
+  await acceptOnChain(seeker, id);
+  const proof = await callRoute<{ proofHash: Hex }>(proofRoute, {
+    token: sharer.idToken,
+    params: { id: id.toString() },
+    body: { orderId: `OD-${id}-0001` },
+  });
+  await markDeliveredOnChain(sharer, id, proof.body.data.proofHash);
+  return id;
+}
