@@ -80,6 +80,8 @@ export const serverEnvSchema = z
     MST_RPC_URL: z.url(),
     MST_CHAIN_ID: z.coerce.number().int().positive(),
     MST_EXPLORER_URL: z.url(),
+    /** Public origin of the app; the SIWE domain and URI are derived from it (never from headers). */
+    APP_URL: z.preprocess(blankToUndefined, z.url().default("http://localhost:3000")),
     ESCROW_ADDRESS: address,
     SBT_ADDRESS: address,
 
