@@ -6,11 +6,5 @@
     "moduleResolution": "node",
     "outDir": "dist"
   },
-  "include": [
-    "./scripts",
-    "./test",
-    "./typechain-types",
-    "./deploy.config.ts",
-    "./hardhat.config.ts"
-  ]
+  "include": ["./scripts", "./test", "./typechain-types", "./hardhat.config.ts"]
 }

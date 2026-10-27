@@ -13,3 +13,6 @@ harness.md
 
 # rewritten for the submission in H15
 README.md
+
+# generated deployment records (written by the deploy scripts)
+packages/contracts/deployments

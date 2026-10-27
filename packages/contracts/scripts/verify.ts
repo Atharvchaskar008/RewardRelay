@@ -1,40 +1,42 @@
 import hre from "hardhat";
-import fs from "fs";
-import path from "path";
+import { requireRecord, writeRecord } from "./lib/records";
+import { explorerUrl } from "./lib/tx";
 
+/**
+ * Verifies every contract of the network's deployment record on mstscan (Blockscout) with the
+ * recorded constructor arguments. Already-verified contracts count as success.
+ */
 async function main() {
   const network = hre.network.name;
-  const deploymentsPath = path.join(__dirname, "..", "deployments.json");
+  const record = requireRecord(network);
+  let failures = 0;
 
-  if (!fs.existsSync(deploymentsPath)) {
-    throw new Error(`No deployments.json found. Run "npm run deploy:${network}" first.`);
-  }
-
-  const deployments = JSON.parse(fs.readFileSync(deploymentsPath, "utf8"));
-  const forNetwork = deployments[network];
-
-  if (!forNetwork || Object.keys(forNetwork).length === 0) {
-    throw new Error(`No contracts deployed to ${network} yet.`);
-  }
-
-  for (const [name, info] of Object.entries(
-    forNetwork as Record<string, { address: string; constructorArguments: unknown[] }>,
-  )) {
+  for (const [name, info] of Object.entries(record.contracts)) {
     console.log(`Verifying ${name} at ${info.address} on ${network}...`);
     try {
       await hre.run("verify:verify", {
         address: info.address,
-        constructorArguments: info.constructorArguments ?? [],
+        constructorArguments: info.constructorArguments,
       });
-      console.log(`✓ ${name} verified`);
+      console.log(
+        `✓ ${name} verified: ${explorerUrl(record.chainId, "address", info.address)}#code`,
+      );
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       if (message.toLowerCase().includes("already verified")) {
         console.log(`✓ ${name} already verified`);
       } else {
+        failures++;
         console.error(`✖ Failed to verify ${name}:`, message);
       }
     }
+  }
+
+  if (failures === 0) {
+    record.verification = { verifiedAt: new Date().toISOString(), explorer: "blockscout" };
+    writeRecord(record);
+  } else {
+    process.exitCode = 1;
   }
 }
 
