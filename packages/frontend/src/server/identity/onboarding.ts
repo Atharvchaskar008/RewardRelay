@@ -98,12 +98,23 @@ async function claim(uid: string, field: "badge" | "topup", amountWei?: bigint):
   });
 }
 
+/**
+ * Records a badge found on-chain as "existing", in a transaction so a concurrent request that is
+ * minting (fresh "pending") or has recorded "minted" is never overwritten. `ownClaim`: the caller
+ * holds the pending claim itself (its own mint lost a race) and may replace it.
+ */
+async function recordExistingBadge(uid: string, ownClaim = false): Promise<void> {
+  await transaction(async (tx) => {
+    const badge = (await repos.users.get(uid, tx))?.badge;
+    if (badge?.status === "minted" || badge?.status === "existing") return;
+    if (!ownClaim && badge?.status === "pending" && Date.now() - badge.at < STALE_CLAIM_MS) return;
+    await repos.users.update(uid, { badge: { status: "existing", at: Date.now() } }, tx);
+  });
+}
+
 async function ensureBadge(uid: string, wallet: Address): Promise<void> {
   if (await sbtContract().read.hasBadge([wallet])) {
-    const user = await repos.users.get(uid);
-    if (user?.badge?.status !== "minted") {
-      await repos.users.update(uid, { badge: { status: "existing", at: Date.now() } });
-    }
+    await recordExistingBadge(uid);
     return;
   }
   if (!(await claim(uid, "badge"))) return;
@@ -124,7 +135,7 @@ async function ensureBadge(uid: string, wallet: Address): Promise<void> {
   } catch (error) {
     // Another request may have minted in the meantime; the chain decides.
     if (await sbtContract().read.hasBadge([wallet])) {
-      await repos.users.update(uid, { badge: { status: "existing", at: Date.now() } });
+      await recordExistingBadge(uid, true);
       return;
     }
     await repos.users.update(uid, { badge: { status: "failed", at: Date.now() } });

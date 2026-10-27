@@ -178,3 +178,25 @@ export async function balanceOf(address: Address): Promise<bigint> {
 }
 
 export type { Hex };
+
+/** A phone-verified user with a linked, gas-funded wallet holding a Trust Badge. */
+export async function onboard(value = parseEther("1")) {
+  const [{ POST: challengeRoute }, { POST: linkRoute }] = await Promise.all([
+    import("@/app/api/auth/challenge/route"),
+    import("@/app/api/auth/link-wallet/route"),
+  ]);
+  const { idToken, uid } = await signInWithPhone(fakePhone());
+  const account = await fundedWallet(value);
+  const challenge = await callRoute<{ message: string }>(challengeRoute, {
+    token: idToken,
+    body: { address: account.address },
+  });
+  const signature = await account.signMessage({ message: challenge.body.data.message });
+  const linked = await callRoute(linkRoute, {
+    token: idToken,
+    body: { address: account.address, message: challenge.body.data.message, signature },
+  });
+  if (linked.status !== 200) throw new Error(`onboard failed: ${JSON.stringify(linked.body)}`);
+  const clients = localClients(account);
+  return { idToken, uid, account, ...clients };
+}
