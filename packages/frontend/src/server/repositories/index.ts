@@ -98,7 +98,24 @@ export const vaultSchema = z.object({
   revealedAt: millis.nullable(),
 });
 
-/** disputes/{dealId}: evidence bundles and the arbiter's ruling. */
+export const storedFileSchema = z.object({
+  fileId: z.string(),
+  backend: z.enum(["firestore", "blob"]),
+  contentType: z.enum(["application/pdf", "image/jpeg", "image/png"]),
+  size: z.number().int().positive(),
+  url: z.string().optional(),
+});
+
+export const evidenceClaimSchema = z.enum([
+  "not_delivered",
+  "not_as_described",
+  "booking_cancelled",
+  "code_invalid",
+  "delivered_as_agreed",
+  "other",
+]);
+
+/** disputes/{dealId}: evidence bundles (encrypted; only their keccak256 goes on-chain). */
 export const disputeSchema = z.object({
   dealId: z.string().regex(/^\d+$/),
   status: z.enum(["open", "resolved"]),
@@ -106,13 +123,30 @@ export const disputeSchema = z.object({
     z.object({
       party: z.enum(["sharer", "seeker"]),
       uid: z.string(),
+      claim: evidenceClaimSchema,
       evidenceHash: hex32,
       bundle: encryptedBlobSchema,
+      files: z.array(storedFileSchema).max(3),
       at: millis,
     }),
   ),
   openedAt: millis,
   updatedAt: millis,
+  resolvedAt: millis.nullable().default(null),
+});
+
+/** audit/{auto}: append-only record of every privileged action (created, never updated). */
+export const auditSchema = z.object({
+  kind: z.literal("dispute.resolve"),
+  dealId: z.string(),
+  adminUid: z.string(),
+  ruling: z.object({
+    seekerShareBps: z.number().int().min(0).max(10_000),
+    faultParty: z.enum(["None", "Sharer", "Seeker"]),
+  }),
+  reason: z.string(),
+  txHash: hex32,
+  at: millis,
 });
 
 /** idempotency/{hash(scope)}: claimed or completed state-changing requests. */
@@ -185,4 +219,5 @@ export const repos = {
   challenges: new Collection("challenges", challengeSchema),
   phoneIndex: new Collection("phoneIndex", phoneIndexSchema),
   walletIndex: new Collection("walletIndex", walletIndexSchema),
+  audit: new Collection("audit", auditSchema),
 };

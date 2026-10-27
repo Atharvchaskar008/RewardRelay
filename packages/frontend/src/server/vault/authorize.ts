@@ -2,6 +2,7 @@ import "server-only";
 import type { Hex } from "viem";
 import { CODE_PATTERN, categoryByKey, normalizeCode } from "rewardrelay-shared";
 import { escrowContract } from "../chain";
+import { chainNow } from "../deals/read";
 import { keyring, signListingAuth } from "../crypto";
 import { AppError } from "../errors";
 import { requireLinkedUser } from "../identity/users";
@@ -71,7 +72,8 @@ export async function authorizeCode(
     );
   });
 
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + LISTING_AUTH_TTL_SECONDS);
+  // The contract checks the deadline against block.timestamp, so it is set from the chain clock.
+  const deadline = BigInt((await chainNow()) + LISTING_AUTH_TTL_SECONDS);
   const signature = await signListingAuth({ sharer: user.address, fingerprint, nonce, deadline });
   return {
     fingerprint,

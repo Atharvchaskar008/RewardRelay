@@ -51,14 +51,14 @@ export async function requireParty(
   return { id, dealId: id.toString(), deal, role, wallet };
 }
 
-export type AccessKind = "details" | "proof" | "invoice" | "code";
+export type AccessKind = "details" | "proof" | "invoice" | "code" | "evidence";
 
 /** Append-only access log (who and when, never what): deals/{id}/access/{auto}. */
 export async function logAccess(
   dealId: string,
   uid: string,
   kind: AccessKind,
-  role: Party,
+  role: Party | "admin",
 ): Promise<void> {
   await db()
     .collection(`deals/${dealId}/access`)
