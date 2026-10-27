@@ -65,7 +65,9 @@ npm run smoke:testnet -w @rewardrelay/contracts       # mints 2 badges and runs 
    `npx firebase-tools deploy --only firestore:rules,firestore:indexes --project <project-id>`.
    Optional TTL policies on `idempotency.expiresAt`, `rateLimits.expiresAt`, `challenges.expiresAt`.
 2. **Phone sign-in**: Authentication → Sign-in method → Phone → enable; add test phone numbers for
-   demos (never commit them); add the production domain under Authorized domains.
+   demos (never commit them); add the production domain under Authorized domains. Then Authentication
+   → Settings → **SMS region policy** → Allow → **India**: with an empty allowlist every request,
+   including test numbers, fails with `OPERATION_NOT_ALLOWED`.
 3. **Web app**: Project settings → Your apps → Add app (Web) → copy the config into
    `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`,
    `NEXT_PUBLIC_FIREBASE_APP_ID`.
