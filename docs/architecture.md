@@ -92,6 +92,37 @@ admin desk shows the evidence, the order proof and a rulebook suggestion → the
 
 Firestore rules deny every client write and every read except `listings`.
 
+## Reliability and performance
+
+**Every backend call is bounded.** Firestore and Firebase Auth calls have an 8 s deadline, an MST RPC
+read 9 s (retries included), the deal timeline 5 s and the secondary parts of a deal view 3 s. A
+timeout names the operation in the logs and reaches the user as "RewardRelay is temporarily
+unavailable", never as a hang. Sending a signed transaction is the one call that is not cut short.
+
+| When this fails or hangs         | What users see                                                                                                               |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| MST RPC                          | deal pages answer "temporarily unavailable" within about 10 s; `/api/health` reports `down`                                  |
+| Event scan (timeline)            | the deal view without its timeline                                                                                           |
+| Firestore, for a listing's text  | the deal view from the chain, without the listing text                                                                       |
+| Firestore, for writes            | the action fails fast and can be retried with the same Idempotency-Key                                                       |
+| A server wallet runs dry         | the action is refused with a clear message; `/api/health` turns `degraded`; a missed welcome top-up is retried by the keeper |
+| A serverless response ends early | release-on-visit and index sync run in `after()`, so they finish; the keeper (every 2 minutes) is the guarantee              |
+
+**Reads are shared and cached where it is safe.** Concurrent requests share one in-flight read (the
+latest block, a deal's events, a public deal view's deal and listing); immutable data is kept (block
+timestamps, past deal events, rescanned only from the last scanned block); a few values are reused
+for seconds (the latest block 1.5 s, other users' badges 5 s, the pause flag 10 s). A user's own
+badge, private-data checks and every privileged action read the chain fresh.
+
+**Independent work runs side by side**: the deal view starts the chain clock, the listing and the
+timeline before the deal and the caller's wallet are known; the health checks run in parallel; wallet
+set-up mints the badge and sends the top-up at the same time. Reads without private data use lighter
+session and rate-limit checks (see SECURITY.md §5); writes keep the strict ones.
+
+**Measured** (production build against Firebase and MST Testnet, median of warm requests): a deal page
+in about 0.3 s (was 1.5 s), `/api/me` 0.3 s, the listings feed 0.05 s; 150 simultaneous requests are
+all served without an error. Every response carries a `Server-Timing` header with the breakdown.
+
 ## Repository layout
 
 ```

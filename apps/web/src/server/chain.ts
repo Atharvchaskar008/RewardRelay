@@ -13,6 +13,7 @@ import {
 import { getAbiItem, pad, parseEventLogs, toEventSelector, toHex, type AbiEvent } from "viem";
 import { chainById, deployments, relayEscrowAbi, reputationSbtAbi } from "@rewardrelay/shared";
 import { TtlCache } from "./cache";
+import { withDeadline } from "./deadline";
 import { serverEnv, type ServerEnv } from "./env";
 import { track } from "./timing";
 
@@ -21,10 +22,12 @@ import { track } from "./timing";
  * at the configured RPC URL, so the same code serves MST Testnet and a local Hardhat node.
  */
 
-/** Per attempt; with the retries a read fails within about 25 s instead of hanging a request. */
+/** Per attempt (a read is also bounded as a whole by CHAIN_CALL_DEADLINE_MS). */
 const RPC_TIMEOUT_MS = 8_000;
 const RPC_RETRIES = 2;
 const RPC_RETRY_DELAY_MS = 250;
+/** Upper bound for one read, retries included: an RPC outage answers "temporarily unavailable". */
+const CHAIN_CALL_DEADLINE_MS = 9_000;
 
 export function mstChain(env: ServerEnv = serverEnv()): Chain {
   const known = chainById(env.MST_CHAIN_ID);
@@ -52,8 +55,16 @@ export function rpcTransport(env: ServerEnv = serverEnv()): Transport {
   });
   return ((params) => {
     const transport = inner(params);
-    const request: typeof transport.request = (args, options) =>
-      track("chain", transport.request(args, options));
+    const request = ((args: { method: string }, options?: unknown) => {
+      const call = transport.request(args as never, options as never);
+      // A hung node must not hold a request for every retry; a broadcast is never cut short (the
+      // signer would not know whether the transaction left).
+      const bounded =
+        args.method === "eth_sendRawTransaction"
+          ? call
+          : withDeadline(call, CHAIN_CALL_DEADLINE_MS, `chain.${args.method}`);
+      return track("chain", bounded);
+    }) as typeof transport.request;
     return { ...transport, request };
   }) as Transport;
 }

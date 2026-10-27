@@ -26,6 +26,7 @@ import {
   type OnChainDeal,
   type TrustSummary,
 } from "../chain";
+import { TtlCache } from "../cache";
 import { withDeadline } from "../deadline";
 import { errorFields, log } from "../log";
 import { repos, type ListingDoc } from "../repositories";
@@ -169,6 +170,26 @@ async function acceptBlockFor(
 
 type Viewer = { uid: string; wallet: Address | null } | null;
 
+/** Concurrent views of one deal share a single read of its listing (nothing kept afterwards). */
+const listingReads = new TtlCache<ListingDoc | undefined>({ ttlMs: 0, max: 1_000 });
+
+/**
+ * Secondary, off-chain parts of the view (the listing's text, whether an address was sent): when
+ * Firestore is slow or failing the view is still built from the chain, without them.
+ */
+const SECONDARY_DEADLINE_MS = 3_000;
+
+function secondary<T>(dealId: bigint, part: string, work: Promise<T>): Promise<T | null> {
+  return withDeadline(work, SECONDARY_DEADLINE_MS, `firestore.${part}`).catch((error) => {
+    log("warn", "deals.view_part_failed", {
+      dealId: dealId.toString(),
+      part,
+      ...errorFields(error),
+    });
+    return null;
+  });
+}
+
 /** The timeline is secondary: a slow event scan must not hold up the whole deal view. */
 const TIMELINE_DEADLINE_MS = 5_000;
 
@@ -188,7 +209,11 @@ export async function buildDealView(
   preloaded?: OnChainDeal | Promise<OnChainDeal>,
 ): Promise<DealView> {
   const nowCall = started(chainNow());
-  const listingCall = started(repos.listings.get(id.toString()));
+  const listingCall = secondary(
+    id,
+    "listing",
+    listingReads.get(id.toString(), () => repos.listings.get(id.toString())),
+  );
   const eventsCall = withDeadline(
     readDealEvents(id),
     TIMELINE_DEADLINE_MS,
@@ -210,7 +235,7 @@ export async function buildDealView(
     counterpart ? readTrust(counterpart) : Promise.resolve(null),
     role === "visitor" && deal.status === 0 ? acceptBlockFor(deal, who) : Promise.resolve(null),
     eventsCall,
-    deliveryDetailsSent(id, deal, role),
+    secondary(id, "details flag", deliveryDetailsSent(id, deal, role)),
   ]);
 
   const action = computeNextAction({

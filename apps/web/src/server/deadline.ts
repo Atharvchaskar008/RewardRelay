@@ -17,7 +17,7 @@ export class DeadlineExceeded extends Error {
     readonly operation: string,
     readonly ms: number,
   ) {
-    super(`${operation} did not answer within ${ms} ms`);
+    super(`${operation} timed out after ${ms} ms`);
     this.name = "DeadlineExceeded";
   }
 }

@@ -17,7 +17,7 @@ export const GET = withRoute(
   async ({ params, user }) => {
     const id = dealIdParam(params.id);
     // The deal and the caller's wallet are read alongside everything else the view needs.
-    const dealCall = readDealOrThrow(id);
+    const dealCall = readDealOrThrow(id, { shared: true });
     const viewer = user ? walletOf(user.uid).then((wallet) => ({ uid: user.uid, wallet })) : null;
     const view = await buildDealView(id, viewer, dealCall);
     const deal = await dealCall;

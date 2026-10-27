@@ -30,6 +30,8 @@ All notable changes to RewardRelay are recorded here. The format follows
   asks to connect the wallet rather than for a PIN.
 - Demo data: `npm run seed:demo -w @rewardrelay/web` lists one offer per category from a demo
   Sharer (Firebase test number), checks the balance first and never duplicates an open offer.
+- TTL policies in `firestore.indexes.json`: Firestore deletes expired rate-limit, idempotency and
+  sign-in challenge records by itself (applied with the rules and indexes deploy).
 - `apps/web/vercel.json` runs the functions in Mumbai (`bom1`), next to Firestore.
 - A `Server-Timing` header on every API response (route phases and busy time per backend) and the
   same timing in the request log.
@@ -39,8 +41,16 @@ All notable changes to RewardRelay are recorded here. The format follows
 ### Fixed
 
 - Firestore queries, the file store, the keeper's lease and Firebase Auth lookups now have the 8 s
-  deadline, and a timeout names the operation in the logs; an MST RPC read fails within about 25 s
-  instead of about 40 s.
+  deadline, and a timeout names the operation in the logs.
+- When the MST RPC hangs, a deal or badge page now answers "RewardRelay is temporarily unavailable"
+  within about 10 s (it took about 25 s and said "something went wrong"): every RPC read is capped
+  at 9 s, the error mapper finds a user-safe error inside wrapped library errors, and the server
+  signer still retries a timed-out call as a network error.
+- A deal page is still served from the chain when its off-chain parts (the listing's text, the
+  delivery-details flag) fail or take longer than 3 s, and the listings feed leaves out a Sharer
+  whose badge cannot be read instead of failing; both sync the deal index after the response.
+- Concurrent views of one deal share a single in-flight read of the deal and its listing (150
+  simultaneous requests: no errors).
 - Release-on-visit is no longer cut off when a serverless response ends.
 - A dispute ruling that succeeded on-chain is no longer reported as failed when its audit record
   cannot be written at once (the write is retried, then logged in full).

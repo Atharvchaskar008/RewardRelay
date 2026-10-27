@@ -53,8 +53,29 @@ export class AppError extends Error {
 }
 
 /** Maps anything thrown by a handler to an AppError (unknown errors become INTERNAL). */
+/** viem's errors for an RPC node that is unreachable or does not answer in time. */
+const UNREACHABLE = new Set(["TimeoutError", "HttpRequestError", "WebSocketRequestError"]);
+
+/** Walks an error's `cause` chain (libraries such as viem wrap the original error). */
+function causes(error: unknown): unknown[] {
+  const chain: unknown[] = [];
+  for (let current = error; current && chain.length < 10; current = (current as Error).cause) {
+    chain.push(current);
+  }
+  return chain;
+}
+
 export function toAppError(error: unknown): AppError {
   if (error instanceof AppError) return error;
+  // A user-safe error raised deep inside a library call (e.g. a deadline in the RPC transport).
+  const inner = causes(error).find((cause): cause is AppError => cause instanceof AppError);
+  if (inner) return inner;
+  if (causes(error).some((cause) => cause instanceof Error && UNREACHABLE.has(cause.name))) {
+    return new AppError("INTERNAL", {
+      message: "RewardRelay is temporarily unavailable. Please try again shortly.",
+      cause: error,
+    });
+  }
   if (error instanceof ZodError) {
     return new AppError("VALIDATION_FAILED", {
       details: {

@@ -12,9 +12,11 @@ import {
   type CategoryKey,
 } from "@rewardrelay/shared";
 import { listingTermsHash } from "@/common/terms";
-import { explorerAddressUrl, mapLimit, readDeals, readTrust } from "../chain";
+import { afterResponse } from "../background";
+import { explorerAddressUrl, mapLimit, readDeals, readTrust, type OnChainDeal } from "../chain";
 import { serverEnv } from "../env";
 import { AppError } from "../errors";
+import { errorFields, log } from "../log";
 import { requireLinkedUser } from "../identity/users";
 import { repos, type ListingDoc } from "../repositories";
 import { runQuery, transaction } from "../repositories/collection";
@@ -235,22 +237,28 @@ export async function listListings(query: {
   const sharers = [...new Set(docs.map((doc) => getAddress(doc.sharer)))];
   const trusts = new Map<Address, Awaited<ReturnType<typeof readTrust>>>();
   await mapLimit(sharers, 8, async (sharer) => {
-    trusts.set(sharer, await readTrust(sharer));
+    // A Sharer whose badge cannot be read right now is left out of this page instead of failing it
+    // (like a deal the chain did not return).
+    const trust = await readTrust(sharer).catch((error: unknown) => {
+      log("warn", "listings.trust_failed", { sharer, ...errorFields(error) });
+      return null;
+    });
+    if (trust) trusts.set(sharer, trust);
   });
 
   const items: ListingView[] = [];
-  await Promise.all(
-    docs.map(async (doc, index) => {
-      const deal = deals[index];
-      if (!deal) return;
-      await syncDealIndex(doc.dealId, deal);
-      if (query.status === "open" && deal.status !== DealStatus.Listed) return;
-      items[index] = listingView(
-        doc,
-        deal.status as DealStatus,
-        trusts.get(getAddress(doc.sharer))!,
-      );
-    }),
+  const toSync: [string, OnChainDeal][] = [];
+  docs.forEach((doc, index) => {
+    const deal = deals[index];
+    const trust = trusts.get(getAddress(doc.sharer));
+    if (!deal) return;
+    toSync.push([doc.dealId, deal]);
+    if (!trust || (query.status === "open" && deal.status !== DealStatus.Listed)) return;
+    items[index] = listingView(doc, deal.status as DealStatus, trust);
+  });
+  // Keeping the index in step with the chain does not need to delay the feed.
+  await afterResponse("listings.sync_index", () =>
+    mapLimit(toSync, 8, ([dealId, deal]) => syncDealIndex(dealId, deal)),
   );
 
   const nextCursor = docs.length === PAGE_SIZE ? docs[docs.length - 1].dealId : null;

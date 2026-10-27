@@ -63,7 +63,8 @@ npm run smoke:testnet -w @rewardrelay/contracts       # mints 2 badges and runs 
 1. **Firestore**: Firebase console → Build → Firestore Database → Create database → production mode
    → location `asia-south1`. Deploy the rules and indexes from `apps/web`:
    `npx firebase-tools deploy --only firestore:rules,firestore:indexes --project <project-id>`.
-   Optional TTL policies on `idempotency.expiresAt`, `rateLimits.expiresAt`, `challenges.expiresAt`.
+   The same command applies the TTL policies declared in `firestore.indexes.json`, so Firestore
+   deletes expired `idempotency`, `rateLimits` and `challenges` documents by itself.
 2. **Phone sign-in**: Authentication → Sign-in method → Phone → enable; add test phone numbers for
    demos (never commit them); add the production domain under Authorized domains. Then Authentication
    → Settings → **SMS region policy** → Allow → **India**: with an empty allowlist every request,

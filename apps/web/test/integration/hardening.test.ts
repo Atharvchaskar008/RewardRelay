@@ -9,6 +9,8 @@ import { POST as rpcRoute } from "@/app/api/rpc/[network]/route";
 import { POST as challengeRoute } from "@/app/api/auth/challenge/route";
 import { GET as meRoute } from "@/app/api/me/route";
 import { adminAuth } from "@/server/firebaseAdmin";
+import { repos } from "@/server/repositories";
+import { GET as dealRoute } from "@/app/api/deals/[id]/route";
 import {
   callRoute,
   fakePhone,
@@ -156,6 +158,22 @@ describe("session revocation", () => {
     await pause();
     await adminAuth().revokeRefreshTokens(reader.uid);
     expect((await callRoute(meRoute, { token: reader.idToken })).status).toBe(401);
+  });
+});
+
+describe("graceful degradation", () => {
+  it("still serves the deal view from the chain when its off-chain parts fail", async () => {
+    const id = await deliverWithProof(admin, seeker);
+    const spy = vi
+      .spyOn(repos.listings, "get")
+      .mockRejectedValue(new Error("Firestore unavailable"));
+    const res = await callRoute<{ status: string; listing: unknown; nextAction: string }>(
+      dealRoute,
+      { params: { id: id.toString() } },
+    );
+    spy.mockRestore();
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ status: "Delivered", listing: null });
   });
 });
 

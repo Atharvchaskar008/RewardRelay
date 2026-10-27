@@ -3,7 +3,8 @@ import { NextRequest } from "next/server";
 import { afterResponse } from "@/server/background";
 import { TtlCache } from "@/server/cache";
 import { DeadlineExceeded, withDeadline } from "@/server/deadline";
-import { AppError } from "@/server/errors";
+import { AppError, toAppError } from "@/server/errors";
+import { classifyTxError } from "@/server/signer";
 import { withRoute } from "@/server/http";
 import { retrying } from "@/server/retry";
 import {
@@ -49,6 +50,21 @@ describe("TtlCache", () => {
     now += 101;
     expect(await cache.get("k", load)).toBe(2);
     expect(loads).toBe(2);
+  });
+
+  it("with a zero TTL shares only reads that are still in flight", async () => {
+    const cache = new TtlCache<number>({ ttlMs: 0, max: 10 });
+    let loads = 0;
+    const slow = deferred<void>();
+    const load = async () => {
+      loads++;
+      await slow.promise;
+      return loads;
+    };
+    const concurrent = Promise.all([cache.get("deal", load), cache.get("deal", load)]);
+    slow.resolve();
+    expect(await concurrent).toEqual([1, 1]);
+    expect(await cache.get("deal", load)).toBe(2); // finished reads are never reused
   });
 
   it("never caches a failure", async () => {
@@ -186,11 +202,45 @@ describe("withDeadline", () => {
     const cause = (error as AppError).cause as DeadlineExceeded;
     expect(cause).toBeInstanceOf(DeadlineExceeded);
     expect(cause.operation).toBe("firestore.get users");
-    expect(cause.message).toBe("firestore.get users did not answer within 10 ms");
+    expect(cause.message).toBe("firestore.get users timed out after 10 ms");
   });
 
   it("passes a fast result through", async () => {
     expect(await withDeadline(Promise.resolve("ok"), 1_000, "fast")).toBe("ok");
+  });
+});
+
+describe("errors from an RPC outage", () => {
+  const unavailable = "RewardRelay is temporarily unavailable. Please try again shortly.";
+
+  it("surfaces a user-safe error raised deep inside a library call", () => {
+    const deadline = new AppError("INTERNAL", {
+      message: unavailable,
+      cause: new DeadlineExceeded("chain.eth_call", 9_000),
+    });
+    // viem wraps transport errors, e.g. in a ContractFunctionExecutionError.
+    const wrapped = Object.assign(new Error('The contract function "getDeal" reverted.'), {
+      cause: Object.assign(new Error("RPC Request failed."), { cause: deadline }),
+    });
+    expect(toAppError(wrapped)).toBe(deadline);
+  });
+
+  it("reports an unreachable or slow node as temporarily unavailable", () => {
+    const timeout = Object.assign(new Error("The request took too long to respond."), {
+      name: "TimeoutError",
+    });
+    const mapped = toAppError(Object.assign(new Error("readContract failed"), { cause: timeout }));
+    expect(mapped.code).toBe("INTERNAL");
+    expect(mapped.message).toBe(unavailable);
+    expect(toAppError(new Error("a bug")).message).not.toBe(unavailable);
+  });
+
+  it("lets the server signer retry a timed-out call instead of giving up", () => {
+    const error = new AppError("INTERNAL", {
+      message: unavailable,
+      cause: new DeadlineExceeded("chain.eth_estimateGas", 9_000),
+    });
+    expect(classifyTxError(error)).toBe("network");
   });
 });
 
