@@ -36,7 +36,7 @@ export const userSchema = z.object({
   updatedAt: millis,
   badge: z
     .object({
-      status: z.enum(["pending", "minted", "existing"]),
+      status: z.enum(["pending", "minted", "existing", "failed"]),
       txHash: hex32.optional(),
       at: millis,
     })
@@ -147,6 +147,25 @@ export const walletBackupSchema = z.object({
   updatedAt: millis,
 });
 
+/** challenges/{nonce}: single-use wallet-link challenges (SIWE-style), bound to the signed-in uid. */
+export const challengeSchema = z.object({
+  nonce: z.string(),
+  uid: z.string(),
+  address: evmAddress,
+  message: z.string(),
+  issuedAt: millis,
+  expiresAt,
+  usedAt: millis.nullable(),
+});
+
+/** phoneIndex/{phoneHash} and walletIndex/{lowercase address}: uniqueness claims for onboarding. */
+export const phoneIndexSchema = z.object({
+  uid: z.string(),
+  wallet: evmAddress,
+  createdAt: millis,
+});
+export const walletIndexSchema = z.object({ uid: z.string(), phoneHash: hex32, createdAt: millis });
+
 export type UserDoc = z.output<typeof userSchema>;
 export type ListingDoc = z.output<typeof listingSchema>;
 export type DealDoc = z.output<typeof dealSchema>;
@@ -163,4 +182,7 @@ export const repos = {
   idempotency: new Collection("idempotency", idempotencySchema),
   rateLimits: new Collection("rateLimits", rateLimitSchema),
   walletBackups: new Collection("walletBackups", walletBackupSchema),
+  challenges: new Collection("challenges", challengeSchema),
+  phoneIndex: new Collection("phoneIndex", phoneIndexSchema),
+  walletIndex: new Collection("walletIndex", walletIndexSchema),
 };
