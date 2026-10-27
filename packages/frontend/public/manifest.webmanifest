@@ -1,0 +1,21 @@
+{
+  "name": "RewardRelay",
+  "short_name": "RewardRelay",
+  "description": "A trusted buy-it-for-me marketplace for unused rewards, on MST Blockchain.",
+  "start_url": "/explore",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e151b",
+  "theme_color": "#0e151b",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
