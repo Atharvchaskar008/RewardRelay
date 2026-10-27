@@ -57,19 +57,35 @@ interface RpcCall {
   params: unknown[] | Record<string, unknown>;
 }
 
-function sanitize(call: unknown): RpcCall {
+interface RpcErrorReply {
+  jsonrpc: "2.0";
+  id: RpcCall["id"];
+  error: { code: number; message: string };
+}
+
+/**
+ * A method outside the allowlist gets a standard JSON-RPC "method not found" reply rather than an
+ * HTTP error: viem then marks it unsupported for the session (e.g. its optional
+ * `eth_fillTransaction`, which would turn our legacy transactions into EIP-1559 ones) instead of
+ * retrying it as a network failure on every transaction.
+ */
+function methodNotFound(id: RpcCall["id"]): RpcErrorReply {
+  return {
+    jsonrpc: "2.0",
+    id,
+    error: { code: -32601, message: "Method not found: not available through RewardRelay." },
+  };
+}
+
+function sanitize(call: unknown): RpcCall | RpcErrorReply {
   const { id, method, params } = (call ?? {}) as Record<string, unknown>;
-  if (typeof method !== "string" || !ALLOWED_METHODS.has(method)) {
-    throw new AppError("FORBIDDEN", {
-      message: "This JSON-RPC method is not available through RewardRelay.",
-    });
-  }
   const validId =
     id === undefined || id === null || typeof id === "number" || typeof id === "string";
   const validParams = params === undefined || Array.isArray(params) || typeof params === "object";
-  if (!validId || !validParams) {
+  if (typeof method !== "string" || !validId || !validParams) {
     throw new AppError("VALIDATION_FAILED", { message: "The request is not valid JSON-RPC." });
   }
+  if (!ALLOWED_METHODS.has(method)) return methodNotFound((id as RpcCall["id"]) ?? null);
   return {
     jsonrpc: "2.0",
     id: (id as RpcCall["id"]) ?? null,
@@ -106,12 +122,16 @@ export const POST = withRoute(
         message: `Send 1 to ${MAX_BATCH} calls per request.`,
       });
     }
+    const isBatch = Array.isArray(payload);
     const sanitized = calls.map(sanitize);
+    const forward = sanitized.filter((call): call is RpcCall => "method" in call);
+    const refused = sanitized.filter((call): call is RpcErrorReply => "error" in call);
+    if (forward.length === 0) return Response.json(isBatch ? refused : refused[0]);
 
     const upstream = await fetch(env.MST_RPC_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Array.isArray(payload) ? sanitized : sanitized[0]),
+      body: JSON.stringify(isBatch ? forward : forward[0]),
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       cache: "no-store",
     }).catch((error: unknown) => {
@@ -120,7 +140,19 @@ export const POST = withRoute(
         cause: error,
       });
     });
-    return new Response(await upstream.text(), {
+    const reply = await upstream.text();
+    if (refused.length > 0 && upstream.ok) {
+      // A batch with refused calls: merge the node's replies with ours (replies match by id).
+      const replies: unknown = (() => {
+        try {
+          return JSON.parse(reply);
+        } catch {
+          return undefined;
+        }
+      })();
+      if (Array.isArray(replies)) return Response.json([...replies, ...refused]);
+    }
+    return new Response(reply, {
       status: upstream.status,
       headers: { "Content-Type": "application/json" },
     });

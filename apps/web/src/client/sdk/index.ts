@@ -5,7 +5,7 @@
  * - flows (`onboardWallet`, `listBuyForYou`, `listPassOn`, `payForDeal`, `deliverOrder`,
  *   `raiseDispute`, `runDealAction`),
  * - React hooks (`RewardRelayProvider`, `useMe`, `useWallet`, `useListings`, `useDeal`,
- *   `useDealAction`).
+ *   `useDealAction`, `useSendDeliveryDetails`).
  */
 export * from "./api";
 export * from "./errors";

@@ -37,10 +37,22 @@ export function adminAuth(): Auth {
   return getAuth(firebaseApp());
 }
 
+/** Marks the shared Firestore instance as configured; `Symbol.for` is the same in every bundle. */
+const CONFIGURED = Symbol.for("rewardrelay.firestore.configured");
+
+/**
+ * The firebase-admin app (and so its Firestore instance) is shared by every route in the process,
+ * but Next bundles each route with its own copy of this module. `settings()` may run only once per
+ * instance, so the first copy marks the instance and the others skip it.
+ */
 export function db(): Firestore {
   if (!firestore) {
-    firestore = getFirestore(firebaseApp());
-    firestore.settings({ ignoreUndefinedProperties: true });
+    const instance = getFirestore(firebaseApp()) as Firestore & { [CONFIGURED]?: true };
+    if (!instance[CONFIGURED]) {
+      instance.settings({ ignoreUndefinedProperties: true });
+      instance[CONFIGURED] = true;
+    }
+    firestore = instance;
   }
   return firestore;
 }

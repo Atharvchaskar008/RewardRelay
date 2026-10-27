@@ -103,7 +103,8 @@ Evidence claims: `not_delivered`, `not_as_described`, `booking_cancelled`, `code
 `id, type (BuyForYou|PassOn), category, categoryLabel, status, statusLabel, role
 (sharer|seeker|visitor), nextAction, secondaryActions[], actionReason, price{wei,mstc,inr}, priceMstc,
 priceInr, deposit, depositMstc, deposits{sharer,seeker}, payAmount, feeBps, deadlines{deliverBy,
-releaseAt, eventTime, evidenceUntil, defaultRulingAt}, sharer, seeker, counterpartTrust{tier, tierName,
+releaseAt, eventTime, evidenceUntil, defaultRulingAt}, sharer, seeker, deliveryDetailsSent (Buy-for-you
+parties while Locked/Delivered, else null), counterpartTrust{tier, tierName,
 completed, disputesLost}, listing{title, description, faceValueInr, priceInr, terms}, hashes,
 mstscanUrls{escrow, sharer, seeker}, timeline[{event, label, at, txHash, url}], chainTime`
 
@@ -111,24 +112,28 @@ Show **one primary button** for `nextAction` and small buttons for `secondaryAct
 `useDealAction(id).mutate({ action, input })` for any of them; it runs the API calls and the
 transaction in order and returns the refreshed view.
 
-| Action                        | Who / when                        | Button                                  | `input` needed                     | What runs                                          |
-| ----------------------------- | --------------------------------- | --------------------------------------- | ---------------------------------- | -------------------------------------------------- |
-| `PAY`                         | visitor, Listed                   | "Pay X MSTC (≈ ₹Y)"                     | Buy-for-you: `details`             | `acceptListing` (price + deposit) → `POST details` |
-| `MARK_DELIVERED`              | sharer, Locked, before deliverBy  | "Submit order proof"                    | `proof{orderId, notes?, invoice?}` | `POST proof` → `markDelivered(proofHash)`          |
-| `CONFIRM`                     | seeker, Delivered (check window)  | "Confirm received"                      | —                                  | `confirmReceipt`                                   |
-| `RELEASE_AVAILABLE`           | either party, after releaseAt     | "Release payment"                       | —                                  | `release`                                          |
-| `CLAIM_REFUND`                | seeker, Locked, after deliverBy   | "Claim refund"                          | —                                  | `claimTimeout`                                     |
-| `WAIT`                        | see `actionReason`                | none (show the reason and the deadline) | —                                  | —                                                  |
-| `NONE`                        | finished or not your deal         | none                                    | —                                  | —                                                  |
-| `CANCEL` (secondary)          | sharer, Listed                    | "Cancel listing"                        | —                                  | `cancelListing`                                    |
-| `RAISE_DISPUTE` (secondary)   | seeker, check window              | "Report a problem"                      | `evidence{claim, text, files?}`    | `POST evidence` → `raiseDispute(evidenceHash)`     |
-| `ADD_EVIDENCE` (secondary)    | party, evidence window            | "Add evidence"                          | `evidence`                         | `POST evidence` → `addEvidence(evidenceHash)`      |
-| `CONFIRM` (secondary)         | seeker, Disputed                  | "Withdraw dispute and release"          | —                                  | `confirmReceipt`                                   |
-| `DEFAULT_RESOLVE` (secondary) | party, after the arbiter deadline | "Apply 50/50 ruling"                    | —                                  | `defaultResolve`                                   |
+| Action                        | Who / when                        | Button                                  | `input` needed                     | What runs                                                                                                       |
+| ----------------------------- | --------------------------------- | --------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `PAY`                         | visitor, Listed                   | "Pay X MSTC (≈ ₹Y)"                     | Buy-for-you: `details`             | details checked first (no payment without a valid address) → `acceptListing` (price + deposit) → `POST details` |
+| `MARK_DELIVERED`              | sharer, Locked, before deliverBy  | "Submit order proof"                    | `proof{orderId, notes?, invoice?}` | `POST proof` → `markDelivered(proofHash)`                                                                       |
+| `CONFIRM`                     | seeker, Delivered (check window)  | "Confirm received"                      | —                                  | `confirmReceipt`                                                                                                |
+| `RELEASE_AVAILABLE`           | either party, after releaseAt     | "Release payment"                       | —                                  | `release`                                                                                                       |
+| `CLAIM_REFUND`                | seeker, Locked, after deliverBy   | "Claim refund"                          | —                                  | `claimTimeout`                                                                                                  |
+| `WAIT`                        | see `actionReason`                | none (show the reason and the deadline) | —                                  | —                                                                                                               |
+| `NONE`                        | finished or not your deal         | none                                    | —                                  | —                                                                                                               |
+| `CANCEL` (secondary)          | sharer, Listed                    | "Cancel listing"                        | —                                  | `cancelListing`                                                                                                 |
+| `RAISE_DISPUTE` (secondary)   | seeker, check window              | "Report a problem"                      | `evidence{claim, text, files?}`    | `POST evidence` → `raiseDispute(evidenceHash)`                                                                  |
+| `ADD_EVIDENCE` (secondary)    | party, evidence window            | "Add evidence"                          | `evidence`                         | `POST evidence` → `addEvidence(evidenceHash)`                                                                   |
+| `CONFIRM` (secondary)         | seeker, Disputed                  | "Withdraw dispute and release"          | —                                  | `confirmReceipt`                                                                                                |
+| `DEFAULT_RESOLVE` (secondary) | party, after the arbiter deadline | "Apply 50/50 ruling"                    | —                                  | `defaultResolve`                                                                                                |
 
 `actionReason` values: `SIGN_IN`, `NO_WALLET`, `NO_BADGE`, `OVER_LIMIT`, `PAUSED`, `EVENT_STARTED`
 (visitor cannot pay), `AWAITING_SEEKER`, `AWAITING_DELIVERY`, `IN_CHECK_WINDOW`, `AWAITING_ARBITER`,
 `DELIVERY_WINDOW_CLOSED`, `NOT_A_PARTY`, `FINISHED`.
+
+If a paid Buy-for-you deal has `deliveryDetailsSent: false` (the details call failed after the payment),
+show the seeker the address form again and call `useSendDeliveryDetails(id).mutate(details)`; tell the
+sharer to wait for it.
 
 Panels by role: sharer while Locked/Delivered → delivery details (`getDetails`); both after delivery →
 order proof (`getProof`, invoice link); Pass-on seeker once paid → "Reveal code" (`deals.code`).
@@ -221,8 +226,8 @@ Create one job at cron-job.org (free):
 | Notify on failure | on (non-2xx)                                                 |
 
 Each run refreshes the deal index, releases due deals, applies default rulings and purges expired
-private data (details, proofs, files 7 days after a deal ends). Overlapping runs are safe (Firestore
-lease). Watch `/api/health`: `signers[].low` turns true when a server wallet needs MSTC.
+private data (details, proofs, files 7 days after a deal ends), and retries welcome top-ups that failed
+before broadcast (e.g. the funder was empty at sign-up). Overlapping runs are safe (Firestore lease). Watch `/api/health`: `signers[].low` turns true when a server wallet needs MSTC.
 
 ---
 

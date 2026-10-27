@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { DealStatus } from "@rewardrelay/shared";
+import { deliveryDetailsSchema, type DeliveryDetails } from "@/common/deliveryDetails";
 import { keyring } from "../crypto";
 import { AppError } from "../errors";
 import { encryptedBlobSchema, repos } from "../repositories";
@@ -14,18 +15,7 @@ import { pathOf, privateDocs } from "./privateDocs";
  * document path as AAD; every read is logged (who and when, never what).
  */
 
-export const deliveryDetailsSchema = z
-  .object({
-    name: z.string().trim().min(2).max(80),
-    phone: z
-      .string()
-      .trim()
-      .regex(/^(\+91[\s-]?)?[6-9]\d{9}$|^\+[1-9]\d{7,14}$/, "expected a mobile number"),
-    addressLines: z.array(z.string().trim().min(1).max(120)).min(1).max(4),
-    pincode: z.string().regex(/^[1-9]\d{5}$/, "expected a 6-digit PIN code"),
-  })
-  .strict();
-export type DeliveryDetails = z.output<typeof deliveryDetailsSchema>;
+export { deliveryDetailsSchema, type DeliveryDetails };
 
 export const detailsDocSchema = z.object({
   details: encryptedBlobSchema,
