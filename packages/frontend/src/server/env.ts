@@ -1,16 +1,28 @@
+import "server-only";
+import { getAddress, type Address, type Hex } from "viem";
 import { z } from "zod";
 
 /**
  * Server-side environment schema. Every API route reads configuration through `serverEnv()`, so a
  * missing or malformed variable fails the first request loudly instead of misbehaving later.
  * Error messages name the variable and the rule only, never the value.
+ *
+ * Emulator mode: when FIRESTORE_EMULATOR_HOST and FIREBASE_AUTH_EMULATOR_HOST are both set (local
+ * development and tests), the Firebase Admin service-account credentials may be empty.
  */
+
+/** Empty strings in .env files mean "not set". */
+const blankToUndefined = (value: unknown) => (value === "" ? undefined : value);
 
 const privateKey = z
   .string()
-  .regex(/^0x[0-9a-fA-F]{64}$/, "expected a 0x-prefixed 32-byte hex private key");
+  .regex(/^0x[0-9a-fA-F]{64}$/, "expected a 0x-prefixed 32-byte hex private key")
+  .transform((value) => value as Hex);
 
-const address = z.string().regex(/^0x[0-9a-fA-F]{40}$/, "expected a 0x-prefixed 20-byte address");
+const address = z
+  .string()
+  .regex(/^0x[0-9a-fA-F]{40}$/, "expected a 0x-prefixed 20-byte address")
+  .transform((value): Address => getAddress(value));
 
 const wei = z
   .string()
@@ -60,10 +72,8 @@ const commaList = z.string().transform((value) =>
     .filter((item) => item.length > 0),
 );
 
-const optionalPrivateKey = z.preprocess(
-  (value) => (value === "" ? undefined : value),
-  privateKey.optional(),
-);
+const optional = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(blankToUndefined, schema.optional());
 
 export const serverEnvSchema = z
   .object({
@@ -75,28 +85,32 @@ export const serverEnvSchema = z
 
     VERIFIER_PRIVATE_KEY: privateKey,
     FUNDER_PRIVATE_KEY: privateKey,
-    RELEASER_PRIVATE_KEY: optionalPrivateKey,
+    RELEASER_PRIVATE_KEY: optional(privateKey),
 
     FIREBASE_PROJECT_ID: z.string().min(1),
-    FIREBASE_CLIENT_EMAIL: z.email(),
-    FIREBASE_PRIVATE_KEY: z
-      .string()
-      .min(1)
-      .transform((value) => value.replace(/\\n/g, "\n")),
+    FIREBASE_CLIENT_EMAIL: optional(z.email()),
+    FIREBASE_PRIVATE_KEY: optional(
+      z
+        .string()
+        .min(1)
+        .transform((value) => value.replace(/\\n/g, "\n")),
+    ),
+    FIRESTORE_EMULATOR_HOST: optional(z.string().min(1)),
+    FIREBASE_AUTH_EMULATOR_HOST: optional(z.string().min(1)),
 
     DATA_KEYS: dataKeys,
     DATA_KEY_ID: z.string().min(1),
     PHONE_HMAC_KEY: secretKey,
     CODE_HMAC_KEY: secretKey,
 
-    ADMIN_UIDS: commaList,
+    ADMIN_UIDS: z.preprocess((value) => value ?? "", commaList),
     CRON_SECRET: z.string().min(32, "expected at least 32 characters"),
 
     DEMO_RATE_INR_PER_MSTC: z.coerce.number().positive(),
     TOPUP_WEI: wei,
-    SIGNER_LOW_BALANCE_WEI: wei.default(10_000_000_000_000_000n),
+    SIGNER_LOW_BALANCE_WEI: z.preprocess(blankToUndefined, wei.default(10_000_000_000_000_000n)),
 
-    BLOB_READ_WRITE_TOKEN: z.string().optional(),
+    BLOB_READ_WRITE_TOKEN: optional(z.string()),
   })
   .superRefine((env, ctx) => {
     if (!env.DATA_KEYS.has(env.DATA_KEY_ID)) {
@@ -114,11 +128,27 @@ export const serverEnvSchema = z
       });
     }
     const signers = [env.VERIFIER_PRIVATE_KEY, env.FUNDER_PRIVATE_KEY, env.RELEASER_PRIVATE_KEY];
-    const present = signers.filter((key): key is string => key !== undefined);
+    const present = signers.filter((key): key is Hex => key !== undefined);
     if (new Set(present.map((key) => key.toLowerCase())).size !== present.length) {
       ctx.addIssue({ code: "custom", message: "server signer keys must be distinct" });
     }
-  });
+    const emulator = Boolean(env.FIRESTORE_EMULATOR_HOST && env.FIREBASE_AUTH_EMULATOR_HOST);
+    if (!emulator) {
+      for (const name of ["FIREBASE_CLIENT_EMAIL", "FIREBASE_PRIVATE_KEY"] as const) {
+        if (!env[name]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [name],
+            message: "required unless the Firebase emulators are configured",
+          });
+        }
+      }
+    }
+  })
+  .transform((env) => ({
+    ...env,
+    firebaseEmulator: Boolean(env.FIRESTORE_EMULATOR_HOST && env.FIREBASE_AUTH_EMULATOR_HOST),
+  }));
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
@@ -140,4 +170,9 @@ let cached: ServerEnv | undefined;
 export function serverEnv(): ServerEnv {
   cached ??= parseServerEnv(process.env);
   return cached;
+}
+
+/** Test hook: forget the cached environment so the next call re-reads `process.env`. */
+export function resetServerEnvForTests(): void {
+  cached = undefined;
 }
