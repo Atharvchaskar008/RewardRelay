@@ -58,3 +58,26 @@ export const LISTING_AUTH_TYPES = {
     { name: "deadline", type: "uint256" },
   ],
 } as const;
+
+/** Short user-facing labels per on-chain status. */
+export const STATUS_LABELS: Record<DealStatus, string> = {
+  [DealStatus.Listed]: "Open",
+  [DealStatus.Locked]: "Paid, waiting for delivery",
+  [DealStatus.Delivered]: "Delivered, in the check window",
+  [DealStatus.Completed]: "Completed",
+  [DealStatus.Refunded]: "Refunded",
+  [DealStatus.Disputed]: "In dispute",
+  [DealStatus.Resolved]: "Resolved",
+  [DealStatus.Cancelled]: "Cancelled",
+};
+
+export const STATUS_NAMES: Record<DealStatus, string> = {
+  [DealStatus.Listed]: "Listed",
+  [DealStatus.Locked]: "Locked",
+  [DealStatus.Delivered]: "Delivered",
+  [DealStatus.Completed]: "Completed",
+  [DealStatus.Refunded]: "Refunded",
+  [DealStatus.Disputed]: "Disputed",
+  [DealStatus.Resolved]: "Resolved",
+  [DealStatus.Cancelled]: "Cancelled",
+};

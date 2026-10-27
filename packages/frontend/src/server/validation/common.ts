@@ -1,6 +1,7 @@
 import "server-only";
 import { getAddress, isAddress, type Address, type Hex } from "viem";
 import { z } from "zod";
+import { AppError } from "../errors";
 
 /** Shared request-field schemas. */
 
@@ -20,3 +21,11 @@ export const base64Input = (maxLength: number) =>
     .min(4)
     .max(maxLength)
     .regex(/^[A-Za-z0-9+/]+={0,2}$/, "expected base64");
+
+/** A deal id path parameter (1-based uint, as decimal). */
+export function dealIdParam(value: string | undefined): bigint {
+  if (!value || !/^[1-9]\d{0,18}$/.test(value)) {
+    throw new AppError("VALIDATION_FAILED", { message: "Invalid deal id." });
+  }
+  return BigInt(value);
+}
