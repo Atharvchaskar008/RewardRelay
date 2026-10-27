@@ -56,18 +56,33 @@ describe("JSON-RPC relay", () => {
     expect(batch.json).toHaveLength(2);
   });
 
-  it("refuses other methods, other networks, big batches and non-JSON", async () => {
-    expect(
-      (await rpc("local", { jsonrpc: "2.0", id: 1, method: "eth_accounts", params: [] })).status,
-    ).toBe(403);
-    expect(
-      (await rpc("local", { jsonrpc: "2.0", id: 1, method: "eth_sendTransaction", params: [] }))
-        .status,
-    ).toBe(403);
-    expect(
-      (await rpc("local", { jsonrpc: "2.0", id: 1, method: "hardhat_setBalance", params: [] }))
-        .status,
-    ).toBe(403);
+  it("answers other methods with JSON-RPC 'method not found' without reaching the node", async () => {
+    const spy = vi.spyOn(globalThis, "fetch");
+    for (const method of [
+      "eth_accounts",
+      "eth_sendTransaction",
+      "hardhat_setBalance",
+      "eth_fillTransaction",
+    ]) {
+      const res = await rpc("local", { jsonrpc: "2.0", id: 9, method, params: [] });
+      expect(res.status, method).toBe(200);
+      expect(res.json, method).toMatchObject({ jsonrpc: "2.0", id: 9, error: { code: -32601 } });
+    }
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+
+    // In a batch, the allowed calls still reach the node; the refused one is answered by the relay.
+    const batch = await rpc("local", [
+      { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] },
+      { jsonrpc: "2.0", id: 2, method: "eth_fillTransaction", params: [{}] },
+    ]);
+    expect(batch.status).toBe(200);
+    const byId = new Map((batch.json as { id: number }[]).map((reply) => [reply.id, reply]));
+    expect(byId.get(1)).toMatchObject({ result: "0x7a69" });
+    expect(byId.get(2)).toMatchObject({ error: { code: -32601 } });
+  });
+
+  it("refuses other networks, big batches and non-JSON", async () => {
     expect(
       (await rpc("testnet", { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] })).status,
     ).toBe(404);
