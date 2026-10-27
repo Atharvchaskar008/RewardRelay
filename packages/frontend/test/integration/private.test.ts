@@ -73,7 +73,7 @@ async function postProofMultipart(
     },
     body: form,
   });
-  const res = await postProofRoute(req, { params: params(id) });
+  const res = await postProofRoute(req, { params: Promise.resolve(params(id)) });
   return { status: res.status, body: await res.json() };
 }
 
@@ -235,12 +235,14 @@ describe("Buy-for-you private data", () => {
       new NextRequest(`http://localhost:3000/api/deals/${id}/invoice`, {
         headers: { authorization: `Bearer ${token}` },
       });
-    const res = await invoiceRoute(req(seeker.idToken), { params: params(id) });
+    const res = await invoiceRoute(req(seeker.idToken), { params: Promise.resolve(params(id)) });
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("image/png");
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(Buffer.from(await res.arrayBuffer()).equals(PNG)).toBe(true);
-    expect((await invoiceRoute(req(outsider.idToken), { params: params(id) })).status).toBe(403);
+    expect(
+      (await invoiceRoute(req(outsider.idToken), { params: Promise.resolve(params(id)) })).status,
+    ).toBe(403);
 
     const chunks = await db().collectionGroup("chunks").get();
     for (const chunk of chunks.docs) {

@@ -1,5 +1,5 @@
 import type { Address } from "viem";
-import { deployments, MST_TESTNET } from "rewardrelay-shared";
+import { deployments, MST_TESTNET, rpcRelayPath } from "rewardrelay-shared";
 import type { RewardRelayConfig } from "@/src/client/sdk";
 
 /**
@@ -16,8 +16,8 @@ export const appConfig: RewardRelayConfig = {
   apiBaseUrl: "",
   chain: {
     chainId,
-    // Same-origin proxy: MST Testnet's RPC sends no CORS headers.
-    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || "/api/rpc/testnet",
+    // Same-origin relay for the configured chain (MST Testnet's RPC sends no CORS headers).
+    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || rpcRelayPath(chainId) || "/api/rpc/testnet",
     explorerUrl: process.env.NEXT_PUBLIC_MSTSCAN_URL || MST_TESTNET.blockExplorers.default.url,
     escrow: (process.env.NEXT_PUBLIC_ESCROW_ADDRESS ||
       testnetEscrow ||

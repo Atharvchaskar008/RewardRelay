@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "crypto";
-import { getAbiItem, getAddress, type AbiEvent, type Hex } from "viem";
+import { getAbiItem, getAddress, type AbiEvent, type Address, type Hex } from "viem";
 import { DealStatus, relayEscrowAbi } from "rewardrelay-shared";
 import {
   escrowDeployBlock,
@@ -16,6 +16,7 @@ import { syncDealIndex } from "../deals/dealIndex";
 import { pathOf, privateDocs } from "../deals/privateDocs";
 import { proofDocSchema } from "../deals/proof";
 import { readDealOrThrow } from "../deals/read";
+import { walletOf } from "../identity/users";
 import { serverEnv } from "../env";
 import { AppError } from "../errors";
 import { storeFor } from "../files/store";
@@ -159,10 +160,27 @@ async function disputeView(id: bigint, adminUid: string): Promise<AdminDisputeVi
 }
 
 /** Every deal whose on-chain status is Disputed right now. */
+/**
+ * Admins never see, open or rule on disputes of deals they are part of (the contract only stops the
+ * arbiter *signer* from being a party; this covers the admin person behind it).
+ */
+function isPartyTo(adminWallet: Address | null, deal: { sharer: string; seeker: string }): boolean {
+  return Boolean(
+    adminWallet &&
+    (adminWallet === getAddress(deal.sharer) || adminWallet === getAddress(deal.seeker)),
+  );
+}
+
+const conflictOfInterest = () =>
+  new AppError("FORBIDDEN", { message: "You cannot handle a dispute on a deal you are part of." });
+
 export async function listOpenDisputes(adminUid: string): Promise<{ items: AdminDisputeView[] }> {
-  const ids = await disputedDealIds();
+  const [ids, adminWallet] = await Promise.all([disputedDealIds(), walletOf(adminUid)]);
   const deals = await readDeals(ids);
-  const open = ids.filter((_, index) => deals[index]?.status === DealStatus.Disputed);
+  const open = ids.filter((_, index) => {
+    const deal = deals[index];
+    return deal?.status === DealStatus.Disputed && !isPartyTo(adminWallet, deal);
+  });
   const items: AdminDisputeView[] = [];
   for (const id of open) {
     try {
@@ -179,7 +197,9 @@ export async function readEvidenceFile(
   idParam: string | undefined,
   fileId: string | undefined,
 ) {
-  const dealId = dealIdParam(idParam).toString();
+  const id = dealIdParam(idParam);
+  const dealId = id.toString();
+  if (isPartyTo(await walletOf(adminUid), await readDealOrThrow(id))) throw conflictOfInterest();
   const dispute = await repos.disputes.get(dealId);
   const file = dispute?.evidence
     .flatMap((item) => item.files)
@@ -209,6 +229,7 @@ export async function resolveDispute(
       message: "This deal is not in dispute on-chain.",
     });
   }
+  if (isPartyTo(await walletOf(adminUid), deal)) throw conflictOfInterest();
 
   let result;
   try {

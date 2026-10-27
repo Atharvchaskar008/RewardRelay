@@ -52,7 +52,7 @@ async function cron(secret: string | null = env.CRON_SECRET) {
   const req = new NextRequest("http://localhost:3000/api/cron/release", {
     headers: secret ? { "x-cron-secret": secret } : {},
   });
-  const res = await cronRoute(req, { params: {} });
+  const res = await cronRoute(req, { params: Promise.resolve({}) });
   return { status: res.status, body: (await res.json()) as { ok: boolean; data: CronSummary } };
 }
 
@@ -82,7 +82,7 @@ describe("cron auth and lease", () => {
       new NextRequest("http://localhost:3000/api/cron/release", {
         headers: { authorization: `Bearer ${env.CRON_SECRET}` },
       }),
-      { params: {} },
+      { params: Promise.resolve({}) },
     );
     expect(bearer.status).toBe(200);
   });

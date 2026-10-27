@@ -79,9 +79,10 @@ export interface RouteContext<B, Q> {
   ipTag: string;
 }
 
+/** Next 15 passes route params as a Promise (a plain object is also tolerated at runtime). */
 export type RouteHandler = (
   req: NextRequest,
-  context: { params: Record<string, string> },
+  context: { params: Promise<Record<string, string>> },
 ) => Promise<NextResponse>;
 
 const DEFAULT_RATE_LIMIT: RateLimitRule = { capacity: 30, refillPerMinute: 30 };
@@ -154,6 +155,7 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
     const services = routeServices();
 
     try {
+      const params: Record<string, string> = (await context?.params) ?? {};
       // 1. Authentication (Firebase ID token, revocation checked).
       if (authMode !== "none") {
         const header = req.headers.get("authorization") ?? "";
@@ -162,6 +164,8 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
           try {
             user = await services.verifyIdToken(token);
           } catch (error) {
+            // An outage (deadline) is not an expired session.
+            if (error instanceof AppError && error.code === "INTERNAL") throw error;
             throw new AppError("AUTH_REQUIRED", {
               message: "Your session has expired. Please sign in again.",
               cause: error,
@@ -201,7 +205,7 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
           });
         }
         const scope = `${options.name}|${user?.uid ?? `ip:${ipTag}`}|${key}`;
-        const requestHash = shortHash(toJson({ query, body, params: context.params }));
+        const requestHash = shortHash(toJson({ query, body, params }));
         const begun = await services.idempotency.begin(scope, requestHash);
         if (begun.state === "replay") {
           log("info", "api.request", {
@@ -225,7 +229,7 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
         user,
         body: body as Parsed<B>,
         query: query as Parsed<Q>,
-        params: context.params ?? {},
+        params,
         ipTag,
       });
       // A raw Response (file download) passes through with the standard headers added.
@@ -244,10 +248,20 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
       const result = isRouteResult(output) ? output : respond(output);
       const payload = toJson({ ok: true, data: result.data });
       if (idempotencyScope) {
-        await services.idempotency.complete(idempotencyScope, {
-          status: result.status,
-          body: payload,
-        });
+        const scope = idempotencyScope;
+        // The handler's effects already happened: never turn this into an error (which would release
+        // the key and let a retry run them twice). A failed store leaves the claim "pending", so a
+        // retry within its TTL gets CONFLICT instead of a second execution.
+        idempotencyScope = undefined;
+        try {
+          await services.idempotency.complete(scope, { status: result.status, body: payload });
+        } catch (error) {
+          log("error", "idempotency.complete_failed", {
+            route: options.name,
+            requestId,
+            ...errorFields(error),
+          });
+        }
       }
       log("info", "api.request", {
         route: options.name,

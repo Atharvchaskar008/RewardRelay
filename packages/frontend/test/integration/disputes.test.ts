@@ -70,7 +70,7 @@ async function postEvidence(
     headers: { authorization: `Bearer ${user.idToken}`, "idempotency-key": `ev-${randomUUID()}` },
     body: form,
   });
-  const res = await evidenceRoute(req, { params: params(id) });
+  const res = await evidenceRoute(req, { params: Promise.resolve(params(id)) });
   return { status: res.status, body: await res.json() };
 }
 
@@ -173,7 +173,7 @@ describe("arbitration", () => {
       new NextRequest(`http://localhost:3000${file.path}`, {
         headers: { authorization: `Bearer ${admin.idToken}` },
       }),
-      { params: { id: id.toString(), fileId: file.fileId } },
+      { params: Promise.resolve({ id: id.toString(), fileId: file.fileId }) },
     );
     expect(Buffer.from(await download.arrayBuffer()).equals(PNG)).toBe(true);
   });

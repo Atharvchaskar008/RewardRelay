@@ -5,7 +5,10 @@ import { NextRequest } from "next/server";
  * real Next.js route handlers (same wrapper, same validation), with no server process.
  */
 
-type Handler = (req: NextRequest, ctx: { params: Record<string, string> }) => Promise<Response>;
+type Handler = (
+  req: NextRequest,
+  ctx: { params: Promise<Record<string, string>> },
+) => Promise<Response>;
 type RouteModule = Partial<Record<"GET" | "POST" | "PUT", Handler>>;
 
 const ROUTES: [string, () => Promise<RouteModule>][] = [
@@ -53,7 +56,7 @@ export const routerFetch: typeof fetch = async (input, init) => {
     const handler = routeModule[(init?.method ?? "GET") as "GET" | "POST" | "PUT"];
     if (!handler) return new Response(null, { status: 405 });
     return handler(new NextRequest(url, init as ConstructorParameters<typeof NextRequest>[1]), {
-      params,
+      params: Promise.resolve(params),
     });
   }
   return new Response(

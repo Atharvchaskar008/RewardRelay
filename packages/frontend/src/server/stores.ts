@@ -16,6 +16,11 @@ import {
   type StoredResponse,
 } from "./services";
 
+/**
+ * Firestore-backed rate limiter and idempotency store. Every Firestore call here goes through the
+ * repository layer, which applies the backend deadline (src/server/deadline.ts).
+ */
+
 /** Document ids are hashes, so uids and keys never appear as Firestore paths. */
 const docId = (value: string) => createHash("sha256").update(value, "utf8").digest("hex");
 

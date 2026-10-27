@@ -47,7 +47,7 @@ function request(
 }
 
 async function call(handler: ReturnType<typeof withRoute>, req: NextRequest, params = {}) {
-  const res = await handler(req, { params });
+  const res = await handler(req, { params: Promise.resolve(params) });
   return { res, json: await res.json() };
 }
 
