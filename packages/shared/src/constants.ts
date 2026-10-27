@@ -54,3 +54,16 @@ export function chainById(id: number): ChainConfig | undefined {
 
 /** MST has no base fee: every transaction is legacy (type 0) at 1 gwei. */
 export const GAS_PRICE_WEI = 1_000_000_000n;
+
+/** Path segment of the app's same-origin JSON-RPC relay (`/api/rpc/<network>`) per chain. */
+export const RPC_RELAY_NETWORKS: Record<string, number> = {
+  testnet: MST_TESTNET.id,
+  mainnet: MST_MAINNET.id,
+  local: LOCAL_CHAIN.id,
+};
+
+/** The relay path for a chain id, e.g. `/api/rpc/testnet`, or undefined for an unknown chain. */
+export function rpcRelayPath(chainId: number): string | undefined {
+  const entry = Object.entries(RPC_RELAY_NETWORKS).find(([, id]) => id === chainId);
+  return entry ? `/api/rpc/${entry[0]}` : undefined;
+}

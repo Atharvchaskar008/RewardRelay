@@ -2,6 +2,7 @@ import "server-only";
 import { AppError } from "./errors";
 import { serverEnv } from "./env";
 import { adminAuth } from "./firebaseAdmin";
+import { withDeadline } from "./deadline";
 import { FirestoreIdempotencyStore, FirestoreRateLimiter } from "./stores";
 
 /**
@@ -128,7 +129,7 @@ export const idempotencyBusy = () =>
 function createDefaultServices(): RouteServices {
   return {
     async verifyIdToken(token) {
-      const decoded = await adminAuth().verifyIdToken(token, true);
+      const decoded = await withDeadline(adminAuth().verifyIdToken(token, true));
       return {
         uid: decoded.uid,
         phoneNumber: decoded.phone_number ?? null,

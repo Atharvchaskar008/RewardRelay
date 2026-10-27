@@ -138,7 +138,10 @@ export async function resetEmulators(): Promise<void> {
   phoneCounter = 0;
 }
 
-type Handler = (req: NextRequest, ctx: { params: Record<string, string> }) => Promise<Response>;
+type Handler = (
+  req: NextRequest,
+  ctx: { params: Promise<Record<string, string>> },
+) => Promise<Response>;
 
 /** Calls a route handler directly with a JSON body, bearer token and (optional) idempotency key. */
 export async function callRoute<T = unknown>(
@@ -169,7 +172,7 @@ export async function callRoute<T = unknown>(
     headers,
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
   });
-  const res = await handler(req, { params: init.params ?? {} });
+  const res = await handler(req, { params: Promise.resolve(init.params ?? {}) });
   return { status: res.status, body: await res.json(), headers: res.headers };
 }
 
@@ -180,12 +183,12 @@ export async function balanceOf(address: Address): Promise<bigint> {
 export type { Hex };
 
 /** A phone-verified user with a linked, gas-funded wallet holding a Trust Badge. */
-export async function onboard(value = parseEther("1")) {
+export async function onboard(value = parseEther("1"), session?: { idToken: string; uid: string }) {
   const [{ POST: challengeRoute }, { POST: linkRoute }] = await Promise.all([
     import("@/app/api/auth/challenge/route"),
     import("@/app/api/auth/link-wallet/route"),
   ]);
-  const { idToken, uid } = await signInWithPhone(fakePhone());
+  const { idToken, uid } = session ?? (await signInWithPhone(fakePhone()));
   const account = await fundedWallet(value);
   const challenge = await callRoute<{ message: string }>(challengeRoute, {
     token: idToken,

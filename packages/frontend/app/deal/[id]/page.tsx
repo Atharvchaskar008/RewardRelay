@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { Banner, Card, ErrorText, ExplorerLink, Money, Page } from "@/components/ui";
 import {
@@ -19,12 +20,13 @@ import {
 import { useSession } from "@/app/providers";
 
 /** The deal room: one primary button from nextAction, secondary actions, private-data panels. */
-export default function DealPage({ params }: { params: { id: string } }) {
-  const deal = useDeal(params.id);
-  if (deal.isLoading) return <Page title={`Deal #${params.id}`}>Loading…</Page>;
+export default function DealPage() {
+  const { id } = useParams<{ id: string }>();
+  const deal = useDeal(id);
+  if (deal.isLoading) return <Page title={`Deal #${id}`}>Loading…</Page>;
   if (!deal.data) {
     return (
-      <Page title={`Deal #${params.id}`}>
+      <Page title={`Deal #${id}`}>
         <ErrorText error={deal.error} />
       </Page>
     );

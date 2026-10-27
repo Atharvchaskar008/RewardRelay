@@ -1,5 +1,6 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import QRCode from "qrcode";
@@ -23,7 +24,8 @@ interface BadgeView {
 }
 
 /** Public Trust Badge: tier, deals, Relay Points, soulbound (locked), QR to verify. */
-export default function BadgePage({ params }: { params: { address: string } }) {
+export default function BadgePage() {
+  const params = useParams<{ address: string }>();
   const { api } = useRewardRelay();
   const badge = useQuery({
     queryKey: ["badge", params.address],
