@@ -24,6 +24,14 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "deals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "piiPurgedAt", "order": "ASCENDING" },
+        { "fieldPath": "terminalAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

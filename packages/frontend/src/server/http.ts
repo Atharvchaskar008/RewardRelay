@@ -228,6 +228,19 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
         params: context.params ?? {},
         ipTag,
       });
+      // A raw Response (file download) passes through with the standard headers added.
+      if (output instanceof Response) {
+        output.headers.set("X-Request-Id", requestId);
+        if (!output.headers.has("Cache-Control")) output.headers.set("Cache-Control", "no-store");
+        log("info", "api.request", {
+          route: options.name,
+          requestId,
+          status: output.status,
+          uidTag: user ? shortHash(user.uid) : undefined,
+          durationMs: Date.now() - started,
+        });
+        return output as unknown as NextResponse;
+      }
       const result = isRouteResult(output) ? output : respond(output);
       const payload = toJson({ ok: true, data: result.data });
       if (idempotencyScope) {
