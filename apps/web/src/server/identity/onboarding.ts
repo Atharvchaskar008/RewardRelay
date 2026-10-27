@@ -170,6 +170,24 @@ async function ensureTopup(uid: string, wallet: Address): Promise<void> {
         : { status: "failed", amountWei: amount.toString(), at: Date.now() },
     });
     log("error", "onboarding.topup_failed", { broadcast: Boolean(hash), ...errorFields(error) });
-    // The account works without the top-up; the next link attempt retries a failed one.
+    // The account works without the top-up; the keeper (retryFailedTopups) or the next link retries.
   }
+}
+
+/**
+ * Keeper step: retries welcome top-ups that failed before broadcast (e.g. the funder was empty when
+ * the user signed up). Stops at the first one that fails again, so an empty funder costs one attempt
+ * per run. Returns how many were sent.
+ */
+export async function retryFailedTopups(limit: number): Promise<number> {
+  const failed = await repos.users.query().where("topup.status", "==", "failed").limit(limit).get();
+  let sent = 0;
+  for (const doc of failed.docs) {
+    const wallet = doc.data().wallet;
+    if (!wallet) continue;
+    await ensureTopup(doc.id, getAddress(wallet));
+    if ((await repos.users.get(doc.id))?.topup?.status !== "sent") break;
+    sent++;
+  }
+  return sent;
 }

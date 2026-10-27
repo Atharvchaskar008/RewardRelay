@@ -7,6 +7,7 @@ import { chainNow } from "../deals/read";
 import { purgeExpiredPrivateData } from "../deals/retention";
 import { serverEnv } from "../env";
 import { AppError } from "../errors";
+import { retryFailedTopups } from "../identity/onboarding";
 import { errorFields, log } from "../log";
 import { repos } from "../repositories";
 import { txManager, type TxResult } from "../signer";
@@ -18,7 +19,8 @@ import { acquireLease, releaseLease } from "./lease";
  *    on-chain changes nobody has viewed yet, e.g. a markDelivered);
  * 2. release() every deal the index lists as Delivered with releaseAt ≤ chain time;
  * 3. defaultResolve() every dispute past its arbiter timeout;
- * 4. purge private data 7 days after a deal ends.
+ * 4. purge private data 7 days after a deal ends;
+ * 5. retry welcome top-ups that failed before broadcast (e.g. the funder was empty at sign-up).
  * Every action re-reads the deal on-chain first. A Firestore lease keeps runs from overlapping, and a
  * second release of the same deal fails in simulation (InvalidStatus) without spending gas.
  */
@@ -28,6 +30,7 @@ const LEASE_TTL_MS = 90_000;
 const TIME_BUDGET_MS = 45_000;
 const MAX_ACTIONS_PER_RUN = 10;
 const REFRESH_BATCH = 50;
+const TOPUP_RETRIES_PER_RUN = 5;
 const OPEN_STATUSES = [
   DealStatus.Listed,
   DealStatus.Locked,
@@ -42,6 +45,8 @@ export interface CronSummary {
   released: string[];
   defaultResolved: string[];
   purged: string[];
+  /** Welcome top-ups sent on retry (a count: user ids stay out of the response and the logs). */
+  topupsRetried: number;
   failed: { dealId: string; action: string; reason: string }[];
   durationMs: number;
 }
@@ -90,6 +95,7 @@ export async function runReleaseCron(): Promise<CronSummary> {
     released: [],
     defaultResolved: [],
     purged: [],
+    topupsRetried: 0,
     failed: [],
     durationMs: 0,
   };
@@ -162,6 +168,12 @@ export async function runReleaseCron(): Promise<CronSummary> {
     }
 
     if (!outOfTime()) summary.purged = await purgeExpiredPrivateData();
+    if (!outOfTime()) {
+      summary.topupsRetried = await retryFailedTopups(TOPUP_RETRIES_PER_RUN).catch((error) => {
+        log("warn", "cron.topup_retry_failed", errorFields(error));
+        return 0;
+      });
+    }
   } finally {
     await releaseLease(CRON_LEASE, runId).catch(() => undefined);
   }
