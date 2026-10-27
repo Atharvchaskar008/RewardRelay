@@ -123,10 +123,27 @@ export function toChainError(error: unknown, hash?: string): ChainError {
   return new ChainError("The transaction failed. Please try again.", undefined, hash, error);
 }
 
+/** Firebase Auth (phone sign-in) error codes the user can act on. */
+const AUTH_MESSAGES: Record<string, string> = {
+  "auth/invalid-phone-number":
+    "Enter the mobile number with its country code, e.g. +91 98765 43210.",
+  "auth/missing-phone-number": "Enter your mobile number.",
+  "auth/invalid-verification-code": "That code is not right. Check it and try again.",
+  "auth/missing-verification-code": "Enter the 6-digit code.",
+  "auth/code-expired": "That code has expired. Request a new one.",
+  "auth/too-many-requests": "Too many attempts. Wait a few minutes and try again.",
+  "auth/quota-exceeded": "We cannot send more codes right now. Try again later.",
+  "auth/operation-not-allowed": "Sign-in by SMS is not enabled for this number's region yet.",
+  "auth/captcha-check-failed": "The security check failed. Refresh the page and try again.",
+  "auth/network-request-failed": "No internet connection. Check it and try again.",
+};
+
 /** One sentence for the UI. */
 export function userMessage(error: unknown): string {
   if (error instanceof ApiError || error instanceof ChainError) return error.message;
   if (error instanceof Error && error.name === "WalletLockedError") return error.message;
   if (error instanceof Error && error.name === "WrongPinError") return error.message;
+  const code = (error as { code?: unknown } | null)?.code;
+  if (typeof code === "string" && AUTH_MESSAGES[code]) return AUTH_MESSAGES[code];
   return "Something went wrong. Please try again.";
 }
