@@ -1,6 +1,8 @@
 import "server-only";
 import { AppError } from "./errors";
 import { serverEnv } from "./env";
+import { adminAuth } from "./firebaseAdmin";
+import { FirestoreIdempotencyStore, FirestoreRateLimiter } from "./stores";
 
 /**
  * The pluggable dependencies of the route wrapper. Production uses Firebase Auth and Firestore;
@@ -123,15 +125,19 @@ export const idempotencyMismatch = () =>
 export const idempotencyBusy = () =>
   new AppError("CONFLICT", { message: "The same request is still being processed." });
 
-/** Placeholder until the Firebase-backed services are wired in: tokens are rejected. */
 function createDefaultServices(): RouteServices {
   return {
-    async verifyIdToken() {
-      throw new AppError("AUTH_REQUIRED", { message: "No identity provider is configured." });
+    async verifyIdToken(token) {
+      const decoded = await adminAuth().verifyIdToken(token, true);
+      return {
+        uid: decoded.uid,
+        phoneNumber: decoded.phone_number ?? null,
+        claims: decoded as unknown as Record<string, unknown>,
+      };
     },
     isAdmin: (uid) => serverEnv().ADMIN_UIDS.includes(uid),
-    rateLimiter: new MemoryRateLimiter(),
-    idempotency: new MemoryIdempotencyStore(),
+    rateLimiter: new FirestoreRateLimiter(),
+    idempotency: new FirestoreIdempotencyStore(),
   };
 }
 
