@@ -53,8 +53,9 @@ for Firebase, testnet and Vercel setup.
 1. Branch from `main`: `feat/<topic>`, `fix/<topic>`, `docs/<topic>`, `chore/<topic>`.
 2. Commit with [Conventional Commits](https://www.conventionalcommits.org/) (`feat(sdk): …`,
    `fix(api): …`, `docs: …`), one logical change per commit.
-3. Open a pull request; CI must be green (lint, tests, build, integration tests).
-4. Squash or rebase onto `main`; never force-push `main`.
+3. Add a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) for any user-visible change.
+4. Open a pull request; CI must be green (lint, tests, build, integration tests).
+5. Merge with a merge commit once CI passes; never force-push `main`.
 
 ## Expectations for changes
 
@@ -69,3 +70,7 @@ for Firebase, testnet and Vercel setup.
 ## Reporting security issues
 
 Please do not open public issues for vulnerabilities; follow [SECURITY.md](SECURITY.md).
+
+## Code of Conduct
+
+Everyone taking part in this project is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
