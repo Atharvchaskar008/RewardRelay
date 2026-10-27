@@ -29,7 +29,6 @@ import {
   type DealActionInput,
   type SdkContext,
 } from "./flows";
-import type { DealView } from "./types";
 
 /**
  * React bindings of the SDK. Wrap the app in <RewardRelayProvider> (with a Firebase ID-token getter)
@@ -181,7 +180,7 @@ export function useDealAction(id: string) {
   return useMutation({
     mutationFn: ({ action, input }: { action: DealAction; input?: DealActionInput }) =>
       runDealAction(sdk(), { id }, action, input),
-    onSuccess: (result: { deal: DealView }) => {
+    onSuccess: (result) => {
       queryClient.setQueryData(["deal", id], result.deal);
       void queryClient.invalidateQueries({ queryKey: ["me"] });
       void queryClient.invalidateQueries({ queryKey: ["listings"] });

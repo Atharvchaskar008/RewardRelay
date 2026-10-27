@@ -11,6 +11,7 @@ import type {
   FaultParty,
   HealthReport,
   ListingView,
+  MyDealItem,
   ProofReceipt,
   ProofView,
   RevealedCode,
@@ -137,6 +138,9 @@ export function createApiClient(options: ApiClientOptions) {
         throw error;
       }
     },
+
+    /** The caller's deals as sharer or seeker. */
+    myDeals: () => request<{ items: MyDealItem[] }>("GET", "/api/me/deals"),
 
     wallet: {
       putBackup: (backup: EncryptedKey) =>

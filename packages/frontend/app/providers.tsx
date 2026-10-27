@@ -1,15 +1,45 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
-import { wagmiConfig } from "@/lib/wagmi";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { onIdTokenChanged, type User } from "firebase/auth";
+import { RewardRelayProvider } from "@/src/client/sdk";
+import { appConfig } from "@/src/client/config";
+import { firebaseAuth } from "@/src/client/firebase";
 
-const queryClient = new QueryClient();
+/** Firebase session state for the UI (the SDK gets ID tokens through `getIdToken`). */
+interface Session {
+  ready: boolean;
+  user: User | null;
+}
 
-export function Providers({ children }: { children: React.ReactNode }) {
+const SessionContext = createContext<Session>({ ready: false, user: null });
+
+export function useSession(): Session {
+  return useContext(SessionContext);
+}
+
+export function Providers({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session>({ ready: false, user: null });
+
+  useEffect(() => {
+    const auth = firebaseAuth();
+    if (!auth) {
+      setSession({ ready: true, user: null });
+      return;
+    }
+    return onIdTokenChanged(auth, (user) => setSession({ ready: true, user }));
+  }, []);
+
+  const getIdToken = useCallback(async () => {
+    const user = firebaseAuth()?.currentUser;
+    return user ? user.getIdToken() : null;
+  }, []);
+
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </WagmiProvider>
+    <SessionContext.Provider value={session}>
+      <RewardRelayProvider config={appConfig} getIdToken={getIdToken}>
+        {children}
+      </RewardRelayProvider>
+    </SessionContext.Provider>
   );
 }

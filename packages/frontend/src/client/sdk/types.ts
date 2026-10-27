@@ -10,6 +10,7 @@ export type { RulingSuggestion, FaultParty } from "@/src/server/disputes/ruleboo
 export type { HealthReport } from "@/src/server/health";
 export type { CronSummary } from "@/src/server/cron/release";
 export type { DeliveryDetails } from "@/src/server/deals/details";
+export type { MyDealItem } from "@/src/server/deals/mine";
 export type { EncryptedKey } from "@/src/client/wallet";
 
 export type EvidenceClaim =

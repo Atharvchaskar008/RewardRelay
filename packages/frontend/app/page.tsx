@@ -1,33 +1,27 @@
-"use client";
+import Link from "next/link";
 
-import WalletPanel from "@/components/WalletPanel";
-import CertificateStats from "@/components/CertificateStats";
-import IssuePanel from "@/components/IssuePanel";
-import BatchIssuePanel from "@/components/BatchIssuePanel";
-import AutoIssuePanel from "@/components/AutoIssuePanel";
-import AutoBatchIssuePanel from "@/components/AutoBatchIssuePanel";
-import LookupPanel from "@/components/LookupPanel";
-import IssuerAdminPanel from "@/components/IssuerAdminPanel";
-
-export default function Page() {
+/** Landing: the idea in three lines and the two ways in. */
+export default function Home() {
   return (
     <main>
-      <div className="page-header">
-        <h1>On-Chain Certificate</h1>
-        <p className="hint">
-          Issue tamper-proof credentials as soulbound NFTs — every certificate&apos;s fingerprint is
-          locked on-chain, and anyone can verify it in under 2 seconds by token ID or QR code.
-        </p>
-      </div>
-
-      <WalletPanel />
-      <CertificateStats />
-      <IssuePanel />
-      <BatchIssuePanel />
-      <AutoIssuePanel />
-      <AutoBatchIssuePanel />
-      <LookupPanel />
-      <IssuerAdminPanel />
+      <h1>RewardRelay</h1>
+      <p>
+        Got a card offer, wallet credit or promo code you will not use in time? Someone else wants
+        that discount. RewardRelay lets a <strong>Sharer</strong> buy it for a{" "}
+        <strong>Seeker</strong>
+        (or pass on a shareable code), with the payment held in an escrow smart contract on MST
+        Blockchain until delivery.
+      </p>
+      <ol>
+        <li>The Seeker pays in MSTC; the escrow holds it.</li>
+        <li>The Sharer orders in their own account and submits proof, or the code is revealed.</li>
+        <li>The payment is released after the check window. Cheaters lose their deposit.</li>
+      </ol>
+      <p className="row">
+        <Link href="/explore">Browse offers</Link>
+        <Link href="/login">Sign in with your phone</Link>
+        <Link href="/terms">Terms and blocked categories</Link>
+      </p>
     </main>
   );
 }
