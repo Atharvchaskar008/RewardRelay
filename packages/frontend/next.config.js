@@ -6,7 +6,7 @@ const nextConfig = {
     // Node-only server SDK: load it from node_modules at runtime instead of bundling it.
     serverComponentsExternalPackages: ["firebase-admin"],
   },
-  eslint: { dirs: ["app", "components", "lib", "src", "test"] },
+  eslint: { dirs: ["app", "components", "src", "test"] },
 };
 
 module.exports = nextConfig;

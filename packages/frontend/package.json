@@ -12,7 +12,6 @@
     "test:emulators": "npx -y firebase-tools@15.34.1 emulators:exec --project demo-rewardrelay --only auth,firestore \"cross-env VITEST_SUITE=emulator vitest run\""
   },
   "dependencies": {
-    "@mstblockchain/mst-sdk": "^1.0.0",
     "@tanstack/react-query": "^5.59.0",
     "@vercel/blob": "^2.8.2",
     "firebase": "^13.1.0",
@@ -24,7 +23,6 @@
     "rewardrelay-shared": "*",
     "server-only": "^0.0.1",
     "viem": "^2.21.19",
-    "wagmi": "2.12.17",
     "zod": "^4.6.7"
   },
   "devDependencies": {
