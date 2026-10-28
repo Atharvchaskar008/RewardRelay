@@ -105,6 +105,16 @@ describe("TtlCache", () => {
     });
     expect(reloaded).toBe(true);
   });
+
+  it("peek and set allow reading and seeding values directly", () => {
+    let now = 1_000;
+    const cache = new TtlCache<string>({ ttlMs: 100, max: 10, now: () => now });
+    expect(cache.peek("k")).toBeUndefined();
+    cache.set("k", "value");
+    expect(cache.peek("k")).toBe("value");
+    now += 101;
+    expect(cache.peek("k")).toBeUndefined();
+  });
 });
 
 describe("MemoryRateLimiter", () => {

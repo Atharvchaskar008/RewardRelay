@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "crypto";
 import { DealStatus, STATUS_NAMES, relayEscrowAbi } from "@rewardrelay/shared";
-import { mapLimit, readDeal, readDeals } from "../chain";
+import { invalidateDealCache, mapLimit, readDeal, readDeals } from "../chain";
 import { syncDealIndex } from "../deals/dealIndex";
 import { chainNow } from "../deals/read";
 import { purgeExpiredPrivateData } from "../deals/retention";
@@ -141,8 +141,10 @@ export async function runReleaseCron(): Promise<CronSummary> {
       actions++;
       try {
         const result = await act("release", id);
-        if (result !== "already-settled" && result.status === "success")
+        if (result !== "already-settled" && result.status === "success") {
+          invalidateDealCache(id);
           summary.released.push(doc.id);
+        }
       } catch (error) {
         summary.failed.push({
           dealId: doc.id,
@@ -150,7 +152,7 @@ export async function runReleaseCron(): Promise<CronSummary> {
           reason: errorFields(error).errorMessage as string,
         });
       }
-      await syncDealIndex(doc.id, await readDeal(id));
+      await syncDealIndex(doc.id, await readDeal(id, { fresh: true }));
     }
 
     const disputes = await runQuery(
@@ -172,8 +174,10 @@ export async function runReleaseCron(): Promise<CronSummary> {
       actions++;
       try {
         const result = await act("defaultResolve", id);
-        if (result !== "already-settled" && result.status === "success")
+        if (result !== "already-settled" && result.status === "success") {
+          invalidateDealCache(id);
           summary.defaultResolved.push(doc.id);
+        }
       } catch (error) {
         summary.failed.push({
           dealId: doc.id,
@@ -181,7 +185,7 @@ export async function runReleaseCron(): Promise<CronSummary> {
           reason: errorFields(error).errorMessage as string,
         });
       }
-      await syncDealIndex(doc.id, await readDeal(id));
+      await syncDealIndex(doc.id, await readDeal(id, { fresh: true }));
     }
 
     if (!outOfTime()) summary.purged = await purgeExpiredPrivateData();
@@ -218,7 +222,8 @@ export async function releaseOnVisit(dealId: string): Promise<void> {
   await afterResponse("deals.release_on_visit", async () => {
     try {
       await act("release", BigInt(dealId));
-      await syncDealIndex(dealId, await readDeal(BigInt(dealId)));
+      invalidateDealCache(dealId);
+      await syncDealIndex(dealId, await readDeal(BigInt(dealId), { fresh: true }));
     } finally {
       inFlight.delete(dealId);
     }

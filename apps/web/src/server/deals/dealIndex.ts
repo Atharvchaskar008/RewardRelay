@@ -1,7 +1,7 @@
 import "server-only";
 import { zeroHash } from "viem";
 import { DealStatus, STATUS_NAMES, TERMINAL_STATUSES } from "@rewardrelay/shared";
-import type { OnChainDeal } from "../chain";
+import { invalidateDealCache, type OnChainDeal } from "../chain";
 import { errorFields, log } from "../log";
 import { repos, type DealDoc } from "../repositories";
 
@@ -23,7 +23,10 @@ export async function syncDealIndex(
     const now = Date.now();
 
     const patch: Partial<DealDoc> = {};
-    if (current.status !== status) patch.status = status;
+    if (current.status !== status) {
+      patch.status = status;
+      invalidateDealCache(dealId);
+    }
     if (current.releaseAt !== releaseAt) patch.releaseAt = releaseAt;
     if (TERMINAL_STATUSES.includes(deal.status as DealStatus) && current.terminalAt === null) {
       patch.terminalAt = now;

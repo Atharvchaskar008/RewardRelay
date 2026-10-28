@@ -5,6 +5,7 @@ import { DealStatus, relayEscrowAbi } from "@rewardrelay/shared";
 import {
   escrowDeployBlock,
   explorerTxUrl,
+  invalidateDealCache,
   invalidateTrust,
   publicClient,
   readDeal,
@@ -251,6 +252,7 @@ export async function resolveDispute(
     throw new AppError("TX_FAILED", { details: { hash: result.hash } });
   invalidateTrust(getAddress(deal.sharer));
   invalidateTrust(getAddress(deal.seeker));
+  invalidateDealCache(id);
 
   // The ruling is final on-chain from here: a failed bookkeeping write must not turn it into an
   // error (a retry would only meet "already settled"). The audit record is retried and, if it still

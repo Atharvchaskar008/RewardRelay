@@ -158,10 +158,7 @@ async function acceptBlockFor(
 ): Promise<AcceptBlock | null> {
   if (!viewer) return "SIGN_IN";
   if (!viewer.wallet) return "NO_WALLET";
-  const [trust, paused] = await Promise.all([
-    readTrust(viewer.wallet, { fresh: true }),
-    escrowPaused(),
-  ]);
+  const [trust, paused] = await Promise.all([readTrust(viewer.wallet), escrowPaused()]);
   if (paused) return "PAUSED";
   if (!trust.hasBadge) return "NO_BADGE";
   if (deal.price > trust.maxDealValue) return "OVER_LIMIT";

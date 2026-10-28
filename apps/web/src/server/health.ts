@@ -1,6 +1,7 @@
 import "server-only";
 import { formatEther } from "viem";
-import { publicClient } from "./chain";
+import { TtlCache } from "./cache";
+import { latestBlock } from "./chain";
 import { serverEnv } from "./env";
 import { errorFields } from "./log";
 import { db } from "./firebaseAdmin";
@@ -38,9 +39,14 @@ export interface HealthReport {
   time: string;
 }
 
-export async function healthReport(): Promise<HealthReport> {
+const healthCache = new TtlCache<HealthReport>({ ttlMs: 4_000, max: 1 });
+
+export function healthReport(): Promise<HealthReport> {
+  return healthCache.get("health", fetchHealthReport);
+}
+
+async function fetchHealthReport(): Promise<HealthReport> {
   const env = serverEnv();
-  const client = publicClient();
 
   // Roles that share a key are reported once (the releaser falls back to the funder).
   const managers = new Map<string, { role: SignerRole; manager: ReturnType<typeof txManager> }>();
@@ -51,12 +57,12 @@ export async function healthReport(): Promise<HealthReport> {
 
   // The checks are independent, so they run side by side.
   const [chain, firestore, balances] = await Promise.all([
-    withTimeout(client.getBlock({ blockTag: "latest" }), "RPC")
+    withTimeout(latestBlock(), "RPC")
       .then((block) => ({
         ok: true,
         chainId: env.MST_CHAIN_ID,
         latestBlock: block.number.toString(),
-        blockTime: new Date(Number(block.timestamp) * 1000).toISOString(),
+        blockTime: new Date(block.timestamp * 1000).toISOString(),
       }))
       .catch((error) => ({
         ok: false,

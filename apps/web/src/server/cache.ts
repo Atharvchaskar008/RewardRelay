@@ -26,6 +26,18 @@ export class TtlCache<V> {
     return this.start(key, load);
   }
 
+  /** Returns the cached value if present and unexpired; undefined otherwise. Does not start a load. */
+  peek(key: string): V | undefined {
+    const hit = this.entries.get(key);
+    if (hit && hit.expiresAt > this.now()) return hit.value;
+    return undefined;
+  }
+
+  /** Explicitly writes a value into the cache with the configured TTL. */
+  set(key: string, value: V): void {
+    this.store(key, value);
+  }
+
   /** Drops one key (after a write that changes it) or everything. */
   invalidate(key?: string): void {
     this.generation++;
