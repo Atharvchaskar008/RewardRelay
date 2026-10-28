@@ -1,30 +1,33 @@
 import type { Metadata, Viewport } from "next";
-import { BottomNav } from "@/components/BottomNav";
+import { AppNav } from "@/components/AppNav";
+import { fontVariables } from "@/styles/fonts";
 import { Providers } from "../providers";
-import "../globals.css";
+import "@/styles/tokens.css";
+import "@/styles/ds.css";
+import "@/styles/app.css";
 
 export const metadata: Metadata = {
-  title: "SAKAR",
-  description: "A trusted buy-it-for-me marketplace for unused rewards, on MST Blockchain.",
+  title: { default: "SAKAR", template: "%s · SAKAR" },
+  description: "Card offers for everyone, settled by smart contracts on MST Blockchain.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
   appleWebApp: { capable: true, title: "SAKAR", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0e151b",
+  themeColor: "#f5f5f4",
   width: "device-width",
   initialScale: 1,
 };
 
-/** The test dashboard: every app page, with the session, the SDK and the bottom navigation. */
+/** The SAKAR app: session, SDK, top bar (desktop) and bottom bar (mobile). */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={fontVariables}>
       <body>
         <Providers>
-          <div className="app">{children}</div>
-          <BottomNav />
+          <AppNav />
+          {children}
         </Providers>
       </body>
     </html>

@@ -1,14 +1,16 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, ErrorText, Page, RequireSignIn } from "@/components/ui";
+import { ErrorText, LoadingCard, Page, RequireSignIn, isActiveStatus } from "@/components/ui";
+import { Button, Card, EmptyState } from "@/components/ds";
+import { DealRow } from "@/components/cards";
 import { useRewardRelay } from "@/client/sdk";
 
 /** My deals as Sharer or Seeker, newest first. */
 export default function DealsPage() {
   return (
-    <Page title="My deals">
+    <Page eyebrow="Deals" title="My deals">
       <RequireSignIn>
         <DealList />
       </RequireSignIn>
@@ -18,36 +20,40 @@ export default function DealsPage() {
 
 function DealList() {
   const { api } = useRewardRelay();
+  const [tab, setTab] = useState<"active" | "done">("active");
   const deals = useQuery({
     queryKey: ["my-deals"],
     queryFn: () => api.myDeals(),
     refetchInterval: 10_000,
   });
-  if (deals.isLoading) return <p className="muted">Loading…</p>;
-  const items = deals.data?.items ?? [];
+  if (deals.isLoading) return <LoadingCard lines={4} />;
+  const all = deals.data?.items ?? [];
+  const items = all.filter((item) => (tab === "active") === isActiveStatus(item.status));
+  const activeCount = all.filter((item) => isActiveStatus(item.status)).length;
+
   return (
-    <>
+    <div className="stack" style={{ gap: 20 }}>
+      <div className="segmented" role="group" aria-label="Filter">
+        <button type="button" aria-pressed={tab === "active"} onClick={() => setTab("active")}>
+          Active · {activeCount}
+        </button>
+        <button type="button" aria-pressed={tab === "done"} onClick={() => setTab("done")}>
+          Done · {all.length - activeCount}
+        </button>
+      </div>
       <ErrorText error={deals.error} />
-      {items.length === 0 && (
-        <p className="muted">
-          No deals yet. <Link href="/explore">Explore offers</Link> or{" "}
-          <Link href="/listings/new">share one</Link>.
-        </p>
+      {items.length === 0 ? (
+        <EmptyState
+          title={tab === "active" ? "No active deals." : "No finished deals yet."}
+          action={<Button href="/explore">Explore offers</Button>}
+        />
+      ) : (
+        <Card className="list">
+          {items.map((item) => (
+            <DealRow key={item.dealId} item={item} />
+          ))}
+        </Card>
       )}
-      <ul className="plain">
-        {items.map((item) => (
-          <li key={item.dealId}>
-            <Card>
-              <Link href={`/deal/${item.dealId}`}>
-                <strong>{item.title}</strong>
-              </Link>
-              <p className="muted">
-                #{item.dealId} · you are the {item.role} · {item.statusLabel}
-              </p>
-            </Card>
-          </li>
-        ))}
-      </ul>
-    </>
+    </div>
   );
 }

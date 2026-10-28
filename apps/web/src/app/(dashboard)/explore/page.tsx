@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { CATEGORIES, CATEGORY_LABELS } from "@rewardrelay/shared";
-import { Card, ErrorText, Money, Page } from "@/components/ui";
+import { ErrorText, Page } from "@/components/ui";
+import { Button, EmptyState } from "@/components/ds";
+import { OfferCard, OfferCardSkeleton } from "@/components/cards";
 import { useListings } from "@/client/sdk";
 
 /** The offer board: open listings, filter by category, ₹ price and the Sharer's trust level. */
@@ -13,55 +14,69 @@ export default function ExplorePage() {
   const items = listings.data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
-    <Page title="Explore offers">
-      <label htmlFor="category">Category</label>
-      <select id="category" value={category} onChange={(e) => setCategory(e.target.value)}>
-        <option value="">All categories</option>
-        {CATEGORIES.map((entry) => (
-          <option key={entry.key} value={entry.key}>
-            {CATEGORY_LABELS[entry.key]}
-          </option>
-        ))}
-      </select>
+    <Page
+      eyebrow="Offers"
+      title="Explore"
+      action={
+        <Button href="/listings/new" variant="outline">
+          Share an offer
+        </Button>
+      }
+    >
+      <div className="stack" style={{ gap: 24 }}>
+        <div className="chips" role="group" aria-label="Category">
+          <button
+            type="button"
+            className="chip"
+            aria-pressed={category === ""}
+            onClick={() => setCategory("")}
+          >
+            All
+          </button>
+          {CATEGORIES.map((entry) => (
+            <button
+              key={entry.key}
+              type="button"
+              className="chip"
+              aria-pressed={category === entry.key}
+              onClick={() => setCategory(entry.key)}
+            >
+              {CATEGORY_LABELS[entry.key]}
+            </button>
+          ))}
+        </div>
 
-      {listings.isLoading && <p className="muted">Loading…</p>}
-      <ErrorText error={listings.error} />
-      {!listings.isLoading && items.length === 0 && (
-        <p className="muted">No open offers right now.</p>
-      )}
-
-      <ul className="plain">
-        {items.map((item) => (
-          <li key={item.dealId}>
-            <Card>
-              <Link href={`/deal/${item.dealId}`}>
-                <strong>{item.title}</strong>
-              </Link>
-              <p className="muted">
-                {item.categoryLabel} ·{" "}
-                {item.dealType === "BuyForYou" ? "Buy-for-you" : "Pass-on code"}
-              </p>
-              <p>
-                Pay <Money value={item.price} />
-                {item.faceValueInr > 0 && (
-                  <span className="muted">
-                    {" "}
-                    · worth ₹{item.faceValueInr.toLocaleString("en-IN")}
-                  </span>
-                )}
-              </p>
-              <p className="muted">
-                Sharer: {item.sharerTrust.tierName} · {item.sharerTrust.completed} deals completed
-              </p>
-            </Card>
-          </li>
-        ))}
-      </ul>
-      {listings.hasNextPage && (
-        <button disabled={listings.isFetchingNextPage} onClick={() => listings.fetchNextPage()}>
-          Load more
-        </button>
-      )}
+        <ErrorText error={listings.error} />
+        {listings.isLoading ? (
+          <div className="grid" style={{ "--cols": 3 } as React.CSSProperties}>
+            {[0, 1, 2].map((i) => (
+              <OfferCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <EmptyState
+            title="No open offers yet."
+            action={<Button href="/listings/new">Share an offer</Button>}
+          />
+        ) : (
+          <div className="grid" style={{ "--cols": 3 } as React.CSSProperties}>
+            {items.map((item) => (
+              <OfferCard key={item.dealId} item={item} />
+            ))}
+          </div>
+        )}
+        {listings.hasNextPage && (
+          <div>
+            <Button
+              variant="outline"
+              loading={listings.isFetchingNextPage}
+              onClick={() => listings.fetchNextPage()}
+            >
+              Load more
+            </Button>
+          </div>
+        )}
+      </div>
     </Page>
   );
 }

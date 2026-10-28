@@ -1,9 +1,18 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { ConfirmationResult } from "firebase/auth";
-import { Card, ErrorText, Money, Page } from "@/components/ui";
+import { ErrorText, Page } from "@/components/ui";
+import {
+  Avatar,
+  Button,
+  Card,
+  Field,
+  IconChevronRight,
+  Stat,
+  inr,
+  shortAddress,
+} from "@/components/ds";
 import {
   useBrowserWallets,
   useMe,
@@ -20,9 +29,34 @@ import { useSession } from "@/app/providers";
  * Phone OTP (Firebase) → a wallet linked to the phone: the PIN-protected device wallet, or a browser
  * wallet (BridgeKey, MetaMask) → Trust Badge and test MSTC.
  */
+
+function AuthCard({
+  step,
+  title,
+  children,
+}: {
+  step?: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <Page narrow>
+      <div className="auth">
+        <Card className="auth-card">
+          <div className="stack" style={{ gap: 8 }}>
+            {step && <span className="label">{step}</span>}
+            <h1 className="title-2">{title}</h1>
+          </div>
+          {children}
+        </Card>
+      </div>
+    </Page>
+  );
+}
+
 export default function LoginPage() {
   const { ready, user } = useSession();
-  const [phone, setPhone] = useState("+91");
+  const [phone, setPhone] = useState("");
   const [sentTo, setSentTo] = useState("");
   const [code, setCode] = useState("");
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
@@ -43,70 +77,100 @@ export default function LoginPage() {
 
   if (!firebaseConfigured) {
     return (
-      <Page title="Sign in">
-        <p className="error">Phone sign-in is not configured yet (no Firebase web app settings).</p>
-      </Page>
+      <AuthCard title="Sign in">
+        <p className="alert alert-danger">Phone sign-in is not configured on this site yet.</p>
+      </AuthCard>
     );
   }
-  if (!ready) return <Page title="Sign in">Loading…</Page>;
+  if (!ready) {
+    return (
+      <AuthCard title="Sign in">
+        <p className="muted">Loading…</p>
+      </AuthCard>
+    );
+  }
 
   if (!user) {
     return (
-      <Page title="Sign in">
+      <>
         {!confirmation ? (
-          <Card>
-            <label htmlFor="phone">Mobile number</label>
-            <input
-              id="phone"
-              inputMode="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-            <button
-              className="primary"
-              disabled={busy}
-              onClick={() =>
-                run(async () => {
-                  const number = toE164(phone);
+          <AuthCard step="Step 1 of 3" title="Sign in">
+            <form
+              className="stack"
+              style={{ gap: 16 }}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void run(async () => {
+                  const number = toE164(phone.startsWith("+") ? phone : `+91${phone}`);
                   setConfirmation(await sendOtp(number, "recaptcha"));
                   setSentTo(number);
-                })
-              }
-            >
-              Send code
-            </button>
-          </Card>
-        ) : (
-          <Card>
-            <label htmlFor="code">6-digit code sent to {sentTo}</label>
-            <input
-              id="code"
-              inputMode="numeric"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-            <button
-              className="primary"
-              disabled={busy}
-              onClick={() => run(() => confirmation.confirm(code.replace(/\D/g, "")))}
-            >
-              Verify
-            </button>
-            <button
-              disabled={busy}
-              onClick={() => {
-                setConfirmation(null);
-                setCode("");
-                setError(null);
+                });
               }}
             >
-              Change number
-            </button>
-          </Card>
+              <Field label="Mobile number" htmlFor="phone">
+                <div className="prefix-input">
+                  <span>+91</span>
+                  <input
+                    id="phone"
+                    className="input input-mono"
+                    inputMode="tel"
+                    autoComplete="tel-national"
+                    placeholder="98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+              </Field>
+              <Button type="submit" block size="lg" loading={busy}>
+                Send code
+              </Button>
+            </form>
+            <ErrorText error={error} />
+          </AuthCard>
+        ) : (
+          <AuthCard step="Step 2 of 3" title="Enter the code">
+            <form
+              className="stack"
+              style={{ gap: 16 }}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void run(() => confirmation.confirm(code.replace(/\D/g, "")));
+              }}
+            >
+              <Field label={`Sent to ${sentTo}`} htmlFor="code">
+                <input
+                  id="code"
+                  className="input otp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="••••••"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                />
+              </Field>
+              <Button type="submit" block size="lg" loading={busy}>
+                Verify
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                block
+                disabled={busy}
+                onClick={() => {
+                  setConfirmation(null);
+                  setCode("");
+                  setError(null);
+                }}
+              >
+                Change number
+              </Button>
+            </form>
+            <ErrorText error={error} />
+          </AuthCard>
         )}
         <div id="recaptcha" />
-        <ErrorText error={error} />
-      </Page>
+      </>
     );
   }
   return <PinStep />;
@@ -138,141 +202,156 @@ function PinStep() {
     }
   }
 
-  if (!wallet.ready || me.isLoading) return <Page title="Your wallet">Loading…</Page>;
+  if (!wallet.ready || me.isLoading) {
+    return (
+      <AuthCard title="Your wallet">
+        <p className="muted">Loading…</p>
+      </AuthCard>
+    );
+  }
 
   if (me.data && wallet.unlocked) {
     return (
-      <Page title="You are in">
-        <Card>
-          <p>
-            Wallet <code>{me.data.address}</code>
-            {wallet.kind === "injected" && <> · signing with {wallet.browserWalletName}</>}
-          </p>
-          <p>
-            Trust Badge: <strong>{me.data.badge.tierName}</strong> · deal limit{" "}
-            <Money value={me.data.badge.maxDealValue} />
-          </p>
-          <p>
-            Balance{" "}
-            <Money
-              value={{
-                wei: me.data.balanceWei,
-                mstc: me.data.balanceMstc,
-                inr: me.data.balanceInr,
-              }}
-            />
-          </p>
-        </Card>
-        <Link href="/explore">Browse offers</Link>
-        {wallet.kind === "injected" && (
-          <button onClick={() => wallet.disconnectBrowserWallet()}>Disconnect wallet</button>
-        )}
-      </Page>
+      <AuthCard title="You're in">
+        <div className="hello">
+          <Avatar address={me.data.address} size={48} />
+          <div className="stack" style={{ gap: 2 }}>
+            <span className="num">{shortAddress(me.data.address)}</span>
+            <span className="faint" style={{ fontSize: 13 }}>
+              {wallet.kind === "injected"
+                ? `Signing with ${wallet.browserWalletName}`
+                : "PIN wallet on this device"}
+            </span>
+          </div>
+        </div>
+        <div className="grid" style={{ "--cols": 2 } as React.CSSProperties}>
+          <Stat label="Trust Badge" value={me.data.badge.tierName} />
+          <Stat
+            label="Balance"
+            value={inr(me.data.balanceInr)}
+            sub={`${me.data.balanceMstc} MSTC`}
+          />
+        </div>
+        <div className="stack" style={{ gap: 8 }}>
+          <Button href="/explore" block size="lg">
+            Explore offers
+          </Button>
+          <Button href="/dashboard" variant="outline" block>
+            Go to overview
+          </Button>
+          {wallet.kind === "injected" && (
+            <Button variant="ghost" block onClick={() => wallet.disconnectBrowserWallet()}>
+              Disconnect wallet
+            </Button>
+          )}
+        </div>
+      </AuthCard>
     );
   }
 
   // An account linked to a browser wallet signs with that wallet: there is no PIN backup.
   if (me.data?.walletKind === "injected") {
     return (
-      <Page title="Connect your wallet">
-        <Card>
-          <p className="muted">
-            Your account is linked to a browser wallet. Connect it with the account{" "}
-            <code>{me.data.address}</code>.
-          </p>
-          <BrowserWalletPicker
-            busy={busy}
-            onPick={(picked) =>
-              runWithoutPin(() => wallet.connectBrowserWallet(picked, me.data?.address))
-            }
-          />
-        </Card>
+      <AuthCard step="Step 3 of 3" title="Connect your wallet">
+        <p className="muted">
+          Choose the account <span className="num">{shortAddress(me.data.address)}</span> in your
+          wallet.
+        </p>
+        <BrowserWalletPicker
+          busy={busy}
+          onPick={(picked) =>
+            runWithoutPin(() => wallet.connectBrowserWallet(picked, me.data?.address))
+          }
+        />
         <ErrorText error={error} />
-      </Page>
+      </AuthCard>
     );
   }
 
   const linkedElsewhere = me.data && !wallet.exists;
+  const title = wallet.exists
+    ? "Unlock your wallet"
+    : linkedElsewhere
+      ? "Restore your wallet"
+      : "Create your PIN";
   return (
-    <Page title={wallet.exists ? "Unlock your wallet" : "Set your PIN"}>
-      <Card>
-        <p className="muted">
-          Your wallet key is created on this device and stored only encrypted with this PIN (6-12
-          digits). We cannot recover the PIN.
-        </p>
-        <label htmlFor="pin">PIN</label>
-        <input
-          id="pin"
-          type="password"
-          inputMode="numeric"
-          value={pin}
-          onChange={(e) => setPin(e.target.value)}
-        />
-        {wallet.exists ? (
-          <button
-            className="primary"
-            disabled={busy}
-            onClick={() => run(() => (me.data ? wallet.unlock(pin) : wallet.create(pin)))}
-          >
-            Unlock
-          </button>
-        ) : linkedElsewhere ? (
-          <button
-            className="primary"
-            disabled={busy}
-            onClick={() => run(() => wallet.restore(pin))}
-          >
-            Restore my wallet from backup
-          </button>
-        ) : (
-          <button className="primary" disabled={busy} onClick={() => run(() => wallet.create(pin))}>
-            Create wallet
-          </button>
-        )}
-        {busy && <p className="muted">Setting up your Trust Badge and {coinLabel} for fees…</p>}
-      </Card>
-      {!me.data && (
-        <Card>
-          <p>
-            <strong>Already use a crypto wallet?</strong> Link BridgeKey or MetaMask instead of a
-            PIN wallet: you sign once to prove it is yours, and approve every deal in your wallet.
-          </p>
-          <BrowserWalletPicker
-            busy={busy}
-            onPick={(picked) => runWithoutPin(() => wallet.connectBrowserWallet(picked))}
+    <AuthCard step="Step 3 of 3" title={title}>
+      <form
+        className="stack"
+        style={{ gap: 16 }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (wallet.exists) void run(() => (me.data ? wallet.unlock(pin) : wallet.create(pin)));
+          else if (linkedElsewhere) void run(() => wallet.restore(pin));
+          else void run(() => wallet.create(pin));
+        }}
+      >
+        <Field
+          label="PIN"
+          htmlFor="pin"
+          hint="6–12 digits. It encrypts your wallet on this device; we can't recover it."
+        >
+          <input
+            id="pin"
+            className="input input-mono"
+            type="password"
+            inputMode="numeric"
+            autoComplete={wallet.exists ? "current-password" : "new-password"}
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
           />
-        </Card>
+        </Field>
+        <Button type="submit" block size="lg" loading={busy}>
+          {wallet.exists ? "Unlock" : linkedElsewhere ? "Restore from backup" : "Create wallet"}
+        </Button>
+        {busy && (
+          <p className="faint" style={{ fontSize: 13 }}>
+            Setting up your Trust Badge and {coinLabel} for fees…
+          </p>
+        )}
+      </form>
+      {!me.data && (
+        <>
+          <div className="or">or</div>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="label">Use a crypto wallet</span>
+            <BrowserWalletPicker
+              busy={busy}
+              onPick={(picked) => runWithoutPin(() => wallet.connectBrowserWallet(picked))}
+            />
+          </div>
+        </>
       )}
       <ErrorText error={error} />
-    </Page>
+    </AuthCard>
   );
 }
 
-/** The browser wallets found in this browser, one button each. */
+/** The browser wallets found in this browser, one row each. */
 function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWallet) => void }) {
   const wallets = useBrowserWallets();
-  if (wallets === null) return <p className="muted">Looking for wallets…</p>;
+  if (wallets === null) return <p className="faint">Looking for wallets…</p>;
   if (wallets.length === 0) {
-    return (
-      <p className="muted">
-        No browser wallet found. Install the BridgeKey or MetaMask browser extension, then reload
-        this page.
-      </p>
-    );
+    return <p className="faint">No wallet found. Install BridgeKey or MetaMask, then reload.</p>;
   }
   return (
-    <div className="row">
+    <div className="stack" style={{ gap: 8 }}>
       {wallets.map((candidate) => (
         <button
           key={candidate.info.uuid}
+          type="button"
+          className="option"
           disabled={props.busy}
           onClick={() => props.onPick(candidate)}
         >
-          {candidate.info.icon && (
+          {candidate.info.icon ? (
             // eslint-disable-next-line @next/next/no-img-element -- wallet icons are data: URIs
-            <img src={candidate.info.icon} alt="" width={20} height={20} />
-          )}{" "}
+            <img src={candidate.info.icon} alt="" width={24} height={24} />
+          ) : (
+            <Avatar size={24} />
+          )}
           {candidate.info.name}
+          <IconChevronRight />
         </button>
       ))}
     </div>

@@ -2,8 +2,21 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
-import { Banner, Card, ErrorText, ExplorerLink, Money, Page } from "@/components/ui";
+import { Fragment, useState, type CSSProperties } from "react";
+import { ErrorText, LoadingCard, Page, StatusPill } from "@/components/ui";
+import {
+  Avatar,
+  Button,
+  Card,
+  CopyButton,
+  Field,
+  IconExternal,
+  IconShield,
+  Pill,
+  Stepper,
+  inr,
+  shortAddress,
+} from "@/components/ds";
 import {
   useDeal,
   useDealAction,
@@ -25,10 +38,16 @@ import { useSession } from "@/app/providers";
 export default function DealPage() {
   const { id } = useParams<{ id: string }>();
   const deal = useDeal(id);
-  if (deal.isLoading) return <Page title={`Deal #${id}`}>Loading…</Page>;
+  if (deal.isLoading) {
+    return (
+      <Page eyebrow={`Deal #${id}`} title="Loading…">
+        <LoadingCard lines={4} />
+      </Page>
+    );
+  }
   if (!deal.data) {
     return (
-      <Page title={`Deal #${id}`}>
+      <Page eyebrow={`Deal #${id}`} title="Deal not found">
         <ErrorText error={deal.error} />
       </Page>
     );
@@ -38,18 +57,18 @@ export default function DealPage() {
 
 const PRIMARY_LABELS: Partial<Record<DealAction, string>> = {
   PAY: "Pay",
-  MARK_DELIVERED: "Submit order proof and mark delivered",
-  CONFIRM: "Confirm I received it",
-  RELEASE_AVAILABLE: "Release the payment",
-  CLAIM_REFUND: "Claim my refund",
+  MARK_DELIVERED: "Mark delivered",
+  CONFIRM: "Confirm receipt",
+  RELEASE_AVAILABLE: "Release payment",
+  CLAIM_REFUND: "Claim refund",
 };
 
 const SECONDARY_LABELS: Record<string, string> = {
   CANCEL: "Cancel listing",
   RAISE_DISPUTE: "Report a problem",
   ADD_EVIDENCE: "Add evidence",
-  CONFIRM: "Withdraw the dispute and release",
-  DEFAULT_RESOLVE: "Apply the 50/50 default ruling",
+  CONFIRM: "Withdraw dispute",
+  DEFAULT_RESOLVE: "Apply 50/50 ruling",
 };
 
 const REASONS: Record<string, string> = {
@@ -59,9 +78,9 @@ const REASONS: Record<string, string> = {
   OVER_LIMIT: "This deal is above your Trust Badge limit.",
   PAUSED: "New deals are paused right now.",
   EVENT_STARTED: "The event has already started.",
-  AWAITING_SEEKER: "Waiting for a Seeker to pay.",
+  AWAITING_SEEKER: "Waiting for a buyer.",
   AWAITING_DELIVERY: "Waiting for the Sharer to deliver.",
-  IN_CHECK_WINDOW: "The Seeker is checking the delivery.",
+  IN_CHECK_WINDOW: "The buyer is checking the delivery.",
   AWAITING_ARBITER: "The dispute is with the arbiter.",
   DELIVERY_WINDOW_CLOSED: "The delivery window has closed.",
   NOT_A_PARTY: "You are not part of this deal.",
@@ -77,7 +96,35 @@ const CLAIMS: { value: EvidenceClaim; label: string }[] = [
   { value: "other", label: "Something else" },
 ];
 
-const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : "—");
+const fmt = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleString("en-IN", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+
+const STEP_INDEX: Record<string, number> = {
+  Listed: 0,
+  Locked: 1,
+  Delivered: 2,
+  Disputed: 2,
+  Completed: 4,
+  Resolved: 4,
+  Refunded: 4,
+  Cancelled: 4,
+};
+
+function progress(deal: DealView) {
+  const labels = ["Listed", "Paid", "Delivered", "Settled"];
+  const at = STEP_INDEX[deal.status] ?? 0;
+  return labels.map((label, index) => ({
+    label,
+    state: (index < at ? "done" : index === at ? "current" : "todo") as "done" | "current" | "todo",
+  }));
+}
 
 function DealRoom({ deal }: { deal: DealView }) {
   const wallet = useWallet();
@@ -112,206 +159,363 @@ function DealRoom({ deal }: { deal: DealView }) {
   const needsBrowserWallet = !wallet.unlocked && me.data?.walletKind === "injected";
   const needsPin = !wallet.unlocked && user && !needsBrowserWallet;
   const actionable = deal.nextAction !== "WAIT" && deal.nextAction !== "NONE";
+  const anyAction = actionable || deal.secondaryActions.length > 0;
+  const terms = Object.entries(deal.listing?.terms ?? {});
+  const faceValue = deal.listing?.faceValueInr ?? 0;
 
   return (
-    <Page title={deal.listing?.title ?? `Deal #${deal.id}`}>
-      <Banner>Never share card numbers, logins or OTPs. SAKAR never needs them.</Banner>
-      <Card>
-        <p>
-          <strong>{deal.statusLabel}</strong> ·{" "}
-          {deal.type === "BuyForYou" ? "Buy-for-you" : "Pass-on code"} · {deal.categoryLabel}
-        </p>
-        {deal.listing?.description && <p>{deal.listing.description}</p>}
-        <p>
-          Price <Money value={deal.price} />
-          {deal.listing && deal.listing.faceValueInr > 0 && (
-            <span className="muted">
-              {" "}
-              · worth ₹{deal.listing.faceValueInr.toLocaleString("en-IN")}
-            </span>
-          )}
-        </p>
-        <p className="muted">
-          Deposits: Sharer <Money value={deal.deposits.sharer} /> · Seeker{" "}
-          <Money value={deal.deposits.seeker} /> · fee {deal.feeBps / 100}%
-        </p>
-        {Object.keys(deal.listing?.terms ?? {}).length > 0 && (
-          <p className="muted">Terms: {JSON.stringify(deal.listing?.terms)}</p>
-        )}
-        <p className="muted">
-          You are: {deal.role}
-          {deal.counterpartTrust && (
-            <>
-              {" "}
-              · other side:{" "}
-              <Link href={`/badge/${deal.counterpartTrust.address}`}>
-                {deal.counterpartTrust.tierName}
-              </Link>{" "}
-              ({deal.counterpartTrust.completed} completed, {deal.counterpartTrust.disputesLost}{" "}
-              lost disputes)
-            </>
-          )}
-        </p>
-        <p className="muted">
-          Deliver by {fmt(deal.deadlines.deliverBy)} · release from {fmt(deal.deadlines.releaseAt)}
-          {deal.deadlines.eventTime && <> · event {fmt(deal.deadlines.eventTime)}</>}
-          {deal.deadlines.evidenceUntil && (
-            <> · evidence until {fmt(deal.deadlines.evidenceUntil)}</>
-          )}
-          {deal.deadlines.defaultRulingAt && (
-            <> · default ruling from {fmt(deal.deadlines.defaultRulingAt)}</>
-          )}
-        </p>
-      </Card>
-
-      <Card>
-        {!actionable && <p>{REASONS[deal.actionReason ?? ""] ?? ""}</p>}
-        {needsBrowserWallet && (actionable || deal.secondaryActions.length > 0) && (
-          <p className="muted">
-            Your account signs with a browser wallet. <Link href="/login">Connect it</Link> first.
-          </p>
-        )}
-        {needsPin && (actionable || deal.secondaryActions.length > 0) && (
-          <>
-            <label htmlFor="pin">Wallet PIN</label>
-            <input
-              id="pin"
-              type="password"
-              inputMode="numeric"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-            />
-          </>
-        )}
-
-        {deal.nextAction === "PAY" && deal.type === "BuyForYou" && (
-          <DeliveryForm value={details} onChange={setDetails} />
-        )}
-        {deal.nextAction === "MARK_DELIVERED" && (
-          <>
-            <h2>Order proof</h2>
-            <input
-              placeholder="Order id / PNR"
-              value={orderId}
-              onChange={(e) => setOrderId(e.target.value)}
-            />
-            <input
-              placeholder="Notes (optional)"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-            <label htmlFor="invoice">Invoice (PDF, JPEG or PNG, up to 2 MB, optional)</label>
-            <input
-              id="invoice"
-              type="file"
-              accept="application/pdf,image/jpeg,image/png"
-              onChange={(e) => setInvoice(e.target.files?.[0])}
-            />
-          </>
-        )}
-        {actionable && (
-          <button
-            className="primary"
-            disabled={action.isPending}
-            onClick={() =>
-              run(deal.nextAction, {
-                details:
-                  deal.nextAction === "PAY" && deal.type === "BuyForYou"
-                    ? cleanDetails(details)
-                    : undefined,
-                proof:
-                  deal.nextAction === "MARK_DELIVERED"
-                    ? { orderId, notes: notes || undefined, invoice }
-                    : undefined,
-              })
-            }
-          >
-            {action.isPending ? "Working…" : PRIMARY_LABELS[deal.nextAction]}
-            {deal.nextAction === "PAY" && (
-              <>
-                {" "}
-                {deal.payAmount.mstc} MSTC (≈ ₹{deal.payAmount.inr.toLocaleString("en-IN")})
-              </>
-            )}
-          </button>
-        )}
-
-        <div className="row">
-          {deal.secondaryActions.map((name) =>
-            name === "RAISE_DISPUTE" || name === "ADD_EVIDENCE" ? (
-              <button key={name} onClick={() => setOpenForm(openForm === name ? null : name)}>
-                {SECONDARY_LABELS[name]}
-              </button>
-            ) : (
-              <button key={name} disabled={action.isPending} onClick={() => run(name)}>
-                {SECONDARY_LABELS[name]}
-              </button>
-            ),
-          )}
+    <main className="page">
+      <header className="page-head">
+        <div className="stack" style={{ gap: 12 }}>
+          <Link href="/explore" className="label">
+            ← Offers · Deal #{deal.id}
+          </Link>
+          <h1 className="title-2" style={{ maxWidth: "22ch" }}>
+            {deal.listing?.title ?? `Deal #${deal.id}`}
+          </h1>
+          <div className="row" style={{ gap: 8 }}>
+            <StatusPill status={deal.status} label={deal.statusLabel} />
+            <Pill>{deal.type === "BuyForYou" ? "Buy-for-you" : "Pass-on"}</Pill>
+            <Pill>{deal.categoryLabel}</Pill>
+            {deal.role !== "visitor" && <Pill tone="accent">You · {deal.role}</Pill>}
+          </div>
         </div>
-        {(openForm === "RAISE_DISPUTE" || openForm === "ADD_EVIDENCE") && (
-          <>
-            <label htmlFor="claim">What happened?</label>
-            <select
-              id="claim"
-              value={claim}
-              onChange={(e) => setClaim(e.target.value as EvidenceClaim)}
-            >
-              {CLAIMS.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
+      </header>
+
+      <div className="deal-layout">
+        <div className="stack" style={{ gap: 20 }}>
+          <Card>
+            <div className="card-head">
+              <span className="label">Progress</span>
+            </div>
+            <Stepper steps={progress(deal)} />
+            <dl className="kv" style={{ marginTop: 24 }}>
+              {deal.deadlines.deliverBy && (
+                <>
+                  <dt>Deliver by</dt>
+                  <dd>{fmt(deal.deadlines.deliverBy)}</dd>
+                </>
+              )}
+              {deal.deadlines.releaseAt && (
+                <>
+                  <dt>Release from</dt>
+                  <dd>{fmt(deal.deadlines.releaseAt)}</dd>
+                </>
+              )}
+              {deal.deadlines.eventTime && (
+                <>
+                  <dt>Event</dt>
+                  <dd>{fmt(deal.deadlines.eventTime)}</dd>
+                </>
+              )}
+              {deal.deadlines.evidenceUntil && (
+                <>
+                  <dt>Evidence until</dt>
+                  <dd>{fmt(deal.deadlines.evidenceUntil)}</dd>
+                </>
+              )}
+              {deal.deadlines.defaultRulingAt && (
+                <>
+                  <dt>Default ruling</dt>
+                  <dd>{fmt(deal.deadlines.defaultRulingAt)}</dd>
+                </>
+              )}
+            </dl>
+          </Card>
+
+          <Card>
+            <div className="card-head">
+              <span className="label">Details</span>
+            </div>
+            {deal.listing?.description && (
+              <p className="muted" style={{ marginBottom: 20 }}>
+                {deal.listing.description}
+              </p>
+            )}
+            <dl className="kv">
+              <dt>Price</dt>
+              <dd>
+                {inr(deal.price.inr)} <span className="faint">· {deal.price.mstc} MSTC</span>
+              </dd>
+              {faceValue > 0 && (
+                <>
+                  <dt>Worth</dt>
+                  <dd>{inr(faceValue)}</dd>
+                </>
+              )}
+              <dt>Sharer deposit</dt>
+              <dd>{deal.deposits.sharer.mstc} MSTC</dd>
+              <dt>Buyer deposit</dt>
+              <dd>{deal.deposits.seeker.mstc} MSTC</dd>
+              <dt>Fee</dt>
+              <dd>{deal.feeBps / 100}%</dd>
+              {terms.map(([key, value]) => (
+                <Fragment key={key}>
+                  <dt>{key.replace(/([A-Z])/g, " $1").toLowerCase()}</dt>
+                  <dd>{Array.isArray(value) ? value.join(", ") : String(value)}</dd>
+                </Fragment>
               ))}
-            </select>
-            <textarea
-              placeholder="Describe it (at least 5 characters)"
-              value={evidenceText}
-              onChange={(e) => setEvidenceText(e.target.value)}
-            />
-            <label htmlFor="files">Photos or documents (up to 3)</label>
-            <input
-              id="files"
-              type="file"
-              multiple
-              accept="application/pdf,image/jpeg,image/png"
-              onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 3))}
-            />
-            <button
-              className="primary"
-              disabled={action.isPending}
-              onClick={() => run(openForm, { evidence })}
-            >
-              Submit
-            </button>
-          </>
-        )}
-        {lastTx && (
-          <p className="success">
-            Confirmed on-chain. <ExplorerLink href={lastTx}>View on mstscan</ExplorerLink>
+            </dl>
+          </Card>
+
+          <Card>
+            <div className="card-head">
+              <span className="label">People</span>
+            </div>
+            <div className="parties">
+              <Party label="Sharer" address={deal.sharer} you={deal.role === "sharer"} />
+              {deal.seeker ? (
+                <Party label="Buyer" address={deal.seeker} you={deal.role === "seeker"} />
+              ) : (
+                <div className="party">
+                  <Avatar size={40} />
+                  <span className="faint" style={{ fontSize: 14 }}>
+                    No buyer yet
+                  </span>
+                </div>
+              )}
+            </div>
+            {deal.counterpartTrust && (
+              <p className="faint" style={{ fontSize: 13, marginTop: 16 }}>
+                Other side: {deal.counterpartTrust.tierName} · {deal.counterpartTrust.completed}{" "}
+                completed · {deal.counterpartTrust.disputesLost} lost disputes
+              </p>
+            )}
+          </Card>
+
+          <Card>
+            <div className="card-head">
+              <span className="label">On-chain</span>
+              <a
+                className="link"
+                href={deal.mstscanUrls.escrow}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                Escrow contract
+              </a>
+            </div>
+            {deal.timeline.length === 0 ? (
+              <p className="faint">No transactions yet.</p>
+            ) : (
+              <ol className="timeline">
+                {deal.timeline.map((entry) => (
+                  <li key={`${entry.txHash}-${entry.event}`}>
+                    <span>{entry.label}</span>
+                    <a
+                      className="address"
+                      href={entry.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      {fmt(entry.at)} <IconExternal />
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Card>
+        </div>
+
+        <aside className="deal-aside">
+          <Card>
+            <div className="stack" style={{ gap: 16 }}>
+              <span className="label">Next step</span>
+              {deal.nextAction === "PAY" && (
+                <div className="stack" style={{ gap: 4 }}>
+                  <span className="stat-value">{inr(deal.payAmount.inr)}</span>
+                  <span className="stat-sub">{deal.payAmount.mstc} MSTC · price + deposit</span>
+                </div>
+              )}
+              {!actionable && (
+                <p className="title-3">{REASONS[deal.actionReason ?? ""] ?? "Nothing to do."}</p>
+              )}
+              {needsBrowserWallet && anyAction && (
+                <p className="alert">
+                  Your account signs with a crypto wallet.&nbsp;
+                  <Link className="link" href="/login">
+                    Connect it
+                  </Link>
+                </p>
+              )}
+              {needsPin && anyAction && (
+                <Field label="Wallet PIN" htmlFor="pin">
+                  <input
+                    id="pin"
+                    className="input input-mono"
+                    type="password"
+                    inputMode="numeric"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                  />
+                </Field>
+              )}
+
+              {deal.nextAction === "PAY" && deal.type === "BuyForYou" && (
+                <DeliveryForm value={details} onChange={setDetails} />
+              )}
+              {deal.nextAction === "MARK_DELIVERED" && (
+                <>
+                  <Field label="Order id" htmlFor="order">
+                    <input
+                      id="order"
+                      className="input input-mono"
+                      placeholder="OD-4021-5550"
+                      value={orderId}
+                      onChange={(e) => setOrderId(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Note" htmlFor="notes" hint="Optional">
+                    <input
+                      id="notes"
+                      className="input"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                    />
+                  </Field>
+                  <Field
+                    label="Invoice"
+                    htmlFor="invoice"
+                    hint="PDF, JPEG or PNG · up to 2 MB · optional"
+                  >
+                    <input
+                      id="invoice"
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png"
+                      onChange={(e) => setInvoice(e.target.files?.[0])}
+                    />
+                  </Field>
+                </>
+              )}
+              {actionable && (
+                <Button
+                  block
+                  size="lg"
+                  loading={action.isPending}
+                  onClick={() =>
+                    run(deal.nextAction, {
+                      details:
+                        deal.nextAction === "PAY" && deal.type === "BuyForYou"
+                          ? cleanDetails(details)
+                          : undefined,
+                      proof:
+                        deal.nextAction === "MARK_DELIVERED"
+                          ? { orderId, notes: notes || undefined, invoice }
+                          : undefined,
+                    })
+                  }
+                >
+                  {PRIMARY_LABELS[deal.nextAction]}
+                  {deal.nextAction === "PAY" && ` ${inr(deal.payAmount.inr)}`}
+                </Button>
+              )}
+
+              {deal.secondaryActions.length > 0 && (
+                <div className="row" style={{ gap: 8 }}>
+                  {deal.secondaryActions.map((name) =>
+                    name === "RAISE_DISPUTE" || name === "ADD_EVIDENCE" ? (
+                      <Button
+                        key={name}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOpenForm(openForm === name ? null : name)}
+                      >
+                        {SECONDARY_LABELS[name]}
+                      </Button>
+                    ) : (
+                      <Button
+                        key={name}
+                        variant={name === "CANCEL" ? "danger" : "ghost"}
+                        size="sm"
+                        disabled={action.isPending}
+                        onClick={() => run(name)}
+                      >
+                        {SECONDARY_LABELS[name]}
+                      </Button>
+                    ),
+                  )}
+                </div>
+              )}
+              {(openForm === "RAISE_DISPUTE" || openForm === "ADD_EVIDENCE") && (
+                <div className="stack" style={{ gap: 12 }}>
+                  <Field label="What happened?" htmlFor="claim">
+                    <select
+                      id="claim"
+                      className="select"
+                      value={claim}
+                      onChange={(e) => setClaim(e.target.value as EvidenceClaim)}
+                    >
+                      {CLAIMS.map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Describe it" htmlFor="evidence">
+                    <textarea
+                      id="evidence"
+                      className="textarea"
+                      value={evidenceText}
+                      onChange={(e) => setEvidenceText(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Photos or documents" htmlFor="files" hint="Up to 3">
+                    <input
+                      id="files"
+                      type="file"
+                      multiple
+                      accept="application/pdf,image/jpeg,image/png"
+                      onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 3))}
+                    />
+                  </Field>
+                  <Button
+                    block
+                    loading={action.isPending}
+                    onClick={() => run(openForm, { evidence })}
+                  >
+                    Submit
+                  </Button>
+                </div>
+              )}
+              {lastTx && (
+                <p className="alert alert-success">
+                  Confirmed on-chain.&nbsp;
+                  <a className="link" href={lastTx} target="_blank" rel="noreferrer noopener">
+                    View
+                  </a>
+                </p>
+              )}
+              <ErrorText error={error} />
+            </div>
+          </Card>
+
+          <MissingDeliveryDetails deal={deal} />
+          <PrivatePanels deal={deal} />
+
+          <p className="row faint" style={{ gap: 8, fontSize: 13 }}>
+            <IconShield /> Never share card numbers, logins or OTPs.
           </p>
-        )}
-        <ErrorText error={error} />
-      </Card>
+        </aside>
+      </div>
+    </main>
+  );
+}
 
-      <MissingDeliveryDetails deal={deal} />
-      <PrivatePanels deal={deal} />
-
-      <Card>
-        <h2>Timeline</h2>
-        <ul className="plain">
-          {deal.timeline.map((entry) => (
-            <li key={`${entry.txHash}-${entry.event}`}>
-              {fmt(entry.at)} · {entry.label} · <ExplorerLink href={entry.url}>tx</ExplorerLink>
-            </li>
-          ))}
-        </ul>
-        <p className="row">
-          <ExplorerLink href={deal.mstscanUrls.escrow}>Escrow contract</ExplorerLink>
-          <ExplorerLink href={deal.mstscanUrls.sharer}>Sharer</ExplorerLink>
-          <ExplorerLink href={deal.mstscanUrls.seeker}>Seeker</ExplorerLink>
-        </p>
-      </Card>
-    </Page>
+function Party({ label, address, you }: { label: string; address: string; you: boolean }) {
+  return (
+    <div className="party">
+      <Avatar address={address} size={40} />
+      <div className="stack" style={{ gap: 2 }}>
+        <span className="label">
+          {label}
+          {you && " · you"}
+        </span>
+        <Link className="num" href={`/badge/${address}`} style={{ fontSize: 14 }}>
+          {shortAddress(address)}
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -331,33 +535,45 @@ function DeliveryForm({
   onChange: (details: DeliveryDetails) => void;
 }) {
   return (
-    <>
-      <h2>Deliver to</h2>
+    <div className="stack" style={{ gap: 12 }}>
+      <span className="label">Deliver to</span>
       <input
+        className="input"
+        aria-label="Full name"
         placeholder="Full name"
+        autoComplete="name"
         value={value.name}
         onChange={(e) => onChange({ ...value, name: e.target.value })}
       />
       <input
+        className="input input-mono"
+        aria-label="Mobile number"
         placeholder="Mobile number"
         inputMode="tel"
+        autoComplete="tel"
         value={value.phone}
         onChange={(e) => onChange({ ...value, phone: e.target.value })}
       />
       <textarea
-        placeholder="Address (one line per row)"
+        className="textarea"
+        aria-label="Address"
+        placeholder="Address"
+        autoComplete="street-address"
         value={value.addressLines.join("\n")}
         onChange={(e) =>
           onChange({ ...value, addressLines: e.target.value.split("\n").slice(0, 4) })
         }
       />
       <input
+        className="input input-mono"
+        aria-label="PIN code"
         placeholder="PIN code"
         inputMode="numeric"
+        autoComplete="postal-code"
         value={value.pincode}
         onChange={(e) => onChange({ ...value, pincode: e.target.value })}
       />
-    </>
+    </div>
   );
 }
 
@@ -372,26 +588,20 @@ function MissingDeliveryDetails({ deal }: { deal: DealView }) {
   if (deal.role === "sharer") {
     return (
       <Card>
-        <p className="muted">
-          The Seeker has not sent the delivery address yet. Wait for it before placing the order.
-        </p>
+        <p className="muted">Waiting for the buyer&apos;s address before you order.</p>
       </Card>
     );
   }
   return (
     <Card>
-      <p>
-        <strong>Send your delivery address</strong> so the Sharer can place the order.
-      </p>
-      <DeliveryForm value={details} onChange={setDetails} />
-      <button
-        className="primary"
-        disabled={send.isPending}
-        onClick={() => send.mutate(cleanDetails(details))}
-      >
-        {send.isPending ? "Sending…" : "Send delivery details"}
-      </button>
-      <ErrorText error={send.error} />
+      <div className="stack" style={{ gap: 16 }}>
+        <h2 className="h-sm">Send your delivery address</h2>
+        <DeliveryForm value={details} onChange={setDetails} />
+        <Button block loading={send.isPending} onClick={() => send.mutate(cleanDetails(details))}>
+          Send address
+        </Button>
+        <ErrorText error={send.error} />
+      </div>
     </Card>
   );
 }
@@ -431,69 +641,95 @@ function PrivatePanels({ deal }: { deal: DealView }) {
 
   return (
     <Card>
-      {sharerSeesDetails &&
-        (details ? (
-          <p>
-            Deliver to: <strong>{details.name}</strong>, {details.phone},{" "}
-            {details.addressLines.join(", ")} – {details.pincode}
-          </p>
-        ) : (
-          <button
-            onClick={() =>
-              load(async () => setDetails((await api.deals.getDetails(deal.id)).details))
-            }
-          >
-            Show delivery details
-          </button>
-        ))}
-      {proofVisible &&
-        (proof ? (
-          <p>
-            Order id <strong>{proof.orderId}</strong> {proof.notes && <>({proof.notes})</>} ·{" "}
-            {proof.matchesChain ? (
-              <span className="success">matches the on-chain proof</span>
-            ) : (
-              <span className="error">does not match the chain</span>
-            )}
-            {proof.invoice && !invoiceUrl && (
-              <button
-                onClick={() =>
-                  load(async () =>
-                    setInvoiceUrl(URL.createObjectURL(await api.deals.invoice(deal.id))),
-                  )
-                }
-              >
-                Load invoice
-              </button>
-            )}
-            {invoiceUrl && (
-              <a href={invoiceUrl} download={`invoice-${deal.id}`}>
-                Download invoice
-              </a>
-            )}
-          </p>
-        ) : (
-          <button onClick={() => load(async () => setProof(await api.deals.getProof(deal.id)))}>
-            Show order proof
-          </button>
-        ))}
-      {codeVisible &&
-        (code ? (
-          <p>
-            Your code: <code>{code.code}</code>{" "}
-            <span className="muted">
-              (first revealed {new Date(code.firstRevealedAt).toLocaleString()})
-            </span>
-          </p>
-        ) : (
-          <button
-            className="primary"
-            onClick={() => load(async () => setCode(await api.deals.code(deal.id)))}
-          >
-            Reveal code
-          </button>
-        ))}
-      <ErrorText error={error} />
+      <div className="stack" style={{ gap: 16 } as CSSProperties}>
+        <span className="label">Private</span>
+        {sharerSeesDetails &&
+          (details ? (
+            <dl className="kv">
+              <dt>Name</dt>
+              <dd>{details.name}</dd>
+              <dt>Phone</dt>
+              <dd>{details.phone}</dd>
+              <dt>Address</dt>
+              <dd>{details.addressLines.join(", ")}</dd>
+              <dt>PIN code</dt>
+              <dd>{details.pincode}</dd>
+            </dl>
+          ) : (
+            <Button
+              variant="outline"
+              block
+              onClick={() =>
+                load(async () => setDetails((await api.deals.getDetails(deal.id)).details))
+              }
+            >
+              Show delivery address
+            </Button>
+          ))}
+        {proofVisible &&
+          (proof ? (
+            <div className="stack" style={{ gap: 8 }}>
+              <dl className="kv">
+                <dt>Order id</dt>
+                <dd>{proof.orderId}</dd>
+                {proof.notes && (
+                  <>
+                    <dt>Note</dt>
+                    <dd>{proof.notes}</dd>
+                  </>
+                )}
+              </dl>
+              {proof.matchesChain ? (
+                <span className="pill pill-success pill-dot">Matches the chain</span>
+              ) : (
+                <span className="pill pill-danger pill-dot">Does not match the chain</span>
+              )}
+              {proof.invoice && !invoiceUrl && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    load(async () =>
+                      setInvoiceUrl(URL.createObjectURL(await api.deals.invoice(deal.id))),
+                    )
+                  }
+                >
+                  Load invoice
+                </Button>
+              )}
+              {invoiceUrl && (
+                <a className="link" href={invoiceUrl} download={`invoice-${deal.id}`}>
+                  Download invoice
+                </a>
+              )}
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              block
+              onClick={() => load(async () => setProof(await api.deals.getProof(deal.id)))}
+            >
+              Show order proof
+            </Button>
+          ))}
+        {codeVisible &&
+          (code ? (
+            <div className="stack" style={{ gap: 8 }}>
+              <div className="code-box">
+                <span>{code.code}</span>
+                <CopyButton text={code.code} label="Copy code" />
+              </div>
+              <span className="faint" style={{ fontSize: 12 }}>
+                First revealed {new Date(code.firstRevealedAt).toLocaleString("en-IN")}
+              </span>
+            </div>
+          ) : (
+            <Button block onClick={() => load(async () => setCode(await api.deals.code(deal.id)))}>
+              Reveal code
+            </Button>
+          ))}
+        <ErrorText error={error} />
+      </div>
     </Card>
   );
 }

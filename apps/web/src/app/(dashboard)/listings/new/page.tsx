@@ -12,14 +12,15 @@ import {
   inrToWei,
   weiToMstc,
 } from "@rewardrelay/shared";
-import { Card, ErrorText, Page, RequireSignIn } from "@/components/ui";
+import { ErrorText, Page, RequireSignIn } from "@/components/ui";
+import { Button, Card, Field, inr } from "@/components/ds";
 import { appConfig } from "@/client/config";
 import { listBuyForYou, listPassOn, useMe, useSdkContext, useWallet } from "@/client/sdk";
 
 /** Create a listing: category (allowlist), ₹ values converted to MSTC, declaration, code for Pass-on. */
 export default function NewListingPage() {
   return (
-    <Page title="Share an offer">
+    <Page eyebrow="Share" title="Share an offer">
       <RequireSignIn>
         <ListingForm />
       </RequireSignIn>
@@ -28,6 +29,9 @@ export default function NewListingPage() {
 }
 
 const WITH_EVENT = new Set(["travel", "movies"]);
+/** Sharer deposit by Trust Badge tier (New, Trusted, Verified), as configured on-chain. */
+const DEPOSIT_BPS = [5000, 3000, 2000];
+const FEE_BPS = 200;
 
 function ListingForm() {
   const router = useRouter();
@@ -55,6 +59,14 @@ function ListingForm() {
   }, [price]);
   const blocked = findBlockedTopic(title, description);
   const overLimit = me.data && priceWei > BigInt(me.data.badge.maxDealValue.wei);
+  const depositBps = DEPOSIT_BPS[me.data?.tier ?? 0] ?? DEPOSIT_BPS[0];
+  const depositWei = (priceWei * BigInt(depositBps)) / 10_000n;
+  const saving = Math.max(0, (Number(faceValue) || 0) - (Number(price) || 0));
+
+  const switchType = (type: "BuyForYou" | "PassOn") => {
+    const first = CATEGORIES.find((item) => item.dealType === type);
+    if (first) setCategory(first.key);
+  };
 
   async function submit() {
     setBusy(true);
@@ -84,128 +96,212 @@ function ListingForm() {
 
   if (!me.isLoading && !me.data) {
     return (
-      <p>
-        <Link href="/login">Finish signing up</Link> to get your Trust Badge first.
-      </p>
+      <Card className="signin-card">
+        <h2 className="title-3">Finish signing up</h2>
+        <p className="muted">You need a Trust Badge to share offers.</p>
+        <Button href="/login">Continue</Button>
+      </Card>
     );
   }
 
+  const disabled =
+    busy ||
+    !declared ||
+    Boolean(blocked) ||
+    !title.trim() ||
+    !(Number(price) > 0) ||
+    (passOn && !code.trim());
+
   return (
-    <Card>
-      <label htmlFor="category">Category</label>
-      <select id="category" value={category} onChange={(e) => setCategory(e.target.value)}>
-        {CATEGORIES.map((item) => (
-          <option key={item.key} value={item.key}>
-            {CATEGORY_LABELS[item.key]} ({item.dealType === "BuyForYou" ? "Buy-for-you" : "Pass-on"}
-            )
-          </option>
-        ))}
-      </select>
-      <p className="muted">
-        {passOn
-          ? "Pass-on: your shareable code is sealed and revealed only to the Seeker who pays."
-          : "Buy-for-you: you order in your own account and deliver to the Seeker, then submit the order id."}
-      </p>
+    <div className="create-layout">
+      <Card>
+        <div className="stack" style={{ gap: 24 }}>
+          <div className="segmented" role="group" aria-label="Offer type">
+            <button type="button" aria-pressed={!passOn} onClick={() => switchType("BuyForYou")}>
+              Card offer
+            </button>
+            <button type="button" aria-pressed={passOn} onClick={() => switchType("PassOn")}>
+              Code
+            </button>
+          </div>
+          <p className="faint" style={{ fontSize: 14, marginTop: -8 }}>
+            {passOn
+              ? "Your code is sealed and revealed only to the buyer who pays."
+              : "You order with your card and ship to the buyer, then add the order id."}
+          </p>
 
-      <label htmlFor="title">Title</label>
-      <input id="title" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
-      <label htmlFor="description">Description</label>
-      <textarea
-        id="description"
-        value={description}
-        maxLength={500}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-      <label htmlFor="face">Face value (₹)</label>
-      <input
-        id="face"
-        inputMode="decimal"
-        value={faceValue}
-        onChange={(e) => setFaceValue(e.target.value)}
-      />
-      <label htmlFor="price">Price the Seeker pays (₹)</label>
-      <input
-        id="price"
-        inputMode="decimal"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-      />
-      {priceWei > 0n && <p className="muted">= {weiToMstc(priceWei)} MSTC</p>}
-      {overLimit && (
-        <p className="error">
-          This is above your Trust Badge limit ({me.data?.badge.maxDealValue.mstc} MSTC).
-        </p>
-      )}
-      {WITH_EVENT.has(category) && (
-        <>
-          <label htmlFor="event">Journey / show time</label>
-          <input
-            id="event"
-            type="datetime-local"
-            value={eventAt}
-            onChange={(e) => setEventAt(e.target.value)}
-          />
-        </>
-      )}
-      <label htmlFor="valid">Offer valid till (optional)</label>
-      <input
-        id="valid"
-        type="date"
-        value={validTill}
-        onChange={(e) => setValidTill(e.target.value)}
-      />
-      {passOn && (
-        <>
-          <label htmlFor="code">Shareable code</label>
-          <input
-            id="code"
-            value={code}
-            autoComplete="off"
-            onChange={(e) => setCode(e.target.value)}
-          />
-        </>
-      )}
+          <div className="form-grid">
+            <div className="span-2">
+              <Field label="Category" htmlFor="category">
+                <select
+                  id="category"
+                  className="select"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  {CATEGORIES.filter(
+                    (item) => item.dealType === (passOn ? "PassOn" : "BuyForYou"),
+                  ).map((item) => (
+                    <option key={item.key} value={item.key}>
+                      {CATEGORY_LABELS[item.key]}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <div className="span-2">
+              <Field
+                label="Title"
+                htmlFor="title"
+                hint="For example: 10% off on Flipkart with an HDFC card"
+              >
+                <input
+                  id="title"
+                  className="input"
+                  value={title}
+                  maxLength={80}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </Field>
+            </div>
+            <div className="span-2">
+              <Field label="Details" htmlFor="description" hint="Optional">
+                <textarea
+                  id="description"
+                  className="textarea"
+                  value={description}
+                  maxLength={500}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </Field>
+            </div>
+            <Field label="Worth (₹)" htmlFor="face">
+              <input
+                id="face"
+                className="input input-mono"
+                inputMode="decimal"
+                value={faceValue}
+                onChange={(e) => setFaceValue(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Price (₹)"
+              htmlFor="price"
+              error={
+                overLimit
+                  ? `Above your limit (${me.data?.badge.maxDealValue.mstc} MSTC)`
+                  : undefined
+              }
+            >
+              <input
+                id="price"
+                className="input input-mono"
+                inputMode="decimal"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </Field>
+            {WITH_EVENT.has(category) && (
+              <Field label="Journey or show time" htmlFor="event">
+                <input
+                  id="event"
+                  className="input"
+                  type="datetime-local"
+                  value={eventAt}
+                  onChange={(e) => setEventAt(e.target.value)}
+                />
+              </Field>
+            )}
+            <Field label="Valid till" htmlFor="valid" hint="Optional">
+              <input
+                id="valid"
+                className="input"
+                type="date"
+                value={validTill}
+                onChange={(e) => setValidTill(e.target.value)}
+              />
+            </Field>
+            {passOn && (
+              <div className="span-2">
+                <Field label="Code" htmlFor="code">
+                  <input
+                    id="code"
+                    className="input input-mono"
+                    value={code}
+                    autoComplete="off"
+                    onChange={(e) => setCode(e.target.value)}
+                  />
+                </Field>
+              </div>
+            )}
+          </div>
 
-      {blocked && <p className="error">Not allowed on SAKAR: {blocked.label}.</p>}
-      <label className="row">
-        <input type="checkbox" checked={declared} onChange={(e) => setDeclared(e.target.checked)} />
-        I declare this benefit is mine to share, is not one of the blocked categories (
-        {BLOCKED_TOPICS.map((topic) => topic.label).join("; ")}), and I will never ask for or share
-        card numbers, logins or OTPs.
-      </label>
+          {blocked && <p className="alert alert-danger">Not allowed on SAKAR: {blocked.label}.</p>}
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={declared}
+              onChange={(e) => setDeclared(e.target.checked)}
+            />
+            <span>
+              This offer is mine to share, and I&apos;ll never ask for or share card numbers, logins
+              or OTPs.
+              <span className="faint" style={{ display: "block", fontSize: 12, marginTop: 4 }}>
+                Not allowed: {BLOCKED_TOPICS.map((topic) => topic.label).join(" · ")}
+              </span>
+            </span>
+          </label>
+        </div>
+      </Card>
 
-      {!wallet.unlocked && me.data?.walletKind === "injected" && (
-        <p className="muted">
-          Your account signs with a browser wallet. <Link href="/login">Connect it</Link> first.
-        </p>
-      )}
-      {!wallet.unlocked && me.data?.walletKind !== "injected" && (
-        <>
-          <label htmlFor="pin">Wallet PIN</label>
-          <input
-            id="pin"
-            type="password"
-            inputMode="numeric"
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-          />
-        </>
-      )}
-      <button
-        className="primary"
-        disabled={
-          busy ||
-          !declared ||
-          Boolean(blocked) ||
-          !title.trim() ||
-          !(Number(price) > 0) ||
-          (passOn && !code.trim())
-        }
-        onClick={submit}
-      >
-        {busy ? "Listing…" : "List and lock my deposit"}
-      </button>
-      <ErrorText error={error} />
-    </Card>
+      <aside className="deal-aside">
+        <Card>
+          <div className="stack" style={{ gap: 16 }}>
+            <span className="label">Summary</span>
+            <div className="stack" style={{ gap: 4 }}>
+              <span className="stat-value">{inr(Number(price) || 0)}</span>
+              <span className="stat-sub">
+                {priceWei > 0n ? `${weiToMstc(priceWei)} MSTC` : "Set a price"}
+              </span>
+            </div>
+            <dl className="kv">
+              <dt>Buyer saves</dt>
+              <dd>{inr(saving)}</dd>
+              <dt>Your deposit</dt>
+              <dd>{weiToMstc(depositWei)} MSTC</dd>
+              <dt>Fee</dt>
+              <dd>{FEE_BPS / 100}% of payout</dd>
+            </dl>
+            <p className="faint" style={{ fontSize: 12 }}>
+              Your deposit comes back when the deal ends well.
+            </p>
+            {!wallet.unlocked && me.data?.walletKind === "injected" && (
+              <p className="alert">
+                Signs with your crypto wallet.&nbsp;
+                <Link className="link" href="/login">
+                  Connect it
+                </Link>
+              </p>
+            )}
+            {!wallet.unlocked && me.data?.walletKind !== "injected" && (
+              <Field label="Wallet PIN" htmlFor="pin">
+                <input
+                  id="pin"
+                  className="input input-mono"
+                  type="password"
+                  inputMode="numeric"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                />
+              </Field>
+            )}
+            <Button block size="lg" loading={busy} disabled={disabled} onClick={submit}>
+              List offer
+            </Button>
+            <ErrorText error={error} />
+          </div>
+        </Card>
+      </aside>
+    </div>
   );
 }

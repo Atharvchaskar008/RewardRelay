@@ -1,30 +1,48 @@
 "use client";
 
-import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { userMessage, type Money as MoneyValue } from "@/client/sdk";
 import { useSession } from "@/app/providers";
+import { Button, Card as DsCard, Pill, Skeleton, inr, type Tone } from "@/components/ds";
 
-/** Deliberately plain building blocks; the UI teammate restyles them. */
+/** App building blocks on top of the design system (`@/components/ds`). */
 
-export function Page({ title, children }: { title: string; children: ReactNode }) {
+export function Page({
+  title,
+  eyebrow,
+  action,
+  narrow,
+  children,
+}: {
+  title?: ReactNode;
+  eyebrow?: string;
+  action?: ReactNode;
+  narrow?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <main>
-      <h1>{title}</h1>
+    <main className={narrow ? "page page-narrow" : "page"}>
+      {(title || eyebrow) && (
+        <header className="page-head">
+          <div className="stack" style={{ "--gap": "8px" } as CSSProperties}>
+            {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+            {title && <h1 className="title-2">{title}</h1>}
+          </div>
+          {action}
+        </header>
+      )}
       {children}
     </main>
   );
 }
 
-export function Card({ children }: { children: ReactNode }) {
-  return <section className="card">{children}</section>;
-}
+export const Card = DsCard;
 
-/** "X MSTC (≈ ₹Y)", the money format used everywhere. */
+/** "₹Y · X MSTC", the money format used everywhere. */
 export function Money({ value }: { value: MoneyValue }) {
   return (
-    <span className="money">
-      {value.mstc} MSTC <span className="muted">(≈ ₹{value.inr.toLocaleString("en-IN")})</span>
+    <span className="num">
+      {inr(value.inr)} <span className="faint">· {value.mstc} MSTC</span>
     </span>
   );
 }
@@ -32,10 +50,20 @@ export function Money({ value }: { value: MoneyValue }) {
 export function ErrorText({ error }: { error: unknown }) {
   if (!error) return null;
   return (
-    <p className="error" role="alert">
+    <p className="alert alert-danger" role="alert">
       {userMessage(error)}
     </p>
   );
+}
+
+export function Banner({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: "neutral" | "accent" | "success";
+}) {
+  return <p className={tone === "neutral" ? "alert" : `alert alert-${tone}`}>{children}</p>;
 }
 
 export function ExplorerLink({
@@ -47,26 +75,62 @@ export function ExplorerLink({
 }) {
   if (!href) return null;
   return (
-    <a href={href} target="_blank" rel="noreferrer noopener">
+    <a className="link" href={href} target="_blank" rel="noreferrer noopener">
       {children}
     </a>
   );
 }
 
-export function Banner({ children }: { children: ReactNode }) {
-  return <p className="banner">{children}</p>;
-}
-
-/** Shows children only to signed-in users; otherwise a link to /login. */
+/** Shows children only to signed-in users; otherwise one card with the way in. */
 export function RequireSignIn({ children }: { children: ReactNode }) {
   const { ready, user } = useSession();
-  if (!ready) return <p className="muted">Loading…</p>;
+  if (!ready) return <LoadingCard />;
   if (!user) {
     return (
-      <p>
-        Please <Link href="/login">sign in with your phone</Link> first.
-      </p>
+      <DsCard className="signin-card">
+        <span className="label">Sign in</span>
+        <h2 className="title-3">Sign in to continue</h2>
+        <Button href="/login">Sign in with your phone</Button>
+      </DsCard>
     );
   }
   return <>{children}</>;
+}
+
+export function LoadingCard({ lines = 3 }: { lines?: number }) {
+  return (
+    <DsCard>
+      <div className="stack" style={{ "--gap": "12px" } as CSSProperties}>
+        <Skeleton height={12} width={96} />
+        {Array.from({ length: lines }, (_, i) => (
+          <Skeleton key={i} height={18} width={i === lines - 1 ? "60%" : "100%"} />
+        ))}
+      </div>
+    </DsCard>
+  );
+}
+
+/** Deal status → a short label and a pill tone. */
+const STATUS: Record<string, { label: string; tone: Tone }> = {
+  Listed: { label: "Open", tone: "accent" },
+  Locked: { label: "Paid", tone: "warning" },
+  Delivered: { label: "Delivered", tone: "warning" },
+  Disputed: { label: "Disputed", tone: "danger" },
+  Completed: { label: "Completed", tone: "success" },
+  Resolved: { label: "Resolved", tone: "neutral" },
+  Refunded: { label: "Refunded", tone: "neutral" },
+  Cancelled: { label: "Cancelled", tone: "neutral" },
+};
+
+export function StatusPill({ status, label }: { status: string; label?: string }) {
+  const known = STATUS[status];
+  return (
+    <Pill tone={known?.tone ?? "neutral"} dot>
+      {known?.label ?? label ?? status}
+    </Pill>
+  );
+}
+
+export function isActiveStatus(status: string): boolean {
+  return ["Listed", "Locked", "Delivered", "Disputed"].includes(status);
 }

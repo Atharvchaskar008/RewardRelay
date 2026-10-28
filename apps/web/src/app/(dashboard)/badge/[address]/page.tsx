@@ -1,10 +1,11 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import QRCode from "qrcode";
-import { Card, ErrorText, ExplorerLink, Money, Page } from "@/components/ui";
+import { ErrorText, LoadingCard, Page } from "@/components/ui";
+import { AddressChip, Avatar, Card, EmptyState, Pill, Stat, inr } from "@/components/ds";
 import { useRewardRelay, type Money as MoneyValue } from "@/client/sdk";
 
 interface BadgeView {
@@ -36,41 +37,81 @@ export default function BadgePage() {
   });
   const [qr, setQr] = useState("");
   useEffect(() => {
-    void QRCode.toDataURL(window.location.href, { margin: 1, width: 180 }).then(setQr);
+    void QRCode.toDataURL(window.location.href, { margin: 1, width: 192 }).then(setQr);
   }, []);
 
   return (
-    <Page title="Trust Badge">
-      {badge.isLoading && <p className="muted">Loading…</p>}
+    <Page>
+      {badge.isLoading && <LoadingCard lines={4} />}
       <ErrorText error={badge.error} />
       {badge.data && (
-        <Card>
-          <p className="mono">{badge.data.address}</p>
+        <div className="stack" style={{ gap: 24 }}>
+          <header className="profile-head">
+            <Avatar address={badge.data.address} size={72} />
+            <div className="stack" style={{ gap: 8 }}>
+              <span className="eyebrow">Trust Badge</span>
+              <h1 className="title-1">{badge.data.hasBadge ? badge.data.tierName : "No badge"}</h1>
+              <div className="row" style={{ gap: 8 }}>
+                <AddressChip address={badge.data.address} href={badge.data.mstscanUrl} />
+                {badge.data.hasBadge && <Pill tone="accent">Soulbound · ERC-5192</Pill>}
+              </div>
+            </div>
+          </header>
+
           {badge.data.hasBadge ? (
-            <>
-              <p>
-                <strong>{badge.data.tierName}</strong> · soulbound (ERC-5192, locked)
-              </p>
-              <p>
-                {badge.data.completed} deals completed with {badge.data.uniqueCounterparties}{" "}
-                different people · {badge.data.disputesLost} disputes lost ·{" "}
-                {badge.data.relayPoints} Relay Points
-              </p>
-              <p>
-                Volume <Money value={badge.data.volume} /> · deal limit{" "}
-                <Money value={badge.data.maxDealValue} />
-              </p>
-            </>
+            <div className="grid" style={{ "--cols": 4 } as CSSProperties}>
+              <Card>
+                <Stat label="Deals" value={badge.data.completed} />
+              </Card>
+              <Card>
+                <Stat label="Different people" value={badge.data.uniqueCounterparties} />
+              </Card>
+              <Card>
+                <Stat label="Disputes lost" value={badge.data.disputesLost} />
+              </Card>
+              <Card>
+                <Stat
+                  label="Volume"
+                  value={inr(badge.data.volume.inr)}
+                  sub={`${badge.data.volume.mstc} MSTC`}
+                />
+              </Card>
+            </div>
           ) : (
-            <p>This address has no Trust Badge.</p>
+            <EmptyState title="This address has no Trust Badge yet." />
           )}
-          <p className="row">
-            <ExplorerLink href={badge.data.mstscanUrl}>Address on mstscan</ExplorerLink>
-            <ExplorerLink href={badge.data.badgeContractUrl}>Badge contract</ExplorerLink>
-          </p>
-          {/* eslint-disable-next-line @next/next/no-img-element -- a data: URL QR code */}
-          {qr && <img src={qr} alt="QR code of this badge page" width={180} height={180} />}
-        </Card>
+
+          <Card>
+            <div className="row" style={{ gap: 24, alignItems: "center" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- a data: URL QR code */}
+              {qr && <img src={qr} alt="QR code of this badge page" width={112} height={112} />}
+              <div className="stack" style={{ gap: 8 }}>
+                <span className="label">Verify on-chain</span>
+                <p className="faint" style={{ fontSize: 14 }}>
+                  {badge.data.relayPoints} Relay Points · locked to this address.
+                </p>
+                <div className="row" style={{ gap: 16 }}>
+                  <a
+                    className="link"
+                    href={badge.data.mstscanUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    Address on mstscan
+                  </a>
+                  <a
+                    className="link"
+                    href={badge.data.badgeContractUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    Badge contract
+                  </a>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
       )}
     </Page>
   );

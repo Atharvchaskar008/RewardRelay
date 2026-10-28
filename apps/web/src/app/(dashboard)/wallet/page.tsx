@@ -4,14 +4,25 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { isAddress, parseEther, type Address } from "viem";
-import { Card, ErrorText, ExplorerLink, Money, Page, RequireSignIn } from "@/components/ui";
+import { ErrorText, LoadingCard, Page, RequireSignIn } from "@/components/ui";
+import {
+  AddressChip,
+  Avatar,
+  Button,
+  Card,
+  CopyButton,
+  Field,
+  Pill,
+  Stat,
+  inr,
+} from "@/components/ds";
 import { signOut } from "@/client/firebase";
 import { tx, useMe, useSdkContext, useWallet, type TxOutcome } from "@/client/sdk";
 
-/** Balance in MSTC ≈ ₹, receive QR, send, withdraw deferred payouts, lock and backup. */
+/** Profile: balance in MSTC ≈ ₹, Trust Badge, receive QR, send, withdraw deferred payouts, security. */
 export default function WalletPage() {
   return (
-    <Page title="Wallet">
+    <Page>
       <RequireSignIn>
         <WalletScreen />
       </RequireSignIn>
@@ -33,7 +44,7 @@ function WalletScreen() {
   const view = me.data;
 
   useEffect(() => {
-    if (view?.address) void QRCode.toDataURL(view.address, { margin: 1, width: 200 }).then(setQr);
+    if (view?.address) void QRCode.toDataURL(view.address, { margin: 1, width: 240 }).then(setQr);
   }, [view?.address]);
 
   async function run(work: () => Promise<TxOutcome | unknown>) {
@@ -52,125 +63,223 @@ function WalletScreen() {
     }
   }
 
-  if (me.isLoading || !wallet.ready) return <p className="muted">Loading…</p>;
+  if (me.isLoading || !wallet.ready) return <LoadingCard lines={4} />;
   if (!view) {
     return (
-      <p>
-        No wallet linked yet. <Link href="/login">Finish signing up</Link>.
-      </p>
+      <Card className="signin-card">
+        <h2 className="title-3">Finish signing up</h2>
+        <p className="muted">Create your wallet to get a Trust Badge.</p>
+        <Button href="/login">Continue</Button>
+      </Card>
     );
   }
 
   return (
-    <>
-      <Card>
-        <p>
-          Balance{" "}
-          <Money value={{ wei: view.balanceWei, mstc: view.balanceMstc, inr: view.balanceInr }} />
-        </p>
-        {view.withdrawable.wei !== "0" && (
-          <p>
-            Waiting to be withdrawn: <Money value={view.withdrawable} />
-            <button
-              disabled={busy || !wallet.unlocked}
-              onClick={() => run(() => tx.withdraw(sdk().chain))}
-            >
-              Withdraw
-            </button>
-          </p>
-        )}
-        <p>
-          Trust Badge: <Link href={`/badge/${view.address}`}>{view.badge.tierName}</Link> ·{" "}
-          {view.badge.completed} completed · limit <Money value={view.badge.maxDealValue} />
-        </p>
-        <p className="mono">{view.address}</p>
-        <ExplorerLink href={view.mstscanUrl}>View on mstscan</ExplorerLink>
-      </Card>
+    <div className="stack" style={{ gap: 24 }}>
+      <header className="profile-head">
+        <Avatar address={view.address} size={72} />
+        <div className="stack" style={{ gap: 8 }}>
+          <span className="eyebrow">Profile</span>
+          <AddressChip address={view.address} href={view.mstscanUrl} />
+          <div className="row" style={{ gap: 8 }}>
+            <Pill tone="accent">{view.badge.tierName}</Pill>
+            <Pill>
+              {wallet.kind === "injected"
+                ? (wallet.browserWalletName ?? "Crypto wallet")
+                : "PIN wallet"}
+            </Pill>
+          </div>
+        </div>
+      </header>
 
-      <Card>
-        <h2>Receive</h2>
-        {/* eslint-disable-next-line @next/next/no-img-element -- a data: URL QR code */}
-        {qr && <img src={qr} alt="Wallet address QR code" width={200} height={200} />}
-        <button onClick={() => navigator.clipboard?.writeText(view.address)}>Copy address</button>
-      </Card>
-
-      {!wallet.unlocked && view.walletKind === "injected" ? (
+      <div className="grid" style={{ "--cols": 3 } as React.CSSProperties}>
         <Card>
-          <h2>Connect your wallet to send</h2>
-          <p className="muted">
-            This account signs with a browser wallet. <Link href="/login">Connect it</Link> to send
-            or withdraw.
-          </p>
+          <div className="stack" style={{ gap: 16 }}>
+            <Stat label="Balance" value={inr(view.balanceInr)} sub={`${view.balanceMstc} MSTC`} />
+            {view.withdrawable.wei !== "0" && (
+              <div className="stack" style={{ gap: 8 }}>
+                <span className="faint" style={{ fontSize: 13 }}>
+                  {view.withdrawable.mstc} MSTC waiting
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy || !wallet.unlocked}
+                  onClick={() => run(() => tx.withdraw(sdk().chain))}
+                >
+                  Withdraw
+                </Button>
+              </div>
+            )}
+          </div>
         </Card>
-      ) : !wallet.unlocked ? (
         <Card>
-          <h2>Unlock to send</h2>
-          <input
-            type="password"
-            inputMode="numeric"
-            placeholder="PIN"
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-          />
-          <button className="primary" disabled={busy} onClick={() => run(() => wallet.unlock(pin))}>
-            Unlock
-          </button>
+          <div className="stack" style={{ gap: 16 }}>
+            <Stat
+              label="Trust Badge"
+              value={view.badge.tierName}
+              sub={`${view.badge.completed} deals · ${view.badge.disputesLost} lost`}
+            />
+            <Link className="link" href={`/badge/${view.address}`} style={{ fontSize: 14 }}>
+              Public badge
+            </Link>
+          </div>
         </Card>
-      ) : (
         <Card>
-          <h2>Send MSTC</h2>
-          <label htmlFor="to">To address</label>
-          <input
-            id="to"
-            value={to}
-            onChange={(e) => setTo(e.target.value.trim())}
-            placeholder="0x…"
-          />
-          <label htmlFor="amount">Amount (MSTC)</label>
-          <input
-            id="amount"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value.trim())}
-          />
-          <button
-            className="primary"
-            disabled={busy || !isAddress(to) || !(Number(amount) > 0)}
-            onClick={() => run(() => tx.sendMstc(sdk().chain, to as Address, parseEther(amount)))}
-          >
-            Send
-          </button>
-          {wallet.kind === "injected" ? (
-            <div className="row">
-              <button onClick={() => wallet.disconnectBrowserWallet()}>
-                Disconnect {wallet.browserWalletName}
-              </button>
+          <div className="row" style={{ gap: 16, alignItems: "flex-start", flexWrap: "nowrap" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- a data: URL QR code */}
+            {qr && <img src={qr} alt="Wallet address QR code" width={96} height={96} />}
+            <div className="stack" style={{ gap: 8 }}>
+              <span className="label">Receive</span>
+              <p className="faint" style={{ fontSize: 13 }}>
+                Scan or copy your address.
+              </p>
+              <span className="row" style={{ gap: 4 }}>
+                <span className="num" style={{ fontSize: 13 }}>
+                  Copy
+                </span>
+                <CopyButton text={view.address} label="Copy address" />
+              </span>
             </div>
-          ) : (
-            <div className="row">
-              <button onClick={() => run(() => wallet.backup())}>Back up wallet</button>
-              <button onClick={() => wallet.lock()}>Lock</button>
-            </div>
-          )}
+          </div>
         </Card>
-      )}
+      </div>
 
-      {result && (
-        <p className="success">
-          Sent. <ExplorerLink href={result.explorerUrl}>View transaction</ExplorerLink>
-        </p>
-      )}
-      <ErrorText error={error} />
-      <button
-        onClick={() =>
-          run(async () => {
-            wallet.lock();
-            await signOut();
-          })
-        }
-      >
-        Sign out
-      </button>
-    </>
+      <div className="grid" style={{ "--cols": 2 } as React.CSSProperties}>
+        <Card>
+          <div className="stack" style={{ gap: 16 }}>
+            <span className="label">Send MSTC</span>
+            {!wallet.unlocked && view.walletKind === "injected" ? (
+              <p className="muted">
+                <Link className="link" href="/login">
+                  Connect your wallet
+                </Link>{" "}
+                to send or withdraw.
+              </p>
+            ) : !wallet.unlocked ? (
+              <form
+                className="row"
+                style={{ gap: 8, flexWrap: "nowrap", alignItems: "flex-end" }}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void run(() => wallet.unlock(pin));
+                }}
+              >
+                <Field label="PIN" htmlFor="pin">
+                  <input
+                    id="pin"
+                    className="input input-mono"
+                    type="password"
+                    inputMode="numeric"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                  />
+                </Field>
+                <Button type="submit" size="lg" loading={busy}>
+                  Unlock
+                </Button>
+              </form>
+            ) : (
+              <>
+                <Field label="To" htmlFor="to">
+                  <input
+                    id="to"
+                    className="input input-mono"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value.trim())}
+                    placeholder="0x…"
+                  />
+                </Field>
+                <Field label="Amount (MSTC)" htmlFor="amount">
+                  <input
+                    id="amount"
+                    className="input input-mono"
+                    inputMode="decimal"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value.trim())}
+                  />
+                </Field>
+                <Button
+                  disabled={busy || !isAddress(to) || !(Number(amount) > 0)}
+                  loading={busy}
+                  onClick={() =>
+                    run(() => tx.sendMstc(sdk().chain, to as Address, parseEther(amount)))
+                  }
+                >
+                  Send
+                </Button>
+              </>
+            )}
+            {result && (
+              <p className="alert alert-success">
+                Sent.&nbsp;
+                <a
+                  className="link"
+                  href={result.explorerUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  View transaction
+                </a>
+              </p>
+            )}
+            <ErrorText error={error} />
+          </div>
+        </Card>
+
+        <Card>
+          <div className="stack" style={{ gap: 16 }}>
+            <span className="label">Security</span>
+            <p className="faint" style={{ fontSize: 13 }}>
+              {wallet.kind === "injected"
+                ? "Your crypto wallet holds the key."
+                : "Your key is encrypted with your PIN on this device, with an encrypted backup."}
+            </p>
+            <div className="row" style={{ gap: 8 }}>
+              {wallet.kind === "injected" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => wallet.disconnectBrowserWallet()}
+                >
+                  Disconnect {wallet.browserWalletName}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!wallet.unlocked || busy}
+                    onClick={() => run(() => wallet.backup())}
+                  >
+                    Back up
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!wallet.unlocked}
+                    onClick={() => wallet.lock()}
+                  >
+                    Lock
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() =>
+                  run(async () => {
+                    wallet.lock();
+                    await signOut();
+                  })
+                }
+              >
+                Sign out
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
   );
 }
