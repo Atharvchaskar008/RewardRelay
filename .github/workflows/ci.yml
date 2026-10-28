@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Compile contracts (ABIs + TypeChain types)
+        run: npm run compile
+
+      - name: Lint and format check
+        run: npm run lint
+
+      - name: Unit and contract tests
+        run: npm test
+
+      - name: Build (shared, contracts, web)
+        run: npm run build
+
+  integration:
+    name: Integration tests (Firebase emulators + local chain)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # The Firestore emulator needs Java 21.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install
+        run: npm ci
+
+      - name: Compile contracts
+        run: npm run compile
+
+      - name: Integration tests
+        run: npm run test:integration -w @rewardrelay/web

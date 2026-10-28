@@ -1,0 +1,16 @@
+rules_version = '2';
+
+// RewardRelay: every write goes through the API (Firebase Admin SDK, which bypasses these rules).
+// Clients may only read public listing metadata; everything else is server-only.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /listings/{dealId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@rewardrelay/shared",
+  "description": "ABIs, deployed addresses, chain config and protocol rules shared by RewardRelay packages.",
+  "license": "MIT",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

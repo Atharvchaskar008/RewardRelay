@@ -1,0 +1,15 @@
+node_modules
+artifacts
+cache
+coverage
+coverage.json
+typechain-types
+.next
+package-lock.json
+
+# private notes, never committed
+.private
+harness.md
+
+# generated deployment records (written by the deploy scripts)
+packages/contracts/deployments
