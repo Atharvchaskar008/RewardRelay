@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { BottomNav } from "@/components/BottomNav";
-import { Providers } from "./providers";
-import "./globals.css";
+import { Providers } from "../providers";
+import "../globals.css";
 
 export const metadata: Metadata = {
   title: "RewardRelay",
@@ -17,7 +17,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/** The test dashboard: every app page, with the session, the SDK and the bottom navigation. */
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>

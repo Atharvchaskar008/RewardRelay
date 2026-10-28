@@ -4,26 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SAKAR</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="footer.css">
+  <link rel="stylesheet" href="/landing/fonts.css">
+  <link rel="stylesheet" href="/landing/style.css">
+  <link rel="stylesheet" href="/landing/footer.css">
 </head>
 <body>
 
   <!-- NAVBAR -->
-  <nav id="nav" class="hoverchar" data-active="true"><div><a href="/" rel="prefetch" class="home" data-active="true">SAKAR</a></div><div><a href="/work" rel="prefetch" class="work" data-active="true">Work</a><a href="/services" rel="prefetch" data-active="true">Services</a></div><div class="secondary"><a href="/about" rel="prefetch" class="about" data-active="true">About</a><a href="/play" rel="prefetch" data-active="true">Play</a></div><div class="last"><button class="toggler ghost">Settings</button><a href="/contact" rel="prefetch" data-active="true">Contact</a></div><div class="mobile"><button class="ghost mobile-contact" data-active="true">Contact</button><button class="ghost mobile-close" data-active="true">Menu</button></div></nav>
+  <nav id="nav" class="hoverchar" data-active="true"><div><a href="/" rel="prefetch" class="home" data-active="true">SAKAR</a></div><div><a href="/explore" rel="prefetch" class="work" data-active="true">Explore</a><a href="/listings/new" rel="prefetch" data-active="true">Share</a></div><div class="secondary"><a href="/deals" rel="prefetch" class="about" data-active="true">Deals</a><a href="/wallet" rel="prefetch" data-active="true">Wallet</a></div><div class="last"><button class="toggler ghost">Settings</button><a href="/dashboard" rel="prefetch" data-active="true">Dashboard</a></div><div class="mobile"><button class="ghost mobile-contact" data-active="true">Contact</button><button class="ghost mobile-close" data-active="true">Menu</button></div></nav>
 
   <!-- HERO -->
   <main class="hero">
-    <img class="hero__bg" src="hero_art.png" alt="" aria-hidden="true">
+    <img class="hero__bg" src="/landing/hero_art.png" alt="" aria-hidden="true">
     <div class="hero__copy">
       <div class="eyebrow">+ TRUSTED MARKETPLACE FOR UNUSED REWARDS</div>
       <h1>Rewards expire.<br>Value shouldn't.</h1>
       <p>SAKAR lets you use your unused card offers, lounge passes and promo codes for people who want the discount. Payment waits in escrow until the benefit is delivered.</p>
-      <a class="btn" href="#">Join Waitlist</a>
-      <a class="btn btn--ghost" href="#">Discover</a>
+      <a class="btn" href="/login">Join Waitlist</a>
+      <a class="btn btn--ghost" href="/explore">Discover</a>
     </div>
   </main>
 
@@ -96,8 +94,8 @@
     <h2>Ready to put your<br>rewards to work?</h2>
     <p>Join the waitlist and be first in line when SAKAR opens to everyone.</p>
     <div style="margin-top:48px;">
-      <a class="btn" href="#">Join Waitlist</a>
-      <a class="btn btn--ghost" href="#">How It Works</a>
+      <a class="btn" href="/login">Join Waitlist</a>
+      <a class="btn btn--ghost" href="/dashboard">How It Works</a>
     </div>
     <p class="cta-footnote">Live on MST Testnet. No real money moves.</p>
   </section>
@@ -123,7 +121,7 @@
             <ul>
               <li><a href="/explore">Explore</a></li>
               <li><a href="/listings/new">Create Listing</a></li>
-              <li><a href="/deal">Deal Room</a></li>
+              <li><a href="/deals">Deal Room</a></li>
               <li><a href="/wallet">Wallet</a></li>
             </ul>
           </div>
@@ -132,16 +130,16 @@
             <ul>
               <li><a href="https://github.com/Atharvchaskar008/RewardRelay" target="_blank" rel="noopener noreferrer">Documentation</a></li>
               <li><a href="https://github.com/Atharvchaskar008/RewardRelay" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-              <li><a href="https://rewardrelay.vercel.app" target="_blank" rel="noopener noreferrer">Live App</a></li>
+              <li><a href="/dashboard">Live App</a></li>
               <li><a href="https://mstblockchain.com" target="_blank" rel="noopener noreferrer">MST Blockchain</a></li>
             </ul>
           </div>
           <div class="footer-column">
             <h3>Legal</h3>
             <ul>
-              <li><a href="/privacy">Privacy</a></li>
+              <li><a href="/terms">Privacy</a></li>
               <li><a href="/terms">Terms</a></li>
-              <li><a href="/security">Security</a></li>
+              <li><a href="https://github.com/Atharvchaskar008/RewardRelay/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security</a></li>
               <li><a href="https://github.com/Atharvchaskar008/RewardRelay/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License (MIT)</a></li>
             </ul>
           </div>
@@ -156,7 +154,7 @@
               <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
             </svg>
           </a>
-          <a href="https://rewardrelay.vercel.app" target="_blank" rel="noopener noreferrer" aria-label="Live App">
+          <a href="/dashboard" aria-label="Live App">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
               <path d="M5 5v14h14v-7h-2v5H7V7h5V5H5z" />
@@ -167,9 +165,9 @@
     </div>
   </footer>
 
-  <script src="footer.js"></script>
-  <script src="ascii-eye.js"></script>
-  <script src="text-scramble-nav.js"></script>
+  <script src="/landing/footer.js"></script>
+  <script src="/landing/ascii-eye.js"></script>
+  <script src="/landing/text-scramble-nav.js"></script>
 
 </body>
 </html>
