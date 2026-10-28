@@ -22,6 +22,7 @@ import {
 import { TtlCache } from "./cache";
 import { withDeadline } from "./deadline";
 import { serverEnv, type ServerEnv } from "./env";
+import { resetHealthCache } from "./health";
 import { track } from "./timing";
 
 /**
@@ -110,7 +111,7 @@ export interface TrustSummary {
   maxDealValue: bigint;
 }
 
-const dealCache = new TtlCache<OnChainDeal>({ ttlMs: 3_000, max: 2_000 });
+const activeDealInFlight = new TtlCache<OnChainDeal>({ ttlMs: 0, max: 2_000 });
 const terminalDealCache = new TtlCache<OnChainDeal>({
   ttlMs: Number.POSITIVE_INFINITY,
   max: 5_000,
@@ -118,8 +119,8 @@ const terminalDealCache = new TtlCache<OnChainDeal>({
 
 /**
  * The deal as stored on-chain. Unknown ids revert with `DealNotFound`.
- * Active deals are cached for 3 s; terminal deals (Completed, Refunded, Resolved, Cancelled)
- * are cached indefinitely since on-chain deal state never changes once finalized.
+ * Active deals coalesce concurrent in-flight reads; terminal deals (Completed, Refunded,
+ * Resolved, Cancelled) are cached indefinitely since finalized on-chain state never changes.
  */
 export async function readDeal(
   id: bigint,
@@ -129,7 +130,7 @@ export async function readDeal(
   if (!options.fresh) {
     const terminal = terminalDealCache.peek(key);
     if (terminal) return terminal;
-    return dealCache.get(key, async () => {
+    return activeDealInFlight.get(key, async () => {
       const deal = await escrowContract().read.getDeal([id]);
       if (TERMINAL_STATUSES.includes(deal.status as DealStatus)) {
         terminalDealCache.set(key, deal);
@@ -140,8 +141,6 @@ export async function readDeal(
   const deal = await escrowContract().read.getDeal([id]);
   if (TERMINAL_STATUSES.includes(deal.status as DealStatus)) {
     terminalDealCache.set(key, deal);
-  } else {
-    dealCache.set(key, deal);
   }
   return deal;
 }
@@ -149,7 +148,7 @@ export async function readDeal(
 /** Drop any cached deal record and scanned events (after a mutation). */
 export function invalidateDealCache(id: bigint | string): void {
   const key = id.toString();
-  dealCache.invalidate(key);
+  activeDealInFlight.invalidate(key);
   terminalDealCache.invalidate(key);
   dealEvents.delete(key);
 }
@@ -314,12 +313,9 @@ async function scanDealEvents(id: bigint, key: string): Promise<DealEvent[]> {
     return cached.events;
   }
 
-  // A lower bound of the head (shared for up to 2.5 s): the scan below reads to "latest", so every
+  // A lower bound of the head (shared for up to 1.5 s): the scan below reads to "latest", so every
   // block up to `known` is covered by it.
   const known = (await latestBlock()).number;
-  if (cached && known <= cached.scannedTo) {
-    return cached.events;
-  }
 
   const deployBlock = escrowDeployBlock();
   const resume = cached ? cached.scannedTo - REORG_MARGIN + 1n : deployBlock;
@@ -382,7 +378,8 @@ export function resetChainCaches(): void {
   pausedCache.invalidate();
   latestCache.invalidate();
   blockTimes.invalidate();
-  dealCache.invalidate();
+  activeDealInFlight.invalidate();
   terminalDealCache.invalidate();
   dealEvents.clear();
+  resetHealthCache();
 }

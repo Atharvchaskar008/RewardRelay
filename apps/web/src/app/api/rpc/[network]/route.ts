@@ -63,22 +63,6 @@ interface RpcErrorReply {
   error: { code: number; message: string };
 }
 
-interface RpcSuccessReply {
-  jsonrpc: "2.0";
-  id: RpcCall["id"];
-  result: unknown;
-}
-
-function tryFastPath(call: RpcCall, chainId: number): RpcSuccessReply | null {
-  if (call.method === "eth_chainId") {
-    return { jsonrpc: "2.0", id: call.id, result: `0x${chainId.toString(16)}` };
-  }
-  if (call.method === "net_version") {
-    return { jsonrpc: "2.0", id: call.id, result: chainId.toString() };
-  }
-  return null;
-}
-
 /**
  * A method outside the allowlist gets a standard JSON-RPC "method not found" reply rather than an
  * HTTP error: viem then marks it unsupported for the session (e.g. its optional
@@ -144,32 +128,10 @@ export const POST = withRoute(
     const refused = sanitized.filter((call): call is RpcErrorReply => "error" in call);
     if (forward.length === 0) return Response.json(isBatch ? refused : refused[0]);
 
-    const fastReplies = new Map<RpcCall["id"], RpcSuccessReply>();
-    const needUpstream: RpcCall[] = [];
-    for (const call of forward) {
-      const fast = tryFastPath(call, env.MST_CHAIN_ID);
-      if (fast) {
-        fastReplies.set(call.id, fast);
-      } else {
-        needUpstream.push(call);
-      }
-    }
-
-    if (needUpstream.length === 0) {
-      if (!isBatch) {
-        return Response.json(fastReplies.get(forward[0].id) ?? refused[0]);
-      }
-      const results = calls.map((c) => {
-        const id = (c as Record<string, unknown>).id as RpcCall["id"];
-        return fastReplies.get(id) ?? refused.find((r) => r.id === id);
-      });
-      return Response.json(results);
-    }
-
     const upstream = await fetch(env.MST_RPC_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(isBatch ? needUpstream : needUpstream[0]),
+      body: JSON.stringify(isBatch ? forward : forward[0]),
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       cache: "no-store",
     }).catch((error: unknown) => {
@@ -179,8 +141,8 @@ export const POST = withRoute(
       });
     });
     const reply = await upstream.text();
-    if ((refused.length > 0 || fastReplies.size > 0) && upstream.ok) {
-      // Merge upstream replies with fast path and refused replies (matching by id)
+    if (refused.length > 0 && upstream.ok) {
+      // A batch with refused calls: merge the node's replies with ours (replies match by id).
       const replies: unknown = (() => {
         try {
           return JSON.parse(reply);
@@ -188,8 +150,7 @@ export const POST = withRoute(
           return undefined;
         }
       })();
-      const list = Array.isArray(replies) ? replies : [replies];
-      return Response.json([...list, ...fastReplies.values(), ...refused]);
+      if (Array.isArray(replies)) return Response.json([...replies, ...refused]);
     }
     return new Response(reply, {
       status: upstream.status,

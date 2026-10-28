@@ -41,6 +41,10 @@ export interface HealthReport {
 
 const healthCache = new TtlCache<HealthReport>({ ttlMs: 4_000, max: 1 });
 
+export function resetHealthCache(): void {
+  healthCache.invalidate();
+}
+
 export function healthReport(): Promise<HealthReport> {
   return healthCache.get("health", fetchHealthReport);
 }
