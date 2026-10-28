@@ -15,54 +15,53 @@ export interface DemoListing extends Omit<ListingDraft, "eventTime"> {
 
 export const DEMO_LISTINGS: readonly DemoListing[] = [
   {
-    title: "Flipkart card offer – 10% off electronics",
+    title: "10% off on Flipkart with an HDFC card",
     description:
-      "My bank card gives 10% instant discount on Flipkart. Send the product link; I order it from my account to your address and share the order ID and invoice.",
+      "Send me the product link. I order it in my account with my HDFC card and ship it to you, with the order id and invoice.",
     category: "ecommerce",
     faceValueInr: 444,
     priceInr: 400,
   },
   {
-    title: "redBus wallet credit – ₹300 off a bus ticket",
+    title: "₹150 off a Pune–Mumbai bus with an ICICI card",
     description:
-      "I have unused redBus wallet credit expiring this month. Tell me the route and date; I book the seat in your name and share the PNR.",
+      "Tell me the date and seat. I book it in your name with my card offer and share the PNR.",
     category: "travel",
-    faceValueInr: 450,
-    priceInr: 300,
+    faceValueInr: 600,
+    priceInr: 450,
     eventInDays: 3,
   },
   {
-    title: "Swiggy One member price – ₹150 off dinner",
+    title: "Swiggy: 20% off dinner with an Axis card",
     description:
-      "Swiggy One membership pricing on any restaurant. Share your order; I place it for delivery to your address.",
+      "Share your cart. I place the order with my card offer for delivery to your address.",
     category: "food",
     faceValueInr: 300,
-    priceInr: 150,
+    priceInr: 240,
   },
   {
-    title: "BookMyShow card offer – second ticket free",
-    description:
-      "Buy-one-get-one on movie tickets with my card. Pick the show; I book both seats and share the booking ID.",
+    title: "BookMyShow: buy 1, get 1 with a Kotak card",
+    description: "Pick the show. I book both seats with my card and share the booking id.",
     category: "movies",
     faceValueInr: 400,
     priceInr: 200,
     eventInDays: 3,
   },
   {
-    title: "Amazon Prime member deal – ₹250 off",
+    title: "Prime member price on your order",
     description:
-      "Prime-only deal price on the listed item. I order it from my Prime account to your address.",
+      "Members-only deal price on the listed item. I order it from my account to your address.",
     category: "membership",
     faceValueInr: 500,
-    priceInr: 250,
+    priceInr: 350,
   },
   {
-    title: "Zomato ₹100 off coupon code",
-    description: "Unused Zomato code: ₹100 off orders above ₹299, one-time use.",
+    title: "Myntra 15% off code",
+    description: "Unused Myntra code: 15% off orders above ₹999, one-time use.",
     category: "coupon",
-    faceValueInr: 100,
+    faceValueInr: 150,
     priceInr: 40,
-    codePrefix: "ZOMATO100",
+    codePrefix: "MYNTRA15",
   },
 ];
 
