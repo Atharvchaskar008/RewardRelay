@@ -8,6 +8,7 @@ import { purgeExpiredPrivateData } from "../deals/retention";
 import { serverEnv } from "../env";
 import { AppError } from "../errors";
 import { afterResponse } from "../background";
+import { purgeExpiredRecords } from "./expired";
 import { retryFailedTopups } from "../identity/onboarding";
 import { errorFields, log } from "../log";
 import { repos } from "../repositories";
@@ -22,7 +23,8 @@ import { acquireLease, releaseLease } from "./lease";
  * 2. release() every deal the index lists as Delivered with releaseAt ≤ chain time;
  * 3. defaultResolve() every dispute past its arbiter timeout;
  * 4. purge private data 7 days after a deal ends;
- * 5. retry welcome top-ups that failed before broadcast (e.g. the funder was empty at sign-up).
+ * 5. retry welcome top-ups that failed before broadcast (e.g. the funder was empty at sign-up);
+ * 6. delete expired idempotency keys, rate-limit buckets and wallet-link challenges.
  * Every action re-reads the deal on-chain first. A Firestore lease keeps runs from overlapping, and a
  * second release of the same deal fails in simulation (InvalidStatus) without spending gas.
  */
@@ -49,6 +51,8 @@ export interface CronSummary {
   purged: string[];
   /** Welcome top-ups sent on retry (a count: user ids stay out of the response and the logs). */
   topupsRetried: number;
+  /** Expired request records deleted (step 6). */
+  expiredDeleted: number;
   failed: { dealId: string; action: string; reason: string }[];
   durationMs: number;
 }
@@ -100,6 +104,7 @@ export async function runReleaseCron(): Promise<CronSummary> {
     defaultResolved: [],
     purged: [],
     topupsRetried: 0,
+    expiredDeleted: 0,
     failed: [],
     durationMs: 0,
   };
@@ -179,6 +184,12 @@ export async function runReleaseCron(): Promise<CronSummary> {
     if (!outOfTime()) {
       summary.topupsRetried = await retryFailedTopups(TOPUP_RETRIES_PER_RUN).catch((error) => {
         log("warn", "cron.topup_retry_failed", errorFields(error));
+        return 0;
+      });
+    }
+    if (!outOfTime()) {
+      summary.expiredDeleted = await purgeExpiredRecords().catch((error) => {
+        log("warn", "cron.expired_cleanup_failed", errorFields(error));
         return 0;
       });
     }

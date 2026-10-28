@@ -96,7 +96,7 @@ numbers are in the `timing` field of the `api.request` log line.
 | `GET /api/admin/disputes`                   | admin           | —                                                                                                     | `{items: AdminDisputeView[]}`: open disputes from chain events, decrypted evidence, `committedOnChain`, proof, rulebook `suggestion`                                                          |
 | `POST /api/admin/disputes/:id/resolve`      | admin · idem    | `{seekerShareBps 0-10000, faultParty None\|Sharer\|Seeker, reason}`                                   | `{status, txHash, txUrl, auditId}`; audit record written                                                                                                                                      |
 | `GET /api/admin/disputes/:id/files/:fileId` | admin           | —                                                                                                     | an evidence file                                                                                                                                                                              |
-| `GET /api/cron/release`                     | `X-Cron-Secret` | —                                                                                                     | `CronSummary {released[], defaultResolved[], purged[], refreshed, skipped?}`                                                                                                                  |
+| `GET /api/cron/release`                     | `X-Cron-Secret` | —                                                                                                     | `CronSummary {released[], defaultResolved[], purged[], refreshed, topupsRetried, expiredDeleted, skipped?}`                                                                                   |
 
 Evidence claims: `not_delivered`, `not_as_described`, `booking_cancelled`, `code_invalid`,
 `delivered_as_agreed`, `other`. Categories: `ecommerce`, `travel`, `food`, `movies`, `membership`
@@ -173,6 +173,7 @@ import {
     inrPerMstc: 100000,
   }}
   getIdToken={() => auth.currentUser?.getIdToken() ?? Promise.resolve(null)}
+  accountId={user?.uid ?? null} // one device wallet and wallet choice per account on this browser
 >
   <App />
 </RewardRelayProvider>;
@@ -242,8 +243,9 @@ Create one job at cron-job.org (free):
 | Notify on failure | on (non-2xx)                                                 |
 
 Each run refreshes the deal index, releases due deals, applies default rulings and purges expired
-private data (details, proofs, files 7 days after a deal ends), and retries welcome top-ups that failed
-before broadcast (e.g. the funder was empty at sign-up). Overlapping runs are safe (Firestore lease). Watch `/api/health`: `signers[].low` turns true when a server wallet needs MSTC.
+private data (details, proofs, files 7 days after a deal ends), retries welcome top-ups that failed
+before broadcast (e.g. the funder was empty at sign-up) and deletes expired idempotency, rate-limit and
+challenge records. Overlapping runs are safe (Firestore lease). Watch `/api/health`: `signers[].low` turns true when a server wallet needs MSTC.
 
 ---
 

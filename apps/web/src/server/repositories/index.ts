@@ -5,8 +5,8 @@ import { Collection } from "./collection";
 
 /**
  * Firestore data model (server-only except `listings`, which the rules expose read-only).
- * Times are epoch milliseconds; `expiresAt` fields are Firestore Timestamps so a TTL policy can
- * delete expired documents. Personal data and codes are stored only as EncryptedBlob (crypto.ts).
+ * Times are epoch milliseconds; `expiresAt` fields are Firestore Timestamps (the keeper deletes
+ * expired documents; a TTL policy could, on a billing-enabled project). Personal data and codes are stored only as EncryptedBlob (crypto.ts).
  */
 
 export const hex32 = z.string().regex(/^0x[0-9a-fA-F]{64}$/, "expected 32-byte hex");

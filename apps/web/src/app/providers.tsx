@@ -37,7 +37,11 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <SessionContext.Provider value={session}>
-      <RewardRelayProvider config={appConfig} getIdToken={getIdToken}>
+      <RewardRelayProvider
+        config={appConfig}
+        getIdToken={getIdToken}
+        accountId={session.user?.uid ?? null}
+      >
         {children}
       </RewardRelayProvider>
     </SessionContext.Provider>

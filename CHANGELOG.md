@@ -26,12 +26,16 @@ All notable changes to RewardRelay are recorded here. The format follows
 - **Browser wallets:** after phone sign-in, a user can link BridgeKey, MetaMask or any EIP-1193
   wallet instead of a PIN wallet (it signs the link challenge, then approves each deal); MST is added
   to the wallet with its public RPC and switched to before each transaction; the choice is remembered
-  per browser and reconnected without a prompt; the account records `walletKind` so a new device
-  asks to connect the wallet rather than for a PIN.
+  per account and reconnected without a prompt; the account records `walletKind` so a new device
+  asks to connect the wallet rather than for a PIN. Each installed wallet (the BridgeKey extension
+  announces itself through EIP-6963) gets its own button.
+- Each phone account has its own device wallet in the browser (`RewardRelayProvider accountId`), so
+  several accounts can use one browser and a PIN wallet left by another account no longer hides the
+  crypto-wallet option. A PIN wallet stored before this change is restored once from its backup.
 - Demo data: `npm run seed:demo -w @rewardrelay/web` lists one offer per category from a demo
   Sharer (Firebase test number), checks the balance first and never duplicates an open offer.
-- TTL policies in `firestore.indexes.json`: Firestore deletes expired rate-limit, idempotency and
-  sign-in challenge records by itself (applied with the rules and indexes deploy).
+- The keeper deletes expired rate-limit, idempotency and wallet-link challenge records (up to 200
+  per collection per run; works on the free Spark plan, where Firestore TTL policies are unavailable).
 - `apps/web/vercel.json` runs the functions in Mumbai (`bom1`), next to Firestore.
 - A `Server-Timing` header on every API response (route phases and busy time per backend) and the
   same timing in the request log.

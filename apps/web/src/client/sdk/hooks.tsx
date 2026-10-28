@@ -18,7 +18,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import type { Address, EIP1193Provider } from "viem";
-import { EmbeddedWallet } from "@/client/wallet";
+import { EmbeddedWallet, IndexedDbKeyStore } from "@/client/wallet";
 import { clearWalletChoice, loadWalletChoice, saveWalletChoice } from "@/client/walletChoice";
 import { createApiClient, type ApiClient } from "./api";
 import {
@@ -65,6 +65,8 @@ export interface BrowserWalletSession {
 
 interface SdkState {
   config: RewardRelayConfig;
+  /** The signed-in account (e.g. the Firebase uid): device wallet and wallet choice are kept per account. */
+  accountId: string | null | undefined;
   api: ApiClient;
   wallet: EmbeddedWallet;
   browserWallet: BrowserWalletSession | null;
@@ -78,16 +80,33 @@ const SdkReactContext = createContext<SdkState | null>(null);
 export function RewardRelayProvider(props: {
   config: RewardRelayConfig;
   getIdToken: () => Promise<string | null>;
+  /**
+   * The signed-in account (e.g. the Firebase uid; null while signed out). With it, every account on
+   * this device has its own wallet, so several people can use one browser. Without it, one wallet
+   * per browser.
+   */
+  accountId?: string | null;
   wallet?: EmbeddedWallet;
   queryClient?: QueryClient;
   children: ReactNode;
 }) {
-  const { config, getIdToken, wallet, queryClient, children } = props;
+  const { config, getIdToken, accountId, wallet, queryClient, children } = props;
   const api = useMemo(
     () => createApiClient({ baseUrl: config.apiBaseUrl, getIdToken }),
     [config.apiBaseUrl, getIdToken],
   );
-  const embedded = useMemo(() => wallet ?? new EmbeddedWallet(), [wallet]);
+  const embedded = useMemo(
+    () =>
+      wallet ??
+      new EmbeddedWallet(
+        accountId === undefined
+          ? undefined
+          : new IndexedDbKeyStore(undefined, undefined, `account:${accountId ?? "signed-out"}`),
+      ),
+    [wallet, accountId],
+  );
+  // An account's unlocked key never outlives its session.
+  useEffect(() => () => embedded.lock(), [embedded]);
   const client = useMemo(() => queryClient ?? new QueryClient(), [queryClient]);
   const [browserWallet, setBrowserWallet] = useState<BrowserWalletSession | null>(null);
   const [browserWalletReady, setBrowserWalletReady] = useState(false);
@@ -96,11 +115,13 @@ export function RewardRelayProvider(props: {
   // the remembered account (eth_accounts). Otherwise the user reconnects from the login page.
   useEffect(() => {
     let live = true;
-    const choice = loadWalletChoice();
+    setBrowserWallet(null);
+    const choice = loadWalletChoice(accountId);
     if (choice?.kind !== "injected") {
       setBrowserWalletReady(true);
       return;
     }
+    setBrowserWalletReady(false);
     void (async () => {
       try {
         const wallets = await discoverInjectedWallets();
@@ -128,7 +149,7 @@ export function RewardRelayProvider(props: {
     return () => {
       live = false;
     };
-  }, [config.chain]);
+  }, [config.chain, accountId]);
 
   // Switching to another account in the wallet ends the session: deals are signed only by the
   // account linked to the phone number.
@@ -147,13 +168,14 @@ export function RewardRelayProvider(props: {
   const value = useMemo(
     () => ({
       config,
+      accountId,
       api,
       wallet: embedded,
       browserWallet,
       setBrowserWallet,
       browserWalletReady,
     }),
-    [config, api, embedded, browserWallet, browserWalletReady],
+    [config, accountId, api, embedded, browserWallet, browserWalletReady],
   );
   return (
     <QueryClientProvider client={client}>
@@ -186,8 +208,8 @@ export function useSdkContext(): () => SdkContext {
 
 /** The signed-in user's view (null until a wallet is linked). */
 export function useMe() {
-  const { api } = useRewardRelay();
-  return useQuery({ queryKey: ["me"], queryFn: () => api.me() });
+  const { api, accountId } = useRewardRelay();
+  return useQuery({ queryKey: ["me", accountId], queryFn: () => api.me() });
 }
 
 export interface WalletState {
@@ -202,7 +224,7 @@ export interface WalletState {
  * browser wallet: connect (links it on first use), disconnect. `unlocked` means "can sign now".
  */
 export function useWallet() {
-  const { api, wallet, config, browserWallet, setBrowserWallet, browserWalletReady } =
+  const { api, wallet, config, accountId, browserWallet, setBrowserWallet, browserWalletReady } =
     useRewardRelay();
   const queryClient = useQueryClient();
   const [state, setState] = useState<WalletState>({
@@ -261,12 +283,10 @@ export function useWallet() {
           ({ address } = await onboardInjectedWallet(api, picked.provider));
         }
         const chain = await injectedChainContext(config.chain, picked.provider, address);
-        saveWalletChoice({
-          kind: "injected",
-          rdns: picked.info.rdns,
-          name: picked.info.name,
-          address,
-        });
+        saveWalletChoice(
+          { kind: "injected", rdns: picked.info.rdns, name: picked.info.name, address },
+          accountId,
+        );
         setBrowserWallet({
           name: picked.info.name,
           rdns: picked.info.rdns,
@@ -277,7 +297,7 @@ export function useWallet() {
       }),
     /** Forgets the browser wallet on this device (the account stays linked to it). */
     disconnectBrowserWallet: () => {
-      clearWalletChoice();
+      clearWalletChoice(accountId);
       setBrowserWallet(null);
     },
     /** Creates or unlocks the device wallet, links it to the phone account and uploads the backup. */

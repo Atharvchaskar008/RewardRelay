@@ -44,6 +44,25 @@ describe("remembered wallet choice", () => {
     expect(loadWalletChoice()).toBeNull();
   });
 
+  it("keeps one choice per account", () => {
+    vi.stubGlobal("localStorage", memoryStorage());
+    const bridgeKey = {
+      kind: "injected",
+      rdns: "io.bridgekey.wallet",
+      name: "BridgeKey",
+      address: ADDRESS,
+    } as const;
+    saveWalletChoice(bridgeKey, "uid-a");
+    saveWalletChoice({ kind: "embedded" }, "uid-b");
+    expect(loadWalletChoice("uid-a")).toEqual(bridgeKey);
+    expect(loadWalletChoice("uid-b")).toEqual({ kind: "embedded" });
+    expect(loadWalletChoice("uid-c")).toBeNull();
+    expect(loadWalletChoice()).toBeNull();
+    clearWalletChoice("uid-a");
+    expect(loadWalletChoice("uid-a")).toBeNull();
+    expect(loadWalletChoice("uid-b")).toEqual({ kind: "embedded" });
+  });
+
   it("ignores corrupt or tampered entries and unavailable storage", () => {
     const storage = memoryStorage();
     vi.stubGlobal("localStorage", storage);

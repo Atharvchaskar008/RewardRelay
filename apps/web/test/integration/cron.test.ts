@@ -173,6 +173,47 @@ describe("auto-release", () => {
   });
 });
 
+describe("expired records", () => {
+  it("deletes expired request records and keeps live ones", async () => {
+    const now = Date.now();
+    const records = {
+      idempotency: (expiresAt: Date) => ({
+        state: "done",
+        requestHash: "h",
+        status: 200,
+        body: "{}",
+        createdAt: now,
+        expiresAt,
+      }),
+      rateLimits: (expiresAt: Date) => ({ tokens: 1, updatedAt: now, expiresAt }),
+      challenges: (expiresAt: Date) => ({
+        nonce: "n",
+        uid: "u",
+        address: zeroAddress,
+        message: "m",
+        issuedAt: now,
+        expiresAt,
+        usedAt: null,
+      }),
+    };
+    for (const [name, record] of Object.entries(records)) {
+      await db()
+        .doc(`${name}/test-expired`)
+        .set(record(new Date(now - 60_000)));
+      await db()
+        .doc(`${name}/test-live`)
+        .set(record(new Date(now + 60 * 60_000)));
+    }
+
+    const run = await cron();
+    expect(run.body.data.expiredDeleted).toBeGreaterThanOrEqual(3);
+    for (const name of Object.keys(records)) {
+      expect((await db().doc(`${name}/test-expired`).get()).exists).toBe(false);
+      expect((await db().doc(`${name}/test-live`).get()).exists).toBe(true);
+    }
+  });
+});
+
 describe("health", () => {
   it("reports chain, Firestore and every signer's balance without secrets", async () => {
     const res = await callRoute<HealthReport>(healthRoute, {});

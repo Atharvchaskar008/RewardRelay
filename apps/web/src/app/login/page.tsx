@@ -231,7 +231,7 @@ function PinStep() {
         )}
         {busy && <p className="muted">Setting up your Trust Badge and test MSTC…</p>}
       </Card>
-      {!me.data && !wallet.exists && (
+      {!me.data && (
         <Card>
           <p>
             <strong>Already use a crypto wallet?</strong> Link BridgeKey or MetaMask instead of a
@@ -255,8 +255,8 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
   if (wallets.length === 0) {
     return (
       <p className="muted">
-        No browser wallet found. Install MetaMask, or open RewardRelay in your wallet app&apos;s
-        browser (BridgeKey).
+        No browser wallet found. Install the BridgeKey or MetaMask browser extension, then reload
+        this page.
       </p>
     );
   }

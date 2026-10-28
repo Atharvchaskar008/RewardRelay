@@ -89,24 +89,5 @@
       ]
     }
   ],
-  "fieldOverrides": [
-    {
-      "collectionGroup": "idempotency",
-      "fieldPath": "expiresAt",
-      "ttl": true,
-      "indexes": []
-    },
-    {
-      "collectionGroup": "rateLimits",
-      "fieldPath": "expiresAt",
-      "ttl": true,
-      "indexes": []
-    },
-    {
-      "collectionGroup": "challenges",
-      "fieldPath": "expiresAt",
-      "ttl": true,
-      "indexes": []
-    }
-  ]
+  "fieldOverrides": []
 }
