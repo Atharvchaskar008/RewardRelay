@@ -1,0 +1,18 @@
+# Never upload secrets or local-only files; Vercel builds from the repository's tracked sources.
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+.private
+.vercel
+docs/handoff.md
+node_modules
+**/node_modules
+**/.next
+coverage
+**/coverage
+packages/contracts/artifacts
+packages/contracts/cache
+packages/contracts/typechain-types
+packages/contracts/deployments/*.local.json

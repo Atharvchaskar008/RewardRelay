@@ -15,6 +15,7 @@
     "seed:demo": "vite-node --config vitest.config.ts scripts/seed-demo.ts"
   },
   "dependencies": {
+    "@rewardrelay/shared": "*",
     "@tanstack/react-query": "^5.59.0",
     "@vercel/blob": "^2.8.2",
     "firebase": "^13.1.0",
@@ -23,7 +24,6 @@
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "@rewardrelay/shared": "*",
     "server-only": "^0.0.1",
     "viem": "^2.21.19",
     "zod": "^4.6.7"
@@ -34,9 +34,13 @@
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
     "cross-env": "^10.1.0",
+    "dotenv": "^16.6.1",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.28",
+    "eslint-config-prettier": "^10.1.8",
     "typescript": "^5.5.4",
     "vitest": "^3.2.7"
   }

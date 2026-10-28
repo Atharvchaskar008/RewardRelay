@@ -50,6 +50,7 @@
     "@grpc/grpc-js": "^1.14.6",
     "@vercel/cli-config": {
       "zod": "^4.6.7"
-    }
+    },
+    "jose": "^5.10.0"
   }
 }
