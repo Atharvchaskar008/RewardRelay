@@ -31,7 +31,11 @@ import { acquireLease, releaseLease } from "./lease";
 
 export const CRON_LEASE = "cron-release";
 const LEASE_TTL_MS = 90_000;
-const TIME_BUDGET_MS = 45_000;
+/**
+ * No new action starts after this; one in flight (a receipt wait of a few seconds) may still finish. Kept
+ * well under cron-job.org's 30 s request timeout, so a busy run is not reported as a failure.
+ */
+const TIME_BUDGET_MS = 20_000;
 const MAX_ACTIONS_PER_RUN = 10;
 const REFRESH_BATCH = 50;
 const TOPUP_RETRIES_PER_RUN = 5;

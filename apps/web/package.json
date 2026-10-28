@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:integration": "npx -y firebase-tools@15.34.1 emulators:exec --project demo-rewardrelay --only auth,firestore \"cross-env VITEST_SUITE=emulator vitest run\"",
-    "seed:demo": "vite-node --config vitest.config.ts scripts/seed-demo.ts"
+    "seed:demo": "vite-node --config vitest.config.ts scripts/seed-demo.ts",
+    "check:live": "vite-node --config vitest.config.ts scripts/live-check.ts"
   },
   "dependencies": {
     "@rewardrelay/shared": "*",

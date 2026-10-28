@@ -11,7 +11,7 @@ import type { EmbeddedWallet } from "@/client/wallet";
 import type { ApiClient } from "./api";
 import * as tx from "./chain";
 import type { ChainContext, TxOutcome } from "./chain";
-import { ChainError, toChainError } from "./errors";
+import { ChainError, REVERT_MESSAGES, toChainError } from "./errors";
 import type {
   DealView,
   DeliveryDetails,
@@ -133,13 +133,27 @@ async function publish(sdk: SdkContext, dealId: bigint, draft: ListingDraft): Pr
 }
 
 /** Buy-for-you: createListing (deposit from the contract) → publish the chain-verified metadata. */
+/**
+ * The contract refuses a price above the Sharer's Trust Badge limit, but a wallet that cannot cover the
+ * deposit fails the simulation first with "not enough MSTC". Checking the limit before anything is
+ * signed gives the reason that actually applies.
+ */
+async function assertWithinLimit(sdk: SdkContext, price: bigint): Promise<void> {
+  const me = await sdk.api.me();
+  if (me && price > BigInt(me.badge.maxDealValue.wei)) {
+    throw new ChainError(REVERT_MESSAGES.DealValueAboveLimit, "DealValueAboveLimit");
+  }
+}
+
 export async function listBuyForYou(sdk: SdkContext, draft: ListingDraft) {
   const category = categoryByKey(draft.category);
   if (!category || category.dealType !== "BuyForYou")
     throw new ChainError("Choose a Buy-for-you category.");
+  const price = inrToWei(draft.priceInr, sdk.inrPerMstc);
+  await assertWithinLimit(sdk, price);
   const created = await tx.createListing(sdk.chain, {
     categoryId: category.id,
-    price: inrToWei(draft.priceInr, sdk.inrPerMstc),
+    price,
     eventTime: BigInt(draft.eventTime ?? 0),
     termsHash: listingTermsHash(termsFor(draft)),
   });
@@ -151,10 +165,12 @@ export async function listPassOn(sdk: SdkContext, draft: ListingDraft, code: str
   const category = categoryByKey(draft.category);
   if (!category || category.dealType !== "PassOn")
     throw new ChainError("Choose a Pass-on category.");
+  const price = inrToWei(draft.priceInr, sdk.inrPerMstc);
+  await assertWithinLimit(sdk, price);
   const authorization = await sdk.api.codes.authorize({ code, category: category.key });
   const created = await tx.createListing(sdk.chain, {
     categoryId: category.id,
-    price: inrToWei(draft.priceInr, sdk.inrPerMstc),
+    price,
     eventTime: BigInt(draft.eventTime ?? 0),
     termsHash: listingTermsHash(termsFor(draft)),
     fingerprint: authorization.fingerprint,
