@@ -6,8 +6,8 @@ without the real `.env` values: tests generate throwaway keys and use fake phone
 | Layer                      | Where                                                 | Runs on                                   | Count                |
 | -------------------------- | ----------------------------------------------------- | ----------------------------------------- | -------------------- |
 | Smart contracts            | `packages/contracts/test`                             | Hardhat network (Shanghai, 1 gwei)        | 100 tests            |
-| Web unit                   | `apps/web/test/unit`                                  | Node, no network                          | 174 tests            |
-| Integration and end-to-end | `apps/web/test/integration`, `apps/web/test/emulator` | Firebase emulators + a local Hardhat node | 56 tests             |
+| Web unit                   | `apps/web/test/unit`                                  | Node, no network                          | 204 tests            |
+| Integration and end-to-end | `apps/web/test/integration`, `apps/web/test/emulator` | Firebase emulators + a local Hardhat node | 61 tests             |
 | Live network               | [demo guide](demo.md)                                 | MST Testnet, browser and scripted runs    | 3 deal types checked |
 
 ## Smart contracts

@@ -11,6 +11,7 @@ MST Blockchain.**
 [![Solidity 0.8.24](https://img.shields.io/badge/solidity-0.8.24-363636.svg)](packages/contracts)
 [![Node.js 22+](https://img.shields.io/badge/node-%3E%3D22-339933.svg)](.nvmrc)
 [![Contract coverage: 100%](https://img.shields.io/badge/contract%20coverage-100%25-brightgreen.svg)](docs/testing.md)
+[![Live: rewardrelay.vercel.app](https://img.shields.io/badge/live-rewardrelay.vercel.app-black.svg)](https://rewardrelay.vercel.app)
 
 [How it works](#how-it-works) · [Architecture](#architecture) · [Getting started](#getting-started) ·
 [Testing](#testing) · [Deployments](#deployments) · [Security](#security) · [Docs](#documentation)
@@ -31,7 +32,8 @@ sides lock a deposit that a cheater loses to the other side, and every finished 
 soulbound **Trust Badge** that raises the user's deal limit.
 
 > Built for **MST Blockchain Buildathon #2** (Round 2, MVP sprint). It runs on **MST Testnet** with test
-> MSTC; no real money moves.
+> MSTC; no real money moves. **Live:** [rewardrelay.vercel.app](https://rewardrelay.vercel.app)
+> ([health](https://rewardrelay.vercel.app/api/health)).
 
 ### Highlights
 
@@ -110,6 +112,15 @@ stateDiagram-v2
 - Blocked by design: cashing out wallet balances, employee or student-only discounts, IRCTC and railway
   tickets, sharing accounts, logins, passwords or OTPs, and regulated goods.
 - One phone number maps to one wallet, so reputation cannot be farmed with throwaway accounts.
+
+### Payouts on time
+
+A smart contract cannot wake itself up, so a keeper calls the escrow every 2 minutes: `release()` for
+deals past their return window and `defaultResolve()` for disputes past the arbiter's deadline. Both
+functions can be called by **anyone**; the contract checks the time and pays the right party, so the
+keeper can only trigger what is already due and can never move money elsewhere. RewardRelay runs one
+(cron-job.org → `/api/cron/release`, with a lease against overlapping runs), and any MST user can run
+another. Opening a deal that is due also releases it, and the deal page offers the button.
 
 ## Why MST Blockchain
 
@@ -220,33 +231,50 @@ use the Firebase emulators. Both setups, Firebase and Vercel are described in
 | -------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------- |
 | Smart contracts            | Hardhat, Chai; adversarial and randomized invariant tests         | **100 tests**, **100%** statements, branches, lines        |
 | Static analysis            | Slither 0.11, Solhint                                             | 0 high and 0 medium findings                               |
-| Web unit                   | Vitest                                                            | **174 tests**                                              |
-| Integration and end-to-end | Vitest, Firebase Auth and Firestore emulators, local Hardhat node | **56 tests**, both deal types and disputes through the SDK |
-| Live network               | Browser and scripted runs on MST Testnet                          | Buy-for-you, Pass-on and dispute deals (below)             |
+| Web unit                   | Vitest                                                            | **204 tests**                                              |
+| Integration and end-to-end | Vitest, Firebase Auth and Firestore emulators, local Hardhat node | **61 tests**, both deal types and disputes through the SDK |
+| Live site                  | `npm run check:live` against rewardrelay.vercel.app               | 8 read-only checks, real deals and the cheat demos (below) |
 
 CI runs the lint, unit, build and integration jobs on every pull request. The test strategy and how to
 run each layer are in [docs/testing.md](docs/testing.md).
 
 ## Deployments
 
+**Live app:** [rewardrelay.vercel.app](https://rewardrelay.vercel.app) on Vercel, with the functions
+in Mumbai (`bom1`) next to Firestore (`asia-south1`). [`/api/health`](https://rewardrelay.vercel.app/api/health)
+reports the chain, Firestore and the server wallets' balances.
+
 **MST Testnet** (chain id `91562037`, explorer [testnet.mstscan.com](https://testnet.mstscan.com))
 
-| Contract      | Address                                                                                                                        |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| ReputationSBT | [`0x9C0a662D4eA71F9C18b0DEF392cBb1c020cAB5c6`](https://testnet.mstscan.com/address/0x9C0a662D4eA71F9C18b0DEF392cBb1c020cAB5c6) |
-| RelayEscrow   | [`0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A`](https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A) |
+| Contract      | Address                                                                                                                        | Source                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| ReputationSBT | [`0x9C0a662D4eA71F9C18b0DEF392cBb1c020cAB5c6`](https://testnet.mstscan.com/address/0x9C0a662D4eA71F9C18b0DEF392cBb1c020cAB5c6) | [verified](https://testnet.mstscan.com/address/0x9C0a662D4eA71F9C18b0DEF392cBb1c020cAB5c6#code) |
+| RelayEscrow   | [`0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A`](https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A) | [verified](https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A#code) |
 
 Deals completed on MST Testnet through the app:
 
-| Deal | Flow                                      | Outcome                                                                                                                                              |
-| ---- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| #2   | Buy-for-you, confirmed by the Seeker      | [Completed](https://testnet.mstscan.com/tx/0x84d181def4cc8d82017a42586a7ae3e0680246d52b7ccb3efe782c4ec6f68c9d)                                       |
-| #3   | Pass-on code revealed to the Seeker       | [Completed](https://testnet.mstscan.com/tx/0x7bbfc2039cd0dedc913bda08c87624db74d720eaa82e8b6cdbb551effe4f0db2)                                       |
-| #4   | Buy-for-you dispute, ruled for the Seeker | [Resolved](https://testnet.mstscan.com/tx/0x25a65efb3c1db7f89768ba9ad982ce6b148348047d8592e062a8f1ef3609099e): full refund plus the Sharer's deposit |
+| Deal | Flow                                         | Outcome                                                                                                                                              |
+| ---- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #2   | Buy-for-you, confirmed by the Seeker         | [Completed](https://testnet.mstscan.com/tx/0x84d181def4cc8d82017a42586a7ae3e0680246d52b7ccb3efe782c4ec6f68c9d)                                       |
+| #3   | Pass-on code revealed to the Seeker          | [Completed](https://testnet.mstscan.com/tx/0x7bbfc2039cd0dedc913bda08c87624db74d720eaa82e8b6cdbb551effe4f0db2)                                       |
+| #4   | Buy-for-you dispute, ruled for the Seeker    | [Resolved](https://testnet.mstscan.com/tx/0x25a65efb3c1db7f89768ba9ad982ce6b148348047d8592e062a8f1ef3609099e): full refund plus the Sharer's deposit |
+| #5   | Buy-for-you on the live site (`check:live`)  | [Completed](https://testnet.mstscan.com/tx/0x0ba7836e0fcde91b84a981cd2d18a4a8d1a8910796e9e63a74d028afb22d9fc1)                                       |
+| #6   | Pass-on on the live site (`check:live`)      | [Completed](https://testnet.mstscan.com/tx/0xf85b446d13077ce65d256e42733bcee608057f457c77fd25716953ec38e66791)                                       |
+| #7   | Dispute on the live site, ruled by the admin | [Resolved](https://testnet.mstscan.com/tx/0x4698e917052f38c1a53f9bd589d67dc0bf5181e564ef8c7d6012d7046393322a)                                        |
+
+The live check also confirms the cheat demos: the same code listed twice is refused, and a price above
+the Trust Badge limit is refused before anything is signed.
+
+| Live performance (28 Oct) | Server time    | Round trip |
+| ------------------------- | -------------- | ---------- |
+| Offers feed               | 26–58 ms       | 76–102 ms  |
+| Deal page (warm)          | ~205 ms        | ~350 ms    |
+| A full Buy-for-you deal   | 4 transactions | ~23 s      |
 
 The full deployment record (every transaction, configuration read back from the chain, smoke deal) is
 in [`packages/contracts/deployments/mstTestnet.json`](packages/contracts/deployments/mstTestnet.json).
-An MST Mainnet deployment is planned; the scripts and network configuration are ready.
+**MST Mainnet** is ready to deploy with the same addresses (the deployer is unused there): a
+`preflight:mainnet` check, a guarded deploy and a rehearsed runbook in [docs/mainnet.md](docs/mainnet.md).
 
 ## Security
 
@@ -263,7 +291,7 @@ Please report vulnerabilities privately as described in [SECURITY.md](SECURITY.m
 
 ## Roadmap
 
-- **MST Mainnet** deployment with a multisig admin and verified sources
+- **MST Mainnet**: contracts ready ([runbook](docs/mainnet.md)); a multisig admin before real users
 - **MST ecosystem integrations:** SARAL onboarding, ChainPay settlement, ProofEasy invoice verification
 - **Payments in ₹** through a licensed payment aggregator, with MST holding escrow state and reputation
 - **Decentralised arbitration** (juror pool) and client-side encryption of codes to the Seeker's key

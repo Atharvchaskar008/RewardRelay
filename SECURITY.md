@@ -154,4 +154,10 @@ private-key/API-token patterns and forbidden paths (`.env`, keys, service-accoun
   the env, revoke the old address's roles.
 - **Incident**: `pause()` the escrow (blocks new listings and payments only; every open deal can still
   finish), revoke compromised roles, rotate secrets, check `/api/health` and the audit collection.
+- **Live deployment** (rewardrelay.vercel.app): deployed from the Vercel CLI without a Git
+  integration, so no bot has access to the repository; `.vercelignore` keeps every `.env` file and
+  private notes out of the upload; server secrets are Vercel _sensitive_ variables (write-only, never
+  shown in the dashboard); functions run in Mumbai (`bom1`). Logs carry request ids, routes and
+  timings, never phone numbers, delivery details or codes. `npm run check:live` re-checks auth
+  refusals, the keeper secret and the security headers from the outside.
 - **Reporting a vulnerability**: open a private security advisory on the GitHub repository.

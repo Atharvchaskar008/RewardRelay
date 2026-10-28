@@ -8,6 +8,10 @@ All notable changes to RewardRelay are recorded here. The format follows
 
 ### Changed
 
+- A listing above the Sharer's Trust Badge limit is refused with that reason before anything is
+  signed (a wallet that could not cover the deposit used to see "not enough MSTC" instead).
+- The keeper starts no new action after 20 s, so a busy run stays inside cron-job.org's 30 s timeout.
+
 - **Faster API** (production build against Firebase and MST Testnet, median of warm requests): deal
   page 1.5 s → 0.29 s, `/api/me` 0.88 s → 0.32 s, my deals 0.86 s → 0.32 s, health 1.36 s → 0.30 s,
   listings feed 0.25 s → 0.05 s. Reads that do not depend on each other run side by side; block
@@ -22,6 +26,11 @@ All notable changes to RewardRelay are recorded here. The format follows
 - The browser SDK checks for transaction receipts every second instead of every 4 s.
 
 ### Added
+
+- Live deployment: https://rewardrelay.vercel.app (Vercel, functions in Mumbai). `npm run check:live`
+  checks a deployment from the outside: health, feed, deal view, RPC relay, auth and keeper refusals,
+  security headers and latency; with `LIVE_DEALS=1` it also runs Buy-for-you, Pass-on, a dispute
+  ruling and the cheat demos with test accounts.
 
 - MST Mainnet readiness: `preflight:<network>` prints the deployer, nonce, balance, gas, the
   predicted addresses and the planned configuration without sending anything; a mainnet deploy refuses

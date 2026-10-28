@@ -5,6 +5,22 @@ because the testnet policies use short demo windows: **5 minutes to deliver, rel
 delivery, 10 minutes for dispute evidence**. Production windows are days (see
 [protocol.md](protocol.md)).
 
+## The live site
+
+Everything below works on **https://rewardrelay.vercel.app** (MST Testnet). A quick path for a live
+demo on one laptop:
+
+1. **Two browser windows side by side** (for example Chrome and Chrome Incognito): the Sharer on the
+   left, the Seeker on the right. Each phone account keeps its own wallet in the browser, so one
+   window can also switch accounts by signing out and in.
+2. **Buy-for-you** (section 1) end to end: list, pay, deliver with an order id, confirm. Open the
+   mstscan links on the deal page to show each step on-chain.
+3. **The cheat demo**: list the same Pass-on code a second time (refused), or a price above ₹500 with
+   a New badge (refused before anything is signed).
+4. **The Trust Badge** on mstscan: `trustOf(address)` on the verified ReputationSBT contract.
+
+To check the deployment itself: `npm run check:live -w @rewardrelay/web`.
+
 ## Before you start
 
 - **Three browser profiles** (for example Chrome, a Chrome Incognito window and Edge). Each account
