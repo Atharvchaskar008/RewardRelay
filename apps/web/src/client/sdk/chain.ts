@@ -186,12 +186,79 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
   return new Promise((resolve) =>
     setTimeout(() => {
       window.removeEventListener("eip6963:announceProvider", onAnnounce);
-      const legacy = (window as { ethereum?: EIP1193Provider }).ethereum;
+
+      const win = window as unknown as {
+        bridgekey?: EIP1193Provider;
+        bridgeKey?: EIP1193Provider;
+        mst?: EIP1193Provider;
+        ethereum?: EIP1193Provider & {
+          providers?: (EIP1193Provider & { isBridgeKey?: boolean; isMetaMask?: boolean })[];
+          isBridgeKey?: boolean;
+          isMetaMask?: boolean;
+        };
+      };
+
+      const hasBridgeKey = [...found.values()].some(
+        (w) =>
+          w.info.name.toLowerCase().includes("bridgekey") ||
+          w.info.rdns.toLowerCase().includes("bridgekey"),
+      );
+
+      // Check explicit window.bridgekey or window.bridgeKey
+      const explicitBridgeKey = win.bridgekey ?? win.bridgeKey ?? win.mst;
+      if (explicitBridgeKey && !hasBridgeKey) {
+        found.set("io.bridgekey.wallet", {
+          info: {
+            uuid: "bridgekey-direct",
+            name: "BridgeKey",
+            icon: "",
+            rdns: "io.bridgekey.wallet",
+          },
+          provider: explicitBridgeKey,
+        });
+      }
+
+      // Check window.ethereum.providers array (when multiple extensions coexist)
+      if (win.ethereum?.providers && Array.isArray(win.ethereum.providers)) {
+        for (const p of win.ethereum.providers) {
+          if (p.isBridgeKey && !hasBridgeKey) {
+            found.set("io.bridgekey.wallet", {
+              info: {
+                uuid: "bridgekey-provider",
+                name: "BridgeKey",
+                icon: "",
+                rdns: "io.bridgekey.wallet",
+              },
+              provider: p,
+            });
+          }
+        }
+      }
+
+      // Check if window.ethereum itself is BridgeKey
+      if (win.ethereum?.isBridgeKey && !hasBridgeKey) {
+        found.set("io.bridgekey.wallet", {
+          info: {
+            uuid: "bridgekey-injected",
+            name: "BridgeKey",
+            icon: "",
+            rdns: "io.bridgekey.wallet",
+          },
+          provider: win.ethereum,
+        });
+      }
+
+      // Fallback for legacy window.ethereum when no wallets announced through EIP-6963
+      const legacy = win.ethereum;
       if (found.size === 0 && legacy) {
         found.set(LEGACY_WALLET_ID, {
           info: {
             uuid: LEGACY_WALLET_ID,
-            name: "Browser wallet",
+            name: legacy.isMetaMask
+              ? "MetaMask"
+              : legacy.isBridgeKey
+                ? "BridgeKey"
+                : "Browser wallet",
             icon: "",
             rdns: LEGACY_WALLET_ID,
           },
