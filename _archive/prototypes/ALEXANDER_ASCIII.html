@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARCHE – Hero with dotted rider</title>
+<style>
+  :root{ --bg:#f5f5f5; --ink:#000; --muted:#555; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--ink); font-family:"DM Mono","Courier New",monospace; }
+
+  .hero{
+    position:relative;
+    min-height:100vh;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    padding:0 88px;
+  }
+
+  /* ---------- LEFT: copy ---------- */
+  .hero__copy{ position:relative; z-index:2; max-width:620px; }
+  .eyebrow{ font-size:14px; letter-spacing:.02em; margin-bottom:28px; }
+  h1{ font-family:"Instrument Serif",Georgia,serif; font-weight:400;
+      font-size:clamp(56px,7vw,112px); line-height:.95; letter-spacing:-.03em; }
+  .hero__copy p{ margin:28px 0 36px; color:var(--muted); font-size:18px; line-height:1.6; }
+  .btn{ display:inline-block; padding:18px 22px; font:inherit; font-weight:700;
+        text-decoration:none; background:#000; color:#fff; margin-right:16px; }
+  .btn--ghost{ background:transparent; color:#000; border:1px dashed #4a3cff; }
+
+  /* ---------- RIGHT: black panel holding the dotted rider ---------- */
+  .hero__art{
+    position:absolute;
+    top:0; right:0; bottom:0;
+    width:50%;
+    background:#000;          /* the image is drawn on black, so the panel is black */
+    z-index:1;
+    overflow:hidden;
+  }
+  .hero__art img{
+    width:100%; height:100%;
+    object-fit:cover;
+    object-position:center bottom;   /* rider sits at the bottom, black fills the top */
+    display:block;
+    pointer-events:none; user-select:none;
+  }
+  /* optional: dashed blue guide line on the panel edge, like the reference */
+  .hero__art::before{
+    content:""; position:absolute; inset:0 auto 0 0; width:0;
+    border-left:1px dashed #4a3cff; z-index:2;
+  }
+
+  @media (max-width:900px){
+    .hero{ padding:120px 24px 0; flex-direction:column; align-items:flex-start; }
+    .hero__art{ position:relative; width:calc(100% + 48px); margin:40px -24px 0; height:520px; }
+  }
+</style>
+</head>
+<body>
+  <section class="hero">
+    <div class="hero__copy">
+      <div class="eyebrow">+ AI INFRASTRUCTURE FOR AUTONOMOUS SYSTEMS</div>
+      <h1>Intelligence,<br>built to operate.</h1>
+      <p>ARCHE gives product and engineering teams the infrastructure to build, evaluate, and deploy reliable AI agents without losing visibility or control.</p>
+      <a class="btn" href="#">Join Waitlist</a>
+      <a class="btn btn--ghost" href="#">Discover</a>
+    </div>
+
+    <!-- right-hand side: image panel -->
+    <div class="hero__art">
+      <img src="rider_dotted_color.png" alt="Dotted portrait of a rider on a white horse">
+    </div>
+  </section>
+</body>
+</html>
