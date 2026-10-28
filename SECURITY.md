@@ -1,11 +1,11 @@
-# RewardRelay security
+# SAKAR security
 
 Status: **MVP on MST Testnet** (test MSTC only, no real money). This document covers the web app and
 API (`apps/web`); the smart-contract protocol, its invariants and its threat model are in
 [docs/protocol.md](docs/protocol.md) (§4 invariants, §10 threat model, §12 static analysis).
 
 **Reporting a vulnerability:** please do not open a public issue. Use GitHub's private
-[security advisory form](https://github.com/Atharvchaskar008/RewardRelay/security/advisories/new);
+[security advisory form](https://github.com/Atharvchaskar008/SAKAR/security/advisories/new);
 expect an acknowledgement within 72 hours.
 
 ---
@@ -136,7 +136,7 @@ private-key/API-token patterns and forbidden paths (`.env`, keys, service-accoun
 10. **Vercel Blob adapter** exists behind the file-store interface but is not exercised by the tests
     (Firestore storage is used).
 11. **EOA signatures only** for wallet linking (no ERC-1271 smart-contract wallets); a linked browser
-    wallet (BridgeKey, MetaMask) holds its own key, so RewardRelay keeps no backup for it.
+    wallet (BridgeKey, MetaMask) holds its own key, so SAKAR keeps no backup for it.
 12. **Release-on-visit** is best effort; the cron (every 2 minutes) is the guarantee.
 13. **Lighter checks on public reads** (for speed): reads that return no private data (deal views,
     feeds, `/api/me`, badges) accept a revoked session for up to a minute after the last per-user

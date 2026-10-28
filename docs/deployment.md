@@ -1,6 +1,6 @@
 # Deployment
 
-How to run RewardRelay locally, deploy the contracts to MST, and deploy the web app.
+How to run SAKAR locally, deploy the contracts to MST, and deploy the web app.
 
 ## Networks
 

@@ -166,7 +166,7 @@ function ListingForm() {
         </>
       )}
 
-      {blocked && <p className="error">Not allowed on RewardRelay: {blocked.label}.</p>}
+      {blocked && <p className="error">Not allowed on SAKAR: {blocked.label}.</p>}
       <label className="row">
         <input type="checkbox" checked={declared} onChange={(e) => setDeclared(e.target.checked)} />
         I declare this benefit is mine to share, is not one of the blocked categories (

@@ -1,10 +1,10 @@
 <div align="center">
 
-# RewardRelay
+# SAKAR
 
 **A trusted peer-to-peer marketplace for unused rewards and card perks, secured by smart contract escrow and on-chain reputation on MST Blockchain.**
 
-[![CI](https://github.com/Atharvchaskar008/RewardRelay/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharvchaskar008/RewardRelay/actions/workflows/ci.yml)
+[![CI](https://github.com/Atharvchaskar008/SAKAR/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharvchaskar008/SAKAR/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Network: MST Testnet](https://img.shields.io/badge/network-MST%20Testnet-6f42c1.svg)](https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A)
 [![Solidity 0.8.24](https://img.shields.io/badge/solidity-0.8.24-363636.svg)](packages/contracts)
@@ -23,7 +23,7 @@
 
 Every year, billions of rupees in credit card offers, airport lounge access passes, hotel discounts, wallet cashbacks, and subscription perks expire unused. The cardholders and reward owners who hold them rarely need all of them, while buyers seeking discounts have no safe, trustless mechanism to purchase them from strangers without risking scams or credential theft.
 
-**RewardRelay** bridges this gap by creating a trust-minimized, peer-to-peer benefit relay:
+**SAKAR** bridges this gap by creating a trust-minimized, peer-to-peer benefit relay:
 
 - A **Sharer** (the cardholder or reward owner) uses their benefit on behalf of a **Seeker** (the buyer).
 - The Seeker's payment sits locked in the `RelayEscrow` smart contract until the benefit is delivered and verified.
@@ -54,7 +54,7 @@ Every year, billions of rupees in credit card offers, airport lounge access pass
 
 ## How It Works
 
-RewardRelay supports two distinct trade mechanisms based on whether the perk is an ordered purchase or a digital voucher code:
+SAKAR supports two distinct trade mechanisms based on whether the perk is an ordered purchase or a digital voucher code:
 
 | Deal Type                   | Description                                                                                                                                                | Target Categories                                                                       | Release / Verification Mechanism                                                                                 |
 | :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
@@ -69,7 +69,7 @@ RewardRelay supports two distinct trade mechanisms based on whether the perk is 
 sequenceDiagram
     autonumber
     actor Sharer as Sharer (Cardholder)
-    participant UI as RewardRelay App & SDK
+    participant UI as SAKAR App & SDK
     participant API as Server API & Vault
     participant Escrow as RelayEscrow (MST)
     actor Seeker as Seeker (Buyer)
@@ -135,7 +135,7 @@ stateDiagram-v2
 
 ## System Architecture
 
-RewardRelay implements a modern layered Web3 architecture where the blockchain serves as the absolute source of truth for financial commitments, state transitions, and reputation, while zero-knowledge-style off-chain envelope encryption guarantees user privacy.
+SAKAR implements a modern layered Web3 architecture where the blockchain serves as the absolute source of truth for financial commitments, state transitions, and reputation, while zero-knowledge-style off-chain envelope encryption guarantees user privacy.
 
 ```mermaid
 flowchart TB
@@ -213,17 +213,17 @@ The frontend application communicates entirely through `@/client/sdk` (and `@/co
 
 ### 1. Provider Setup
 
-Wrap your application in `RewardRelayProvider` to inject the client SDK context, chain configuration, and wallet session:
+Wrap your application in `SakarProvider` (or `RewardRelayProvider`) to inject the client SDK context, chain configuration, and wallet session:
 
 ```tsx
-import { RewardRelayProvider } from "@/client/sdk";
+import { SakarProvider } from "@/client/sdk";
 import { auth } from "@/client/firebase";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(auth.currentUser);
 
   return (
-    <RewardRelayProvider
+    <SakarProvider
       config={{
         chain: {
           chainId: 91562037,
@@ -237,7 +237,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       accountId={user?.uid ?? null} // Isolates device wallet keys per account
     >
       {children}
-    </RewardRelayProvider>
+    </SakarProvider>
   );
 }
 ```
@@ -246,7 +246,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 ### 2. Dual Wallet Architecture
 
-RewardRelay supports two parallel wallet experiences through the `useWallet()` hook:
+SAKAR supports two parallel wallet experiences through the `useWallet()` hook:
 
 1. **Embedded PIN Wallet (Web2 Friendly)**
    - Keys are generated locally via WebCrypto and never transmitted in plaintext.
@@ -449,8 +449,8 @@ Measured on the live Vercel production deployment (`bom1` Mumbai functions conne
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/Atharvchaskar008/RewardRelay.git
-cd RewardRelay
+git clone https://github.com/Atharvchaskar008/SAKAR.git
+cd SAKAR
 
 # 2. Install dependencies
 npm install

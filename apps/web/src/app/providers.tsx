@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { onIdTokenChanged, type User } from "firebase/auth";
-import { RewardRelayProvider } from "@/client/sdk";
+import { SakarProvider } from "@/client/sdk";
 import { appConfig } from "@/client/config";
 import { firebaseAuth } from "@/client/firebase";
 
@@ -37,13 +37,13 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <SessionContext.Provider value={session}>
-      <RewardRelayProvider
+      <SakarProvider
         config={appConfig}
         getIdToken={getIdToken}
         accountId={session.user?.uid ?? null}
       >
         {children}
-      </RewardRelayProvider>
+      </SakarProvider>
     </SessionContext.Provider>
   );
 }

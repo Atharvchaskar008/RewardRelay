@@ -15,7 +15,7 @@ import { transaction } from "../repositories/collection";
 
 export const CHALLENGE_TTL_MS = 5 * 60_000;
 export const SIWE_STATEMENT =
-  "Link this wallet to your RewardRelay account. Signing is free and sends no transaction.";
+  "Link this wallet to your SAKAR account. Signing is free and sends no transaction.";
 
 export interface Challenge {
   message: string;

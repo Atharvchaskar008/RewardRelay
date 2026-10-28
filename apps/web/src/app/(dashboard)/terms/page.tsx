@@ -10,12 +10,11 @@ export default function TermsPage() {
       <h1>Terms</h1>
       {isMainnet ? (
         <p>
-          RewardRelay runs on {networkName}. Payments are in MSTC; ₹ amounts are estimates at {rate}
-          .
+          SAKAR runs on {networkName}. Payments are in MSTC; ₹ amounts are estimates at {rate}.
         </p>
       ) : (
         <p>
-          RewardRelay is a test MVP on {networkName}. Payments use test MSTC (tMSTC), which has no
+          SAKAR is a test MVP on {networkName}. Payments use test MSTC (tMSTC), which has no
           monetary value; ₹ amounts are shown at a demo rate ({rate}).
         </p>
       )}
@@ -58,8 +57,8 @@ export default function TermsPage() {
       <p>
         Raise a dispute from the deal page within the check window. An arbiter reviews both
         sides&apos; evidence; if no ruling is made in time, either party can apply a 50/50 default
-        ruling. For anything else, write to the RewardRelay team through the contact listed on our
-        GitHub repository.
+        ruling. For anything else, write to the SAKAR team through the contact listed on our GitHub
+        repository.
       </p>
     </main>
   );

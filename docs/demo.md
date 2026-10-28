@@ -1,6 +1,6 @@
 # Demo guide
 
-A click-by-click walkthrough of RewardRelay's main flows on MST Testnet. Each flow takes a few minutes
+A click-by-click walkthrough of SAKAR's main flows on MST Testnet. Each flow takes a few minutes
 because the testnet policies use short demo windows: **5 minutes to deliver, release 3 minutes after
 delivery, 10 minutes for dispute evidence**. Production windows are days (see
 [protocol.md](protocol.md)).

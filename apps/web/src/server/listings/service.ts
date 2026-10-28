@@ -50,7 +50,7 @@ export async function registerListing(uid: string, input: ListingInput): Promise
   const blocked = findBlockedTopic(input.title, input.description, JSON.stringify(input.terms));
   if (blocked) {
     throw new AppError("VALIDATION_FAILED", {
-      message: `RewardRelay does not allow: ${blocked.label}.`,
+      message: `SAKAR does not allow: ${blocked.label}.`,
       details: { blockedTopic: blocked.key },
     });
   }
@@ -127,7 +127,7 @@ export async function registerListing(uid: string, input: ListingInput): Promise
     const vault = fingerprint !== zeroHash ? await repos.vault.get(fingerprint, tx) : undefined;
     if (category.dealType === "PassOn") {
       if (!vault || vault.sharerUid !== uid || vault.status !== "pending") {
-        throw mismatch("The code for this deal was not authorised through RewardRelay.");
+        throw mismatch("The code for this deal was not authorised through SAKAR.");
       }
       await repos.vault.update(fingerprint, { status: "listed", dealId }, tx);
     }

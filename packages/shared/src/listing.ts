@@ -23,7 +23,7 @@ export function categoryById(id: number) {
   return CATEGORIES.find((category) => category.id === id);
 }
 
-/** Never offered on RewardRelay (terms page + server-side keyword screening). */
+/** Never offered on SAKAR (terms page + server-side keyword screening). */
 export const BLOCKED_TOPICS = [
   {
     key: "wallet-cash-out",

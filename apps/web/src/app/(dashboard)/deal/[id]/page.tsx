@@ -115,7 +115,7 @@ function DealRoom({ deal }: { deal: DealView }) {
 
   return (
     <Page title={deal.listing?.title ?? `Deal #${deal.id}`}>
-      <Banner>Never share card numbers, logins or OTPs. RewardRelay never needs them.</Banner>
+      <Banner>Never share card numbers, logins or OTPs. SAKAR never needs them.</Banner>
       <Card>
         <p>
           <strong>{deal.statusLabel}</strong> ·{" "}

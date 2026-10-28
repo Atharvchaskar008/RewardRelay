@@ -54,6 +54,8 @@ export interface RewardRelayConfig {
   inrPerMstc: number;
 }
 
+export type SakarConfig = RewardRelayConfig;
+
 /** A connected browser wallet (BridgeKey, MetaMask, …) and the context that signs through it. */
 export interface BrowserWalletSession {
   name: string;
@@ -184,11 +186,15 @@ export function RewardRelayProvider(props: {
   );
 }
 
+export const SakarProvider = RewardRelayProvider;
+
 export function useRewardRelay(): SdkState {
   const state = useContext(SdkReactContext);
-  if (!state) throw new Error("Wrap the app in <RewardRelayProvider>.");
+  if (!state) throw new Error("Wrap the app in <SAKARProvider> or <RewardRelayProvider>.");
   return state;
 }
+
+export const useSakar = useRewardRelay;
 
 /**
  * Context for flows/transactions: signs with the connected browser wallet, otherwise with the
@@ -275,7 +281,7 @@ export function useWallet() {
           address = await requestWalletAddress(picked.provider);
           if (address.toLowerCase() !== linkedAddress.toLowerCase()) {
             throw new ChainError(
-              `Choose the account linked to RewardRelay in your wallet (${linkedAddress.slice(0, 6)}…${linkedAddress.slice(-4)}).`,
+              `Choose the account linked to SAKAR in your wallet (${linkedAddress.slice(0, 6)}…${linkedAddress.slice(-4)}).`,
               "WrongAccount",
             );
           }

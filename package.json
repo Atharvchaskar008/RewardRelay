@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Atharvchaskar008/RewardRelay.git"
+    "url": "https://github.com/Atharvchaskar008/SAKAR.git"
   },
   "workspaces": [
     "packages/shared",

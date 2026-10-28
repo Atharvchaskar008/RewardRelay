@@ -33,7 +33,7 @@ export function withDeadline<T>(
       () =>
         reject(
           new AppError("INTERNAL", {
-            message: "RewardRelay is temporarily unavailable. Please try again shortly.",
+            message: "SAKAR is temporarily unavailable. Please try again shortly.",
             cause: new DeadlineExceeded(operation, ms),
           }),
         ),

@@ -1,10 +1,10 @@
 /**
- * RewardRelay client SDK. The UI imports everything from here:
+ * SAKAR client SDK. The UI imports everything from here:
  * - `createApiClient` (typed API, envelope unwrapped, ApiError),
  * - `tx`: transaction helpers (`tx.createListing`, `tx.acceptListing`, … `tx.withdraw`) and wallet contexts,
  * - flows (`onboardWallet`, `listBuyForYou`, `listPassOn`, `payForDeal`, `deliverOrder`,
  *   `raiseDispute`, `runDealAction`),
- * - React hooks (`RewardRelayProvider`, `useMe`, `useWallet`, `useListings`, `useDeal`,
+ * - React hooks (`SakarProvider` / `RewardRelayProvider`, `useMe`, `useWallet`, `useListings`, `useDeal`,
  *   `useDealAction`, `useSendDeliveryDetails`).
  */
 export * from "./api";

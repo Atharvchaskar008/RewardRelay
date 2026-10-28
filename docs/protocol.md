@@ -1,4 +1,4 @@
-# RewardRelay protocol specification
+# SAKAR protocol specification
 
 Status: **frozen for implementation** (H1). Interfaces (in `packages/contracts`):
 `contracts/interfaces/IRelayEscrow.sol`, `contracts/interfaces/IReputationSBT.sol`,
@@ -16,8 +16,8 @@ All amounts are wei of MSTC. "now" is `block.timestamp`.
 | -------- | --------------------------------------- | ------------------------------------- |
 | Sharer   | Holds a benefit, lists a deal, delivers | Badge holder (EOA or embedded wallet) |
 | Seeker   | Pays for the deal                       | Badge holder                          |
-| Verifier | RewardRelay server after phone OTP      | `VERIFIER_ROLE` on both contracts     |
-| Arbiter  | RewardRelay admin through the server    | `ARBITER_ROLE` on the escrow          |
+| Verifier | SAKAR server after phone OTP            | `VERIFIER_ROLE` on both contracts     |
+| Arbiter  | SAKAR admin through the server          | `ARBITER_ROLE` on the escrow          |
 | Keeper   | Anyone (cron, either party, a stranger) | none                                  |
 | Treasury | Team BridgeKey wallet                   | fee receiver address                  |
 

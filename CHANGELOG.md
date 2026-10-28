@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to RewardRelay are recorded here. The format follows
+All notable changes to SAKAR are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -62,7 +62,7 @@ All notable changes to RewardRelay are recorded here. The format follows
 
 - Firestore queries, the file store, the keeper's lease and Firebase Auth lookups now have the 8 s
   deadline, and a timeout names the operation in the logs.
-- When the MST RPC hangs, a deal or badge page now answers "RewardRelay is temporarily unavailable"
+- When the MST RPC hangs, a deal or badge page now answers "SAKAR is temporarily unavailable"
   within about 10 s (it took about 25 s and said "something went wrong"): every RPC read is capped
   at 9 s, the error mapper finds a user-safe error inside wrapped library errors, and the server
   signer still retries a timed-out call as a network error.

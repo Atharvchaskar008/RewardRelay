@@ -5,7 +5,7 @@ version 2.1. In short:
 
 ## Our pledge
 
-We want participation in RewardRelay to be a harassment-free experience for everyone, regardless of
+We want participation in SAKAR to be a harassment-free experience for everyone, regardless of
 age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and
 expression, level of experience, education, socio-economic status, nationality, personal appearance,
 race, caste, colour, religion, or sexual identity and orientation.

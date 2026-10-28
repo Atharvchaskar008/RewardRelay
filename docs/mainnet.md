@@ -1,6 +1,6 @@
 # MST Mainnet runbook
 
-How the RewardRelay contracts go to MST Mainnet (chain id `4646`, RPC
+How the SAKAR contracts go to MST Mainnet (chain id `4646`, RPC
 `https://mariorpc.mstblockchain.com`, explorer [mstscan.com](https://mstscan.com)). The contracts are
 the same bytecode as on MST Testnet (solc 0.8.24, evmVersion `shanghai`, optimizer 200 runs), whose
 sources are verified on testnet.mstscan.com.

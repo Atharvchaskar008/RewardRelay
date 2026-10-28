@@ -4,11 +4,11 @@ import { Providers } from "../providers";
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "RewardRelay",
+  title: "SAKAR",
   description: "A trusted buy-it-for-me marketplace for unused rewards, on MST Blockchain.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
-  appleWebApp: { capable: true, title: "RewardRelay", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "SAKAR", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

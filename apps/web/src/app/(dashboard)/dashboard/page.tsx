@@ -4,11 +4,10 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main>
-      <h1>RewardRelay</h1>
+      <h1>SAKAR</h1>
       <p>
         Got a card offer, wallet credit or promo code you will not use in time? Someone else wants
-        that discount. RewardRelay lets a <strong>Sharer</strong> buy it for a{" "}
-        <strong>Seeker</strong>
+        that discount. SAKAR lets a <strong>Sharer</strong> buy it for a <strong>Seeker</strong>
         (or pass on a shareable code), with the payment held in an escrow smart contract on MST
         Blockchain until delivery.
       </p>
