@@ -78,10 +78,6 @@ const nextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
-  // The landing page is a static site in public/landing; the test dashboard is the app itself.
-  async rewrites() {
-    return { beforeFiles: [{ source: "/", destination: "/landing/index.html" }], afterFiles: [] };
-  },
 };
 
 module.exports = nextConfig;

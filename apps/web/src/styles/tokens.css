@@ -1,0 +1,147 @@
+/*
+ * SAKAR design tokens: one source of truth for the landing page, the app and (later) the mobile app.
+ * Light, calm, editorial: a grey canvas, white cards, black ink, one electric-blue accent.
+ */
+:root {
+  color-scheme: light;
+
+  /* Colour */
+  --canvas: #f5f5f4;
+  --surface: #ffffff;
+  --subtle: #ededec;
+  --ink: #0a0a0a;
+  --ink-2: #525252;
+  --ink-3: #8a8a8a;
+  --line: #e5e5e5;
+  --line-strong: #d4d4d4;
+  --accent: #0700ff;
+  --accent-hover: #0500cc;
+  --accent-tint: rgba(7, 0, 255, 0.06);
+  --accent-soft: rgba(7, 0, 255, 0.14);
+  --success: #0f7b4a;
+  --success-bg: #e7f5ee;
+  --warning: #8a5a00;
+  --warning-bg: #fff4db;
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+
+  /* Type */
+  --font-display-stack: var(--font-display), "Times New Roman", serif;
+  --font-sans-stack: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono-stack: var(--font-mono), ui-monospace, "SFMono-Regular", monospace;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+  --text-3xl: 44px;
+  --text-4xl: 64px;
+  --text-5xl: 88px;
+
+  /* Space (4 px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+  --s-10: 128px;
+
+  /* Shape and motion */
+  --radius-btn: 4px;
+  --radius-input: 6px;
+  --radius-card: 10px;
+  --radius-pill: 999px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 200ms;
+  --content: 1200px;
+  --reading: 640px;
+  --gutter: 24px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --gutter: 16px;
+  }
+}
+
+/* Base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans-stack);
+  font-size: var(--text-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

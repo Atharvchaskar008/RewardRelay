@@ -11,8 +11,5 @@ package-lock.json
 .private
 harness.md
 
-# the static landing page, kept exactly as designed
-apps/web/public/landing
-
 # generated deployment records (written by the deploy scripts)
 packages/contracts/deployments
