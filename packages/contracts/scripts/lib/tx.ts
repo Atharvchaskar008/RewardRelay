@@ -20,7 +20,9 @@ export function explorerUrl(chainId: number, kind: "tx" | "address", value: stri
   return base ? `${base}/${kind}/${value}` : `(local ${kind}) ${value}`;
 }
 
-export const formatMstc = (wei: bigint): string => `${ethers.formatEther(wei)} tMSTC`;
+/** Amounts as MSTC on mainnet and tMSTC elsewhere (Hardhat sets HARDHAT_NETWORK for scripts). */
+export const formatMstc = (wei: bigint): string =>
+  `${ethers.formatEther(wei)} ${process.env.HARDHAT_NETWORK === "mstMainnet" ? "MSTC" : "tMSTC"}`;
 
 export interface SpendCaps {
   /** Gas plus value leaving our wallets, summed over every recorded transaction. */

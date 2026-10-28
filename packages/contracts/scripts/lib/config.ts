@@ -27,9 +27,9 @@ export interface CategoryConfig {
   id: number;
   key: string;
   dealType: DealType;
-  /** Applied on testnet and locally: windows of minutes so a full deal fits in a demo. */
+  /** Windows of minutes so a full deal fits in a demo (`POLICY_PROFILE=demo`, the default). */
   demo: PolicyValues;
-  /** Documented production values (return/event windows); not applied by the MVP. */
+  /** Typical return/event windows of the benefit type (`POLICY_PROFILE=production`). */
   production: PolicyValues;
 }
 
@@ -142,7 +142,11 @@ export const CATEGORIES: readonly CategoryConfig[] = [
   },
 ];
 
+/** Which windows configure.ts applies to every category. */
+export type PolicyProfile = "demo" | "production";
+
 export interface ProtocolConfig {
+  policyProfile: PolicyProfile;
   treasury: string;
   serverSigner: string;
   relayPointUnit: bigint;
@@ -184,9 +188,17 @@ function wei(name: string, value: string): bigint {
   return BigInt(value);
 }
 
+function policyProfile(): PolicyProfile {
+  const value = process.env.POLICY_PROFILE?.trim() || "demo";
+  if (value !== "demo" && value !== "production")
+    throw new Error("POLICY_PROFILE must be demo or production.");
+  return value;
+}
+
 /** Reads and validates every protocol parameter (names in errors, never values of secrets). */
 export function loadProtocolConfig(): ProtocolConfig {
   return {
+    policyProfile: policyProfile(),
     treasury: address("TREASURY_ADDRESS"),
     serverSigner: address("SERVER_VERIFIER_ADDRESS"),
     relayPointUnit: wei("RELAY_POINT_UNIT_WEI", required("RELAY_POINT_UNIT_WEI")),

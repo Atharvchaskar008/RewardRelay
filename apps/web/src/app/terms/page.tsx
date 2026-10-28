@@ -1,14 +1,24 @@
 import { BLOCKED_TOPICS, CATEGORIES, CATEGORY_LABELS } from "@rewardrelay/shared";
+import { appConfig, isMainnet, networkName } from "@/client/config";
+
+const rate = `₹${appConfig.inrPerMstc.toLocaleString("en-IN")} per MSTC`;
 
 /** Terms, allowed and blocked categories, grievance contact. */
 export default function TermsPage() {
   return (
     <main>
       <h1>Terms</h1>
-      <p>
-        RewardRelay is a test MVP on MST Testnet. Payments use test MSTC (tMSTC), which has no
-        monetary value; ₹ amounts are shown at a demo rate (₹1,00,000 per MSTC).
-      </p>
+      {isMainnet ? (
+        <p>
+          RewardRelay runs on {networkName}. Payments are in MSTC; ₹ amounts are estimates at {rate}
+          .
+        </p>
+      ) : (
+        <p>
+          RewardRelay is a test MVP on {networkName}. Payments use test MSTC (tMSTC), which has no
+          monetary value; ₹ amounts are shown at a demo rate ({rate}).
+        </p>
+      )}
       <h2>How a deal works</h2>
       <ul>
         <li>

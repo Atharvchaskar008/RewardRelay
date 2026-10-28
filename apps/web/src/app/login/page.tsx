@@ -11,7 +11,7 @@ import {
   validatePin,
   type InjectedWallet,
 } from "@/client/sdk";
-import { firebaseConfigured } from "@/client/config";
+import { coinLabel, firebaseConfigured } from "@/client/config";
 import { sendOtp } from "@/client/firebase";
 import { toE164 } from "@/client/phone";
 import { useSession } from "@/app/providers";
@@ -229,7 +229,7 @@ function PinStep() {
             Create wallet
           </button>
         )}
-        {busy && <p className="muted">Setting up your Trust Badge and test MSTC…</p>}
+        {busy && <p className="muted">Setting up your Trust Badge and {coinLabel} for fees…</p>}
       </Card>
       {!me.data && (
         <Card>

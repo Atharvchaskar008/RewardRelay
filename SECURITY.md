@@ -131,8 +131,8 @@ private-key/API-token patterns and forbidden paths (`.env`, keys, service-accoun
    without nonces; nonce-based CSP via middleware is the next step.
 8. **Single-EOA admin**: the deployer holds DEFAULT_ADMIN/POLICY_ADMIN/PAUSER on both contracts;
    move to a multisig before mainnet.
-9. **Contracts not externally audited**; source verification on testnet.mstscan.com is pending: the
-   explorer rejects the submission although the deployed bytecode matches the build byte for byte.
+9. **Contracts not externally audited**. Their sources are verified on testnet.mstscan.com (full
+   match: solc 0.8.24, evmVersion shanghai, optimizer 200 runs).
 10. **Vercel Blob adapter** exists behind the file-store interface but is not exercised by the tests
     (Firestore storage is used).
 11. **EOA signatures only** for wallet linking (no ERC-1271 smart-contract wallets); a linked browser

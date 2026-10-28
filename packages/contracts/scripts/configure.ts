@@ -10,7 +10,8 @@ import { explorerUrl, formatMstc, loadCaps, sendTx, spentSoFar } from "./lib/tx"
  * fails loudly on a mismatch. Safe to rerun at any time.
  *
  * - SBT: ESCROW_ROLE → escrow; VERIFIER_ROLE → server signer; tier limits.
- * - Escrow: VERIFIER_ROLE + ARBITER_ROLE → server signer; one policy per category (demo windows);
+ * - Escrow: VERIFIER_ROLE + ARBITER_ROLE → server signer; one policy per category (POLICY_PROFILE:
+ *   demo windows by default, production windows for a real launch);
  *   deposit bps, fee, arbiter timeout, treasury.
  */
 
@@ -19,6 +20,7 @@ async function main() {
   const record = requireRecord(network);
   const config = loadProtocolConfig();
   const caps = loadCaps();
+  console.log(`Policy profile: ${config.policyProfile}`);
   const [admin] = await hre.ethers.getSigners();
 
   const sbt = await hre.ethers.getContractAt(
@@ -77,7 +79,7 @@ async function main() {
   );
 
   for (const category of CATEGORIES) {
-    const wanted = { dealType: category.dealType, ...category.demo, active: true };
+    const wanted = { dealType: category.dealType, ...category[config.policyProfile], active: true };
     await step(
       `escrow: policy ${category.id} ${category.key}`,
       async () => {

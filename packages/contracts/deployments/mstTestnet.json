@@ -3,7 +3,7 @@
   "chainId": 91562037,
   "deployer": "0xc9Dd38AB8ae9d897A0B7f34D2b58F04efD101a4E",
   "commit": "54f1858099b2a24271b906c230cc3e609261e10a",
-  "updatedAt": "2026-10-27T04:18:30.806Z",
+  "updatedAt": "2026-10-28T04:54:44.609Z",
   "contracts": {
     "ReputationSBT": {
       "address": "0x9C0a662D4eA71F9C18b0DEF392cBb1c020cAB5c6",
@@ -365,5 +365,9 @@
       "0xa16445c109f819587b560aec2c878e7de39431ce828ba8bddd25de20c52959cd",
       "0x17d2569e57b16b3d59d9b1096e1080d4bdba7e9643b33674fb4c66e4d20a9106"
     ]
+  },
+  "verification": {
+    "verifiedAt": "2026-10-28T04:54:44.608Z",
+    "explorer": "blockscout"
   }
 }

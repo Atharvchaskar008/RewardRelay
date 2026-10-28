@@ -1,6 +1,6 @@
 import hre from "hardhat";
 import promptSyncFactory from "prompt-sync";
-import type { Signer } from "ethers";
+import type { Signer, TransactionRequest } from "ethers";
 import { loadProtocolConfig } from "./lib/config";
 import { exportShared } from "./lib/exportShared";
 import {
@@ -19,7 +19,11 @@ import { GAS_PRICE, explorerUrl, formatMstc, loadCaps, sendTx, spentSoFar } from
  * was broadcast but not recorded is adopted from its receipt. Finishes by exporting ABIs, addresses
  * and categories to packages/shared.
  *
- *   DRY_RUN=true  estimates both deployments against the network and exits without broadcasting.
+ *   DRY_RUN=true  (`npm run preflight:<network>`) prints the deployer, nonce, balance, gas estimate,
+ *                 predicted addresses and the planned configuration, and exits without broadcasting.
+ * On mainnet a real run refuses a used deployer (its addresses would differ from testnet's) unless
+ * ALLOW_NEW_ADDRESSES=true, refuses a balance below the deploy and configure estimate, and asks for a
+ * typed confirmation.
  */
 
 async function hasCode(address: string): Promise<boolean> {
@@ -119,7 +123,23 @@ async function ensureContract(
   return receipt.contractAddress;
 }
 
-async function dryRun(
+/** Gas for configure.ts on a fresh deployment (measured on testnet: about 0.7 M), with margin. */
+const CONFIGURE_GAS_ALLOWANCE = 1_000_000n;
+/**
+ * Deployment gas measured on MST Testnet (same bytecode and EVM), used when a node refuses to
+ * estimate for an unfunded deployer (MST mainnet answers "insufficient funds for transfer").
+ */
+const MEASURED_GAS = { sbt: 2_495_660n, escrow: 4_284_912n };
+
+async function estimateOr(deployer: Signer, tx: TransactionRequest, measured: bigint) {
+  try {
+    return { gas: await deployer.estimateGas({ ...tx, type: 0 }), measured: false };
+  } catch {
+    return { gas: measured, measured: true };
+  }
+}
+
+async function estimateDeployment(
   deployer: Signer,
   args: { relayPointUnit: bigint; treasury: string; signer: string },
 ) {
@@ -129,13 +149,57 @@ async function dryRun(
   const sbtTx = await sbtFactory.getDeployTransaction(from, args.relayPointUnit);
   // Any non-zero address passes the escrow constructor checks; the deployer stands in for the badge.
   const escrowTx = await escrowFactory.getDeployTransaction(from, args.treasury, args.signer, from);
-  const sbtGas = await deployer.estimateGas({ ...sbtTx, type: 0, gasPrice: GAS_PRICE });
-  const escrowGas = await deployer.estimateGas({ ...escrowTx, type: 0, gasPrice: GAS_PRICE });
+  const sbt = await estimateOr(deployer, sbtTx, MEASURED_GAS.sbt);
+  const escrow = await estimateOr(deployer, escrowTx, MEASURED_GAS.escrow);
+  const sbtGas = sbt.gas;
+  const escrowGas = escrow.gas;
   const balance = await hre.ethers.provider.getBalance(from);
-  console.log(`Estimated ReputationSBT deployment: ${sbtGas} gas`);
-  console.log(`Estimated RelayEscrow deployment:   ${escrowGas} gas`);
-  console.log(`Estimated cost at 1 gwei: ${formatMstc((sbtGas + escrowGas) * GAS_PRICE)}`);
-  console.log(`Deployer balance: ${formatMstc(balance)}`);
+  const nonce = await hre.ethers.provider.getTransactionCount(from);
+  const needed = (sbtGas + escrowGas + CONFIGURE_GAS_ALLOWANCE) * GAS_PRICE;
+  const measured = sbt.measured || escrow.measured;
+  return { from, sbtGas, escrowGas, measured, balance, nonce, needed };
+}
+
+async function dryRun(deployer: Signer, config: ReturnType<typeof loadProtocolConfig>) {
+  const estimate = await estimateDeployment(deployer, {
+    relayPointUnit: config.relayPointUnit,
+    treasury: config.treasury,
+    signer: config.serverSigner,
+  });
+  const predicted = [0, 1].map((offset) =>
+    hre.ethers.getCreateAddress({ from: estimate.from, nonce: estimate.nonce + offset }),
+  );
+  const testnet = readRecord("mstTestnet");
+  const sameAsTestnet =
+    testnet?.deployer.toLowerCase() === estimate.from.toLowerCase() &&
+    predicted[0] === testnet.contracts.ReputationSBT?.address &&
+    predicted[1] === testnet.contracts.RelayEscrow?.address;
+  const deployGas = estimate.sbtGas + estimate.escrowGas;
+
+  console.log("\nPreflight (nothing is sent)");
+  console.log(`  Deployer          ${estimate.from} (nonce ${estimate.nonce})`);
+  console.log(`  Balance           ${formatMstc(estimate.balance)}`);
+  console.log(
+    `  Deployment gas    ReputationSBT ${estimate.sbtGas}, RelayEscrow ${estimate.escrowGas}${estimate.measured ? " (measured on testnet: this node will not estimate for an unfunded deployer)" : ""}`,
+  );
+  console.log(
+    `  Cost at 1 gwei    ${formatMstc(deployGas * GAS_PRICE)} to deploy, ${formatMstc(estimate.needed)} with configure`,
+  );
+  console.log(`  Enough balance    ${estimate.balance >= estimate.needed ? "yes" : "NO"}`);
+  console.log(`  ReputationSBT at  ${predicted[0]}`);
+  console.log(`  RelayEscrow at    ${predicted[1]}`);
+  console.log(`  Same as testnet   ${sameAsTestnet ? "yes" : "no"}`);
+  console.log("\nPlanned configuration (configure.ts)");
+  console.log(`  Policy profile    ${config.policyProfile}`);
+  console.log(`  Tier limits       ${config.tierLimits.map(formatMstc).join(" / ")}`);
+  console.log(
+    `  Sharer deposits   ${config.sharerDepositBps.join(" / ")} bps (New / Trusted / Verified)`,
+  );
+  console.log(`  Seeker deposit    ${config.seekerDepositBps} bps`);
+  console.log(`  Fee               ${config.feeBps} bps`);
+  console.log(`  Arbiter timeout   ${config.arbiterTimeout} s`);
+  console.log(`  Treasury          ${config.treasury}`);
+  console.log(`  Server signer     ${config.serverSigner}`);
 }
 
 async function main() {
@@ -144,25 +208,40 @@ async function main() {
   if (!deployer)
     throw new Error("No deployer account. Set DEPLOYER_KEY in packages/contracts/.env.");
 
-  if (network === "mstMainnet") {
-    console.log("\n🔴 DEPLOYING TO MAINNET");
-    const promptSync = promptSyncFactory({ sigint: true });
-    if (promptSync("Type 'yes, deploy to mainnet' to continue: ") !== "yes, deploy to mainnet") {
-      throw new Error("Deployment cancelled.");
-    }
-  }
-
   const config = loadProtocolConfig();
   const chainId = Number((await hre.ethers.provider.getNetwork()).chainId);
   console.log(`\nNetwork ${network} (chain ${chainId}), deployer ${deployer.address}`);
 
   if (process.env.DRY_RUN === "true") {
-    await dryRun(deployer, {
+    await dryRun(deployer, config);
+    return;
+  }
+
+  if (network === "mstMainnet") {
+    const estimate = await estimateDeployment(deployer, {
       relayPointUnit: config.relayPointUnit,
       treasury: config.treasury,
       signer: config.serverSigner,
     });
-    return;
+    if (
+      !readRecord(network) &&
+      estimate.nonce !== 0 &&
+      process.env.ALLOW_NEW_ADDRESSES !== "true"
+    ) {
+      throw new Error(
+        `The deployer has already sent ${estimate.nonce} mainnet transaction(s), so the contracts would not get the testnet addresses. Set ALLOW_NEW_ADDRESSES=true to deploy anyway.`,
+      );
+    }
+    if (estimate.balance < estimate.needed) {
+      throw new Error(
+        `The deployer holds ${formatMstc(estimate.balance)}; deploy and configure need about ${formatMstc(estimate.needed)}.`,
+      );
+    }
+    console.log("\n🔴 DEPLOYING TO MAINNET");
+    const promptSync = promptSyncFactory({ sigint: true });
+    if (promptSync("Type 'yes, deploy to mainnet' to continue: ") !== "yes, deploy to mainnet") {
+      throw new Error("Deployment cancelled.");
+    }
   }
 
   const record = await loadOrCreateRecord(deployer.address, chainId);

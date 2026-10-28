@@ -51,12 +51,15 @@ every broadcast.
 
 ```bash
 npm run deployer:generate -w @rewardrelay/contracts   # fresh deployer key (prints the address only)
-DRY_RUN=true npx hardhat run scripts/deploy.ts --network mstTestnet   # estimate only (in packages/contracts)
+npm run preflight:testnet -w @rewardrelay/contracts   # sends nothing: balance, gas, addresses, planned config
 npm run deploy:testnet -w @rewardrelay/contracts      # ReputationSBT, then RelayEscrow
 npm run configure:testnet -w @rewardrelay/contracts   # roles, category policies, limits, deposits, fee
 npm run verify:testnet -w @rewardrelay/contracts      # source verification on mstscan (Blockscout)
 npm run smoke:testnet -w @rewardrelay/contracts       # mints 2 badges and runs one tiny Buy-for-you deal
 ```
+
+`POLICY_PROFILE` (`demo`, the default, or `production`) picks the category windows `configure` applies.
+MST Mainnet uses the same scripts with `:mainnet`; see [mainnet.md](mainnet.md).
 
 ## Firebase
 

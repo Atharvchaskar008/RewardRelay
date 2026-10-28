@@ -23,6 +23,13 @@ All notable changes to RewardRelay are recorded here. The format follows
 
 ### Added
 
+- MST Mainnet readiness: `preflight:<network>` prints the deployer, nonce, balance, gas, the
+  predicted addresses and the planned configuration without sending anything; a mainnet deploy refuses
+  a used deployer (its addresses would differ from testnet's) or a short balance; `POLICY_PROFILE`
+  picks demo or production windows; `smoke:mainnet`; the browser takes its relay, explorer, escrow and
+  copy from the chain id. Runbook in `docs/mainnet.md`.
+- Contract sources verified on testnet.mstscan.com (full match).
+
 - **Browser wallets:** after phone sign-in, a user can link BridgeKey, MetaMask or any EIP-1193
   wallet instead of a PIN wallet (it signs the link challenge, then approves each deal); MST is added
   to the wallet with its public RPC and switched to before each transaction; the choice is remembered
