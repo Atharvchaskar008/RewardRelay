@@ -238,9 +238,11 @@ async function main() {
       );
     }
     console.log("\n🔴 DEPLOYING TO MAINNET");
-    const promptSync = promptSyncFactory({ sigint: true });
-    if (promptSync("Type 'yes, deploy to mainnet' to continue: ") !== "yes, deploy to mainnet") {
-      throw new Error("Deployment cancelled.");
+    if (process.env.YES !== "true") {
+      const promptSync = promptSyncFactory({ sigint: true });
+      if (promptSync("Type 'yes, deploy to mainnet' to continue: ") !== "yes, deploy to mainnet") {
+        throw new Error("Deployment cancelled.");
+      }
     }
   }
 

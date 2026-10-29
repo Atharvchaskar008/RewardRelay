@@ -1,0 +1,250 @@
+{
+  "network": "mstMainnet",
+  "chainId": 4646,
+  "deployer": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+  "commit": "0b95a52f0d1879ef67480a34e2bb0a146a99de49-dirty",
+  "updatedAt": "2026-10-29T13:03:57.157Z",
+  "contracts": {
+    "ReputationSBT": {
+      "address": "0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e",
+      "txHash": "0x0402f22bf88a617615947124ed84472def918cdad6d085b41d6b7b5c2fc0e121",
+      "blockNumber": 21753555,
+      "constructorArguments": [
+        "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+        "100000000000000"
+      ]
+    },
+    "RelayEscrow": {
+      "address": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "txHash": "0x575c9bf7c07e1b9ca88c75f03c4a981e5fb4182c60ba5962ccaafb1c12fe5b74",
+      "blockNumber": 21753556,
+      "constructorArguments": [
+        "0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e",
+        "0x820A3a10239C7c480491b96e7b5232d158BB19C1",
+        "0xE0b91d46Aa724269B3D66D62310167b9D44fFDCF",
+        "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5"
+      ]
+    }
+  },
+  "pending": {},
+  "transactions": [
+    {
+      "label": "deploy ReputationSBT",
+      "hash": "0x0402f22bf88a617615947124ed84472def918cdad6d085b41d6b7b5c2fc0e121",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e",
+      "blockNumber": 21753555,
+      "gasUsed": "2474851",
+      "gasCostWei": "2474851000000000",
+      "valueWei": "0",
+      "kind": "deploy"
+    },
+    {
+      "label": "deploy RelayEscrow",
+      "hash": "0x575c9bf7c07e1b9ca88c75f03c4a981e5fb4182c60ba5962ccaafb1c12fe5b74",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21753556,
+      "gasUsed": "4250014",
+      "gasCostWei": "4250014000000000",
+      "valueWei": "0",
+      "kind": "deploy"
+    },
+    {
+      "label": "badge: ESCROW_ROLE → escrow",
+      "hash": "0x561bec85cc9c6bf6f11563e77fd784f27b82ca9fddff62addc4debfec52d9f7f",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e",
+      "blockNumber": 21753563,
+      "gasUsed": "51558",
+      "gasCostWei": "51558000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "badge: VERIFIER_ROLE → server signer",
+      "hash": "0x7a927f8b9cdd9822775e8cfb1667f582d4a1ae67e091b7b98933f2724890f981",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e",
+      "blockNumber": 21753564,
+      "gasUsed": "51558",
+      "gasCostWei": "51558000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: ARBITER_ROLE → server signer",
+      "hash": "0x12d84b35ccae7d11426d7941e498ccdc4634c1531aa46709c36fa80a16a6b8cf",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21753565,
+      "gasUsed": "51530",
+      "gasCostWei": "51530000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 0 ecommerce",
+      "hash": "0x532da9f736f623d99707e9ce5db5124bb9d9aaa1e39ae8cb7391dc4491768d48",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21753566,
+      "gasUsed": "53743",
+      "gasCostWei": "53743000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 1 travel",
+      "hash": "0xbf2964116b4171eebe675894f9219e68474d79fbcd2875dc5644987cbd979ff4",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21753567,
+      "gasUsed": "53779",
+      "gasCostWei": "53779000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 2 food",
+      "hash": "0xb06445457f92a75ea46ea5e840bf04bdbbd319cac6bd6d3e03d127d54d92931f",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21753568,
+      "gasUsed": "53755",
+      "gasCostWei": "53755000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 3 movies",
+      "hash": "0x14a9df90f94c63d1b448edee201fc9a7602a47aea72b53d5b8b20cee2bd60aa4",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21753569,
+      "gasUsed": "53779",
+      "gasCostWei": "53779000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 4 membership",
+      "hash": "0xae1a2e295bc30e39620a0f384a510f2eb76461464b9aaaca56872decdfd938c5",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21753570,
+      "gasUsed": "53755",
+      "gasCostWei": "53755000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 5 coupon",
+      "hash": "0x6055cc276f34a6726f71bb5a76a8f5f848b91dc9e0c6ddefeffe43abba9d8d4a",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21753571,
+      "gasUsed": "53559",
+      "gasCostWei": "53559000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "badge: tier limits",
+      "hash": "0xb47e1b46d8eff83df7ed7fee0558215a46402997ed13eabee0cfffe653056bfe",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e",
+      "blockNumber": 21753572,
+      "gasUsed": "92763",
+      "gasCostWei": "92763000000000",
+      "valueWei": "0",
+      "kind": "config"
+    }
+  ],
+  "configuration": {
+    "readAt": "2026-10-29T13:03:56.574Z",
+    "serverSigner": "0xE0b91d46Aa724269B3D66D62310167b9D44fFDCF",
+    "roles": {
+      "badgeEscrowRole": true,
+      "badgeVerifierRole": true,
+      "escrowVerifierRole": true,
+      "escrowArbiterRole": true
+    },
+    "tierLimitsWei": [
+      "5000000000000000",
+      "20000000000000000",
+      "100000000000000000"
+    ],
+    "sharerDepositBps": [
+      5000,
+      3000,
+      2000
+    ],
+    "seekerDepositBps": 500,
+    "feeBps": 200,
+    "arbiterTimeout": 259200,
+    "treasury": "0x820A3a10239C7c480491b96e7b5232d158BB19C1",
+    "policies": [
+      {
+        "id": 0,
+        "key": "ecommerce",
+        "dealType": "BuyForYou",
+        "deliveryWindow": 300,
+        "releaseDelay": 180,
+        "eventBuffer": 0,
+        "disputeWindow": 600,
+        "active": true
+      },
+      {
+        "id": 1,
+        "key": "travel",
+        "dealType": "BuyForYou",
+        "deliveryWindow": 300,
+        "releaseDelay": 180,
+        "eventBuffer": 300,
+        "disputeWindow": 600,
+        "active": true
+      },
+      {
+        "id": 2,
+        "key": "food",
+        "dealType": "BuyForYou",
+        "deliveryWindow": 300,
+        "releaseDelay": 180,
+        "eventBuffer": 0,
+        "disputeWindow": 600,
+        "active": true
+      },
+      {
+        "id": 3,
+        "key": "movies",
+        "dealType": "BuyForYou",
+        "deliveryWindow": 300,
+        "releaseDelay": 180,
+        "eventBuffer": 300,
+        "disputeWindow": 600,
+        "active": true
+      },
+      {
+        "id": 4,
+        "key": "membership",
+        "dealType": "BuyForYou",
+        "deliveryWindow": 300,
+        "releaseDelay": 180,
+        "eventBuffer": 0,
+        "disputeWindow": 600,
+        "active": true
+      },
+      {
+        "id": 5,
+        "key": "coupon",
+        "dealType": "PassOn",
+        "deliveryWindow": 0,
+        "releaseDelay": 180,
+        "eventBuffer": 0,
+        "disputeWindow": 600,
+        "active": true
+      }
+    ]
+  }
+}

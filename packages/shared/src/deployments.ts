@@ -2,6 +2,23 @@
 
 /** Contracts deployed by packages/contracts/scripts/deploy.ts, per network. */
 export const deployments = {
+  mstMainnet: {
+    chainId: 4646,
+    deployer: "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+    commit: "0b95a52f0d1879ef67480a34e2bb0a146a99de49-dirty",
+    contracts: {
+      ReputationSBT: {
+        address: "0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e",
+        blockNumber: 21753555,
+        txHash: "0x0402f22bf88a617615947124ed84472def918cdad6d085b41d6b7b5c2fc0e121",
+      },
+      RelayEscrow: {
+        address: "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+        blockNumber: 21753556,
+        txHash: "0x575c9bf7c07e1b9ca88c75f03c4a981e5fb4182c60ba5962ccaafb1c12fe5b74",
+      },
+    },
+  },
   mstTestnet: {
     chainId: 91562037,
     deployer: "0xc9Dd38AB8ae9d897A0B7f34D2b58F04efD101a4E",
