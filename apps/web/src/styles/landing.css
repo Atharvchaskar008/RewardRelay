@@ -606,7 +606,9 @@ body {
 
 .deal-diagram-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.9fr) minmax(0, 1.45fr) minmax(0, 0.9fr) minmax(0, 1.25fr);
+  grid-template-columns:
+    minmax(0, 1.25fr) minmax(0, 0.9fr) minmax(0, 1.45fr) minmax(0, 0.9fr)
+    minmax(0, 1.25fr);
   align-items: center;
   gap: 12px;
 }
