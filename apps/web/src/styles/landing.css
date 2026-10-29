@@ -1,200 +1,46 @@
-/* ==========================================================================
-   SAKAR LANDING PAGE — ARCCHEO EXACT DESIGN SYSTEM SPECIFICATION
-   Visual layout, spacing, components, and aesthetic matching arccheo.framer.ai
-   Preserving SAKAR font: Inter (display), Geist (body), Geist Mono (technical)
-   ========================================================================== */
+/* SAKAR landing page */
 
-/* --------------------------------------------------------------------------
-   1. Canvas Root & 1440px Main Frame Container
-   -------------------------------------------------------------------------- */
-.arccheo-root {
-  background-color: #f5f5f5;
-  color: #000000;
-  min-height: 100vh;
-  overflow-x: hidden;
-  font-family: var(--font-body-stack);
-  position: relative;
-}
-
-/* 1440px Max-Width Blueprint Frame with Subtle Dashed Vertical Guides */
-.arccheo-main-frame {
-  max-width: 1440px;
-  margin: 0 auto;
-  border-left: 1px dashed rgba(7, 0, 255, 0.35);
-  border-right: 1px dashed rgba(7, 0, 255, 0.35);
-  position: relative;
-  background-color: #f5f5f5;
-}
-
-@media (max-width: 1440px) {
-  .arccheo-main-frame {
-    border-left: 1px dashed rgba(7, 0, 255, 0.2);
-    border-right: 1px dashed rgba(7, 0, 255, 0.2);
-  }
-}
-
-/* --------------------------------------------------------------------------
-   2. Arccheo Signature Corner Cross Accents (+ mark)
-   -------------------------------------------------------------------------- */
-.has-crosses {
-  position: relative;
-}
-
-.corner-cross {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.corner-cross::before,
-.corner-cross::after {
-  content: "";
-  position: absolute;
-  background-color: #1e17fc;
-  transition: transform 0.2s ease;
-}
-
-/* Horizontal cross bar: 5px width x 1px height */
-.corner-cross::before {
-  top: 2px;
-  left: 0;
-  width: 5px;
-  height: 1px;
-}
-
-/* Vertical cross bar: 1px width x 5px height */
-.corner-cross::after {
-  top: 0;
-  left: 2px;
-  width: 1px;
-  height: 5px;
-}
-
-.corner-cross-tl {
-  top: -2.5px;
-  left: -2.5px;
-}
-
-.corner-cross-tr {
-  top: -2.5px;
-  right: -2.5px;
-}
-
-.corner-cross-bl {
-  bottom: -2.5px;
-  left: -2.5px;
-}
-
-.corner-cross-br {
-  bottom: -2.5px;
-  right: -2.5px;
-}
-
-.has-crosses:hover .corner-cross::before {
-  transform: scaleX(1.4);
-}
-
-.has-crosses:hover .corner-cross::after {
-  transform: scaleY(1.4);
-}
-
-/* --------------------------------------------------------------------------
-   3. Floating Architectural Header / Nav
-   -------------------------------------------------------------------------- */
-.arccheo-header-wrapper {
+/* Nav */
+.lnav {
   position: sticky;
   top: 0;
-  z-index: 100;
-  padding: 16px 0 8px;
-  pointer-events: none;
+  z-index: 20;
+  background: rgba(245, 245, 244, 0.86);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--dur) var(--ease);
 }
 
-.arccheo-nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-  pointer-events: auto;
+.lnav[data-scrolled="true"] {
+  border-bottom-color: var(--line);
 }
 
-.arccheo-nav {
-  background: rgba(245, 245, 245, 0.85);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.arccheo-nav[data-scrolled="true"] {
-  background: rgba(255, 255, 255, 0.96);
-  border-color: rgba(0, 0, 0, 0.12);
-  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.08);
-}
-
-.arccheo-nav-inner {
+.lnav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 52px;
-  padding: 0 20px;
+  height: 64px;
 }
 
-.arccheo-logo {
-  font-family: var(--font-display-stack);
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: -0.02em;
-  color: #000000;
-  text-decoration: none;
-}
-
-.arccheo-nav-menu {
+.lnav-links {
   display: flex;
-  gap: 32px;
-  align-items: center;
-}
-
-.arccheo-nav-link {
+  gap: var(--s-6);
+  font-family: var(--font-mono-stack);
   font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: rgba(0, 0, 0, 0.7);
-  text-decoration: none;
-  position: relative;
-  padding: 4px 0;
-  transition: color 0.2s ease;
+  color: var(--ink-2);
 }
 
-.arccheo-nav-link:hover {
-  color: #1e17fc;
+.lnav-links a:hover {
+  color: var(--ink);
 }
 
-.arccheo-btn-primary-small {
-  background: #000000 !important;
-  color: #ffffff !important;
-  border-radius: 6px !important;
-  font-weight: 500 !important;
-  font-size: 13px !important;
-  padding: 8px 18px !important;
-  border: 1px solid rgba(0, 0, 0, 0.8) !important;
-  transition: all 0.2s ease !important;
-}
-
-.arccheo-btn-primary-small:hover {
-  background: #1e17fc !important;
-  border-color: #1e17fc !important;
-  box-shadow: 0 4px 14px rgba(30, 23, 252, 0.3);
-}
-
-.arccheo-nav-toggle {
+.lnav-toggle {
   display: none;
   width: 36px;
-  height: 36px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
+  height: 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-btn);
   background: transparent;
   cursor: pointer;
   flex-direction: column;
@@ -203,1129 +49,372 @@
   gap: 5px;
 }
 
-.arccheo-nav-toggle .toggle-bar {
+.lnav-toggle span[aria-hidden] {
   display: block;
-  width: 16px;
+  width: 14px;
   height: 1.5px;
-  background: #000;
+  background: var(--ink);
 }
 
-.arccheo-nav-mobile {
+.lnav-menu {
   display: none;
-  flex-direction: column;
-  padding: 12px 20px 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.arccheo-nav-mobile-item {
-  padding: 12px 0;
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.75);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-.arccheo-nav-mobile-cta {
-  margin-top: 16px;
-}
-
-@media (max-width: 820px) {
-  .arccheo-nav-menu {
+@media (max-width: 760px) {
+  .lnav-links {
     display: none;
   }
-  .arccheo-nav-toggle {
+
+  .lnav-toggle {
     display: inline-flex;
   }
-  .arccheo-nav-mobile {
+
+  .lnav-menu {
     display: flex;
+    flex-direction: column;
+    padding-bottom: var(--s-4);
+    font-family: var(--font-mono-stack);
+    font-size: 15px;
+  }
+
+  .lnav-menu a {
+    padding: var(--s-3) 0;
+    border-top: 1px solid var(--line);
   }
 }
 
-/* --------------------------------------------------------------------------
-   4. Universal Eyebrow Badge (Arccheo Style)
-   -------------------------------------------------------------------------- */
-.arccheo-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 12px;
-  background: rgba(30, 23, 252, 0.04);
-  border: 1px solid rgba(30, 23, 252, 0.16);
-  border-radius: 4px;
-  width: fit-content;
-}
-
-.arccheo-eyebrow-text {
-  font-family: var(--font-mono-stack);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #1e17fc;
-}
-
-/* --------------------------------------------------------------------------
-   5. Hero Section
-   -------------------------------------------------------------------------- */
-.arccheo-hero-section {
+/* Hero */
+.hero {
   position: relative;
-  min-height: min(92vh, 880px);
+  min-height: min(92vh, 900px);
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 80px 24px 100px;
   overflow: hidden;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.arccheo-hero-art {
+.hero-bg-art {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 65%;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.85;
-  mix-blend-mode: multiply;
-  mask-image: radial-gradient(ellipse at 50% 65%, black 25%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse at 50% 65%, black 25%, transparent 75%);
+  /* Soft fade at the bottom where the blue gradient/pixels accumulate */
+  mask-image: linear-gradient(to bottom, black 0%, black 72%, rgba(0, 0, 0, 0.25) 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 72%, rgba(0, 0, 0, 0.25) 90%, transparent 100%);
 }
 
-.arccheo-hero-art-img {
-  object-fit: contain;
-  object-position: center bottom;
+.hero-art-img {
+  object-fit: contain !important;
+  object-position: right center !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+  user-select: none;
 }
 
-.arccheo-hero-container {
+.hero-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-inner {
   position: relative;
   z-index: 2;
-  max-width: 900px;
+  padding-top: var(--s-8);
+  padding-bottom: var(--s-8);
+  display: flex;
+  align-items: center;
   width: 100%;
-  margin: 0 auto;
 }
 
-.arccheo-hero-card {
-  background: rgba(245, 245, 245, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  padding: 56px 48px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04);
+.hero-copy {
+  --gap: 20px;
+  max-width: 640px;
 }
 
-.arccheo-hero-heading {
-  font-family: var(--font-display-stack);
-  font-size: clamp(48px, 6.2vw, 82px);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -2px;
-  color: #000000;
-  margin: 0;
+.hero-copy .lead {
+  max-width: 52ch;
 }
 
-.arccheo-hero-lead {
-  font-size: clamp(16px, 1.3vw, 19px);
-  line-height: 1.6;
-  color: rgba(0, 0, 0, 0.7);
-  max-width: 580px;
-  margin: 0;
-}
-
-.arccheo-hero-actions {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.arccheo-btn-primary {
-  background: #000000 !important;
-  color: #ffffff !important;
-  border-radius: 8px !important;
-  font-weight: 500 !important;
-  font-size: 15px !important;
-  padding: 14px 28px !important;
-  border: 1px solid rgba(0, 0, 0, 0.9) !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.arccheo-btn-primary:hover {
-  background: #1e17fc !important;
-  border-color: #1e17fc !important;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(30, 23, 252, 0.35);
-}
-
-.arccheo-btn-secondary {
-  background: #ffffff !important;
-  color: #000000 !important;
-  border-radius: 8px !important;
-  font-weight: 500 !important;
-  font-size: 15px !important;
-  padding: 14px 26px !important;
-  border: 1px solid rgba(0, 0, 0, 0.15) !important;
-  transition: all 0.2s ease !important;
-}
-
-.arccheo-btn-secondary:hover {
-  background: #f0f0f0 !important;
-  border-color: rgba(0, 0, 0, 0.3) !important;
-  transform: translateY(-1px);
-}
-
-@media (max-width: 768px) {
-  .arccheo-hero-section {
-    padding: 60px 16px 80px;
+@media (max-width: 900px) {
+  .hero {
     min-height: auto;
   }
-  .arccheo-hero-card {
-    padding: 36px 20px;
+
+  .hero-bg-art {
+    width: 85%;
+    opacity: 0.35;
   }
 }
 
-/* --------------------------------------------------------------------------
-   6. Clients / Ecosystem Section
-   -------------------------------------------------------------------------- */
-.arccheo-clients-section {
-  position: relative;
-  padding: 100px 32px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-}
-
-.arccheo-clients-backdrop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  opacity: 0.15;
-  mix-blend-mode: multiply;
-}
-
-.arccheo-clients-bg-img {
-  object-fit: cover;
-  object-position: center;
-}
-
-.arccheo-clients-container {
-  position: relative;
-  z-index: 2;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.arccheo-clients-subtitle {
-  font-size: clamp(18px, 2vw, 24px);
-  line-height: 1.5;
-  color: rgba(0, 0, 0, 0.7);
-  text-align: center;
-  max-width: 820px;
-  margin: 0 auto 56px;
-}
-
-.arccheo-logos-strip {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-}
-
-.arccheo-logos-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  align-items: center;
-}
-
-.arccheo-logo-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 84px;
-  padding: 0 16px;
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
-  transition: background 0.2s ease;
-}
-
-.arccheo-logo-item:last-child {
-  border-right: none;
-}
-
-.arccheo-logo-item:hover {
-  background: rgba(30, 23, 252, 0.02);
-}
-
-.arccheo-logo-svg {
-  opacity: 0.75;
-  filter: grayscale(1);
-  transition: all 0.2s ease;
-}
-
-.arccheo-logo-item:hover .arccheo-logo-svg {
-  opacity: 1;
-  filter: grayscale(0);
-}
-
-@media (max-width: 900px) {
-  .arccheo-logos-grid {
-    grid-template-columns: repeat(3, 1fr);
+@media (max-width: 640px) {
+  .hero {
+    min-height: auto;
   }
-  .arccheo-logo-item:nth-child(3) {
-    border-right: none;
+
+  /* On phones the field stays above the text and fades out. */
+  .hero-field {
+    height: 46%;
+    -webkit-mask-image: linear-gradient(#000 70%, transparent);
+    mask-image: linear-gradient(#000 70%, transparent);
   }
-  .arccheo-logo-item:nth-child(1),
-  .arccheo-logo-item:nth-child(2),
-  .arccheo-logo-item:nth-child(3) {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+  .hero-inner {
+    padding-top: var(--s-7);
+    padding-bottom: var(--s-8);
+  }
+
+  .hero-bg-art {
+    display: none;
   }
 }
 
-@media (max-width: 600px) {
-  .arccheo-logos-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .arccheo-logo-item {
-    border-right: 1px solid rgba(0, 0, 0, 0.08);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  }
-  .arccheo-logo-item:nth-child(2n) {
-    border-right: none;
-  }
-  .arccheo-logo-item:nth-child(5),
-  .arccheo-logo-item:nth-child(6) {
-    border-bottom: none;
-  }
+/* Proof strip */
+.proof {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
 }
 
-/* --------------------------------------------------------------------------
-   7. Manifesto Section (The Signature Cobalt Blue Card)
-   -------------------------------------------------------------------------- */
-.arccheo-manifesto-section {
-  padding: 120px 32px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+.proof .row-between {
+  min-height: 56px;
+  flex-wrap: wrap;
+  padding-top: var(--s-3);
+  padding-bottom: var(--s-3);
 }
 
-.arccheo-manifesto-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.arccheo-manifesto-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.15fr;
-  gap: 48px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  padding: 56px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-  align-items: stretch;
-}
-
-.arccheo-manifesto-left {
+.proof-items {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 32px;
-}
-
-.arccheo-manifesto-headline {
-  font-family: var(--font-display-stack);
-  font-size: clamp(34px, 3.8vw, 52px);
-  font-weight: 700;
-  line-height: 1.12;
-  letter-spacing: -1.5px;
-  color: #000000;
-  margin: 0;
-}
-
-.arccheo-manifesto-sculpture {
-  position: relative;
-  width: 100%;
-  max-width: 320px;
-  height: 220px;
-  overflow: hidden;
-  opacity: 0.85;
-}
-
-.arccheo-sculpture-img {
-  object-fit: contain;
-  object-position: left bottom;
-}
-
-/* The Signature Electric Cobalt Blue Card */
-.arccheo-manifesto-right {
-  display: flex;
-  height: 100%;
-}
-
-.arccheo-cobalt-card {
-  background-color: #1e17fc;
-  color: #ffffff;
-  border-radius: 8px;
-  padding: 56px 48px;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow:
-    0px 0.6px 2.3px -0.5px rgba(0, 0, 0, 0.1),
-    0px 2.3px 8.7px -1px rgba(0, 0, 0, 0.12),
-    0px 10px 38px -1.5px rgba(0, 0, 0, 0.25);
-  width: 100%;
-}
-
-.arccheo-cobalt-art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  opacity: 0.2;
-  mix-blend-mode: screen;
-}
-
-.arccheo-cobalt-img {
-  object-fit: cover;
-  object-position: center;
-}
-
-.arccheo-cobalt-content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  height: 100%;
-  justify-content: space-between;
-}
-
-.arccheo-quote-mark {
-  font-family: Georgia, serif;
-  font-size: 72px;
-  line-height: 0.8;
-  color: rgba(255, 255, 255, 0.9);
-  display: block;
-}
-
-.arccheo-quote-text {
-  font-size: clamp(22px, 2.2vw, 30px);
-  font-weight: 500;
-  line-height: 1.35;
-  color: #ffffff;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
-
-.arccheo-quote-author {
-  font-family: var(--font-mono-stack);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  padding: 6px 14px;
-  border-radius: 4px;
-  width: fit-content;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-@media (max-width: 960px) {
-  .arccheo-manifesto-grid {
-    grid-template-columns: 1fr;
-    padding: 36px 24px;
-  }
-  .arccheo-cobalt-card {
-    padding: 40px 28px;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   8. Operational Section (Escrow Without the Black Box)
-   -------------------------------------------------------------------------- */
-.arccheo-operational-section {
-  padding: 120px 32px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.arccheo-operational-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.arccheo-operational-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  padding: 56px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-}
-
-.arccheo-operational-top {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 820px;
-}
-
-.arccheo-section-heading {
-  font-family: var(--font-display-stack);
-  font-size: clamp(34px, 4vw, 52px);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -1.5px;
-  color: #000000;
-  margin: 0;
-}
-
-.arccheo-operational-lead {
-  font-size: 18px;
-  line-height: 1.6;
-  color: rgba(0, 0, 0, 0.7);
-  margin: 0;
-}
-
-.arccheo-bullet-list {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  font-size: 15px;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.85);
-}
-
-.arccheo-diagram-frame {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
-  overflow: hidden;
-  background: #000000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.arccheo-diagram-img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-@media (max-width: 768px) {
-  .arccheo-operational-card {
-    padding: 32px 20px;
-    gap: 32px;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   9. Architecture Section (3 Services Cards)
-   -------------------------------------------------------------------------- */
-.arccheo-architecture-section {
-  padding: 120px 32px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.arccheo-architecture-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.arccheo-section-header-block {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 56px;
-}
-
-.arccheo-section-subhead {
-  font-size: 18px;
-  line-height: 1.55;
-  color: rgba(0, 0, 0, 0.7);
-  max-width: 640px;
-  margin: 0;
-}
-
-.arccheo-services-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-}
-
-.arccheo-service-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition:
-    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-}
-
-.arccheo-service-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 32px -4px rgba(30, 23, 252, 0.1);
-  border-color: rgba(30, 23, 252, 0.3);
-}
-
-.arccheo-service-art {
-  height: 240px;
-  position: relative;
-  background: #f0f0f0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-}
-
-.arccheo-service-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
-.arccheo-service-body {
-  padding: 32px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.arccheo-step-badge {
-  font-family: var(--font-mono-stack);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: #1e17fc;
-  text-transform: uppercase;
-}
-
-.arccheo-service-title {
-  font-family: var(--font-display-stack);
-  font-size: 22px;
-  font-weight: 700;
-  color: #000000;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
-
-.arccheo-service-text {
-  font-size: 14px;
-  line-height: 1.6;
-  color: rgba(0, 0, 0, 0.7);
-  margin: 0;
-}
-
-@media (max-width: 900px) {
-  .arccheo-services-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   10. Process Section (The Sequence)
-   -------------------------------------------------------------------------- */
-.arccheo-process-section {
-  padding: 120px 32px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.arccheo-process-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.arccheo-phases-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-}
-
-.arccheo-phase-card {
-  position: relative;
-  background-color: #0d0d0f;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  overflow: hidden;
-  min-height: 380px;
-  padding: 40px 32px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  color: #ffffff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: transform 0.25s ease;
-}
-
-.arccheo-phase-card:hover {
-  transform: translateY(-4px);
-}
-
-.arccheo-phase-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  opacity: 0.45;
-  mix-blend-mode: overlay;
-}
-
-.arccheo-phase-bg-img {
-  object-fit: cover;
-  object-position: center;
-}
-
-.arccheo-phase-content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-}
-
-.arccheo-phase-pill {
-  font-family: var(--font-mono-stack);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #1e17fc;
-  background: rgba(30, 23, 252, 0.18);
-  border: 1px solid rgba(30, 23, 252, 0.35);
-  border-radius: 4px;
-  padding: 4px 10px;
-  width: fit-content;
-  margin-bottom: 16px;
-}
-
-.arccheo-phase-title {
-  font-family: var(--font-display-stack);
-  font-size: 24px;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0 0 10px;
-  letter-spacing: -0.5px;
-}
-
-.arccheo-phase-desc {
-  font-size: 14px;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.75);
-  margin: 0;
-}
-
-@media (max-width: 900px) {
-  .arccheo-phases-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   11. Team Section (The People Behind the Protocol)
-   -------------------------------------------------------------------------- */
-.arccheo-team-section {
-  padding: 120px 32px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.arccheo-team-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.arccheo-team-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-}
-
-.arccheo-team-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.25s ease;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-}
-
-.arccheo-team-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px -4px rgba(30, 23, 252, 0.1);
-  border-color: rgba(30, 23, 252, 0.3);
-}
-
-.arccheo-team-portrait {
-  height: 280px;
-  position: relative;
-  background-color: #0700ff;
-  overflow: hidden;
-}
-
-.arccheo-team-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
-.arccheo-team-info {
-  padding: 24px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.arccheo-team-name {
-  font-family: var(--font-display-stack);
-  font-size: 19px;
-  font-weight: 700;
-  color: #000000;
-  margin: 0;
-  letter-spacing: -0.3px;
-}
-
-.arccheo-team-role {
-  font-size: 13px;
-  line-height: 1.45;
-  color: rgba(0, 0, 0, 0.6);
-  margin: 0;
-}
-
-.arccheo-team-link {
-  font-family: var(--font-mono-stack);
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-6);
   font-size: 12px;
-  color: #1e17fc;
-  text-decoration: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.proof-items span + span::before {
+  content: "/";
+  margin-right: var(--s-6);
+  color: var(--line-strong);
+}
+
+.proof-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 8px;
-  transition: opacity 0.2s ease;
+  gap: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
 }
 
-.arccheo-team-link:hover {
-  opacity: 0.75;
-}
+@media (max-width: 640px) {
+  .proof-items span + span::before {
+    display: none;
+  }
 
-@media (max-width: 900px) {
-  .arccheo-team-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
+  .proof-items {
+    flex-direction: column;
   }
 }
 
-/* --------------------------------------------------------------------------
-   12. FAQ Section (The Inquiry)
-   -------------------------------------------------------------------------- */
-.arccheo-faq-section {
-  padding: 120px 32px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+/* Sections */
+.lsection {
+  padding: 112px 0;
 }
 
-.arccheo-faq-container {
-  max-width: 1200px;
-  margin: 0 auto;
+.lsection-line {
+  border-top: 1px solid var(--line);
 }
 
-.arccheo-faq-grid {
+@media (max-width: 640px) {
+  .lsection {
+    padding: 72px 0;
+  }
+}
+
+.split {
   display: grid;
-  grid-template-columns: 1fr 1.35fr;
-  gap: 64px;
-  align-items: flex-start;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--s-8);
+  align-items: end;
 }
 
-.arccheo-faq-left {
+.split-aside {
+  max-width: 520px;
+}
+
+#faq .split {
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-6);
+  }
+}
+
+.reason {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-5) var(--s-5) 0;
+  border-top: 1px solid var(--ink);
+  margin-right: var(--s-5);
 }
 
-.arccheo-faq-subhead {
-  font-size: 18px;
-  line-height: 1.6;
-  color: rgba(0, 0, 0, 0.7);
-  margin: 0;
+.reason p {
+  max-width: 32ch;
 }
 
-.arccheo-accordion {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  background: #ffffff;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+.diagram {
+  padding: var(--s-6) var(--s-5);
 }
 
-.arccheo-accordion-item {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  transition: background 0.2s ease;
-}
-
-.arccheo-accordion-item:last-child {
-  border-bottom: none;
-}
-
-.arccheo-accordion-item.is-open {
-  background: rgba(30, 23, 252, 0.015);
-}
-
-.arccheo-accordion-trigger {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 28px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  gap: 16px;
-}
-
-.arccheo-accordion-question {
-  font-family: var(--font-display-stack);
-  font-size: 16px;
-  font-weight: 600;
-  color: #000000;
-}
-
-.arccheo-accordion-icon {
-  font-size: 20px;
-  font-weight: 400;
-  color: #1e17fc;
-  line-height: 1;
-}
-
-.arccheo-accordion-body {
-  padding: 0 28px 24px;
-}
-
-.arccheo-accordion-answer {
-  font-size: 14px;
-  line-height: 1.65;
-  color: rgba(0, 0, 0, 0.7);
-  margin: 0;
-}
-
-@media (max-width: 900px) {
-  .arccheo-faq-grid {
-    grid-template-columns: 1fr;
-    gap: 40px;
+@media (max-width: 640px) {
+  .diagram {
+    display: none;
   }
 }
 
-/* --------------------------------------------------------------------------
-   13. Closing CTA Section
-   -------------------------------------------------------------------------- */
-.arccheo-cta-section {
-  position: relative;
-  padding: 140px 32px;
-  overflow: hidden;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+.step-card,
+.way,
+.tier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-height: 220px;
 }
 
-.arccheo-cta-art {
+.step-card p,
+.way p {
+  margin-top: auto;
+  max-width: 34ch;
+}
+
+.step-n {
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.tier .kv {
+  margin-top: auto;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+}
+
+.person-link {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+/* Stats strip */
+.stats {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.stats-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-8) var(--s-5) var(--s-8) 0;
+}
+
+.stats-item + .stats-item {
+  border-left: 1px solid var(--line);
+  padding-left: var(--s-5);
+}
+
+.stats-value {
+  font-size: clamp(48px, 6vw, 80px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .stats-item {
+    padding: var(--s-6) 0;
+  }
+
+  .stats-item + .stats-item {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding-left: 0;
+  }
+}
+
+/* Closing */
+.closing {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+}
+
+.closing-field {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
-  opacity: 0.22;
-  mix-blend-mode: multiply;
 }
 
-.arccheo-cta-img {
-  object-fit: cover;
-  object-position: center;
-}
-
-.arccheo-cta-container {
+.closing-inner {
   position: relative;
-  z-index: 2;
-  max-width: 900px;
-  margin: 0 auto;
+  gap: var(--s-6);
+  padding: var(--s-9) var(--gutter);
 }
 
-.arccheo-cta-card {
-  background: rgba(245, 245, 245, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  padding: 64px 48px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04);
+/* Footer */
+.lfooter {
+  border-top: 1px solid var(--line);
+  background: var(--surface);
 }
 
-.arccheo-cta-heading {
-  font-family: var(--font-display-stack);
-  font-size: clamp(38px, 4.5vw, 64px);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -1.5px;
-  color: #000000;
-  margin: 0;
-}
-
-.arccheo-cta-lead {
-  font-size: 18px;
-  line-height: 1.6;
-  color: rgba(0, 0, 0, 0.7);
-  max-width: 560px;
-  margin: 0;
-}
-
-.arccheo-cta-actions {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-@media (max-width: 768px) {
-  .arccheo-cta-section {
-    padding: 80px 16px;
-  }
-  .arccheo-cta-card {
-    padding: 40px 20px;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   14. Architectural Footer
-   -------------------------------------------------------------------------- */
-.arccheo-footer {
-  background: #ffffff;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.arccheo-footer-container {
-  max-width: 1440px;
-  margin: 0 auto;
-}
-
-.arccheo-footer-top {
-  display: grid;
-  grid-template-columns: 1.2fr 2fr;
-  gap: 64px;
-  padding: 80px 48px 60px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.arccheo-footer-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.arccheo-footer-logo {
-  font-family: var(--font-display-stack);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #000000;
-  text-decoration: none;
-}
-
-.arccheo-footer-desc {
-  font-size: 14px;
-  line-height: 1.6;
-  color: rgba(0, 0, 0, 0.65);
-  max-width: 340px;
-  margin: 0;
-}
-
-.arccheo-footer-copy {
-  font-family: var(--font-mono-stack);
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.45);
-  margin-top: 8px;
-}
-
-.arccheo-footer-nav {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
-}
-
-.arccheo-footer-col {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.arccheo-footer-col-title {
-  font-family: var(--font-mono-stack);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.45);
-  margin: 0 0 4px;
-}
-
-.arccheo-footer-link {
-  font-size: 13px;
-  color: rgba(0, 0, 0, 0.7);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.arccheo-footer-link:hover {
-  color: #1e17fc;
-}
-
-.arccheo-footer-bottom {
-  padding: 24px 48px;
+.lfooter-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-family: var(--font-mono-stack);
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.5);
+  gap: var(--s-7);
   flex-wrap: wrap;
-  gap: 12px;
+  padding-top: var(--s-8);
+  padding-bottom: var(--s-8);
 }
 
-@media (max-width: 900px) {
-  .arccheo-footer-top {
-    grid-template-columns: 1fr;
-    gap: 48px;
-    padding: 60px 24px 40px;
-  }
-  .arccheo-footer-nav {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .arccheo-footer-bottom {
-    padding: 20px 24px;
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.lfooter-cols {
+  display: flex;
+  gap: var(--s-8);
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.lfooter-cols a:hover {
+  color: var(--ink);
+}
+
+.lfooter-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  padding-top: var(--s-5);
+  padding-bottom: var(--s-5);
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-3);
 }
