@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ds";
 
-const LINKS = [
-  { href: "#how", label: "How it works" },
-  { href: "#trust", label: "Trust" },
+const NAV_LINKS = [
+  { href: "#architecture", label: "Architecture" },
+  { href: "#process", label: "Sequence" },
   { href: "#team", label: "Team" },
-  { href: "#faq", label: "FAQ" },
+  { href: "#faq", label: "Inquiry" },
 ];
 
 export function LandingNav() {
@@ -23,61 +23,69 @@ export function LandingNav() {
   }, []);
 
   return (
-    <header className="lnav-wrapper">
-      <div className="container lnav-container">
-        <div className="lnav has-crosses" data-scrolled={scrolled || open}>
+    <header className="arccheo-header-wrapper">
+      <div className="arccheo-nav-container">
+        <div className="arccheo-nav has-crosses" data-scrolled={scrolled || open}>
           {/* Arccheo signature corner crosses */}
           <span className="corner-cross corner-cross-tl" aria-hidden="true" />
           <span className="corner-cross corner-cross-tr" aria-hidden="true" />
           <span className="corner-cross corner-cross-bl" aria-hidden="true" />
           <span className="corner-cross corner-cross-br" aria-hidden="true" />
 
-          <div className="lnav-inner">
-            <div className="row" style={{ gap: 10, alignItems: "center" }}>
-              <Link href="/" className="wordmark" aria-label="SAKAR home">
+          <div className="arccheo-nav-inner">
+            {/* Wordmark logo */}
+            <div className="arccheo-nav-left">
+              <Link href="/" className="arccheo-logo" aria-label="SAKAR home">
                 SAKAR
               </Link>
-              <span className="lnav-status-dot" title="MST Mainnet Live" />
             </div>
 
-            <nav className="lnav-links" aria-label="Sections">
-              {LINKS.map((link) => (
-                <a key={link.href} href={link.href} className="lnav-link">
+            {/* Menu Links */}
+            <nav className="arccheo-nav-menu" aria-label="Primary Navigation">
+              {NAV_LINKS.map((link) => (
+                <a key={link.href} href={link.href} className="arccheo-nav-link">
                   {link.label}
                 </a>
               ))}
             </nav>
 
-            <div className="row" style={{ gap: 8, alignItems: "center" }}>
-              <Button href="/dashboard" size="sm" className="lnav-cta">
+            {/* Actions */}
+            <div className="arccheo-nav-right">
+              <Button href="/dashboard" size="sm" className="arccheo-btn-primary-small">
                 Open app
               </Button>
               <button
                 type="button"
-                className="lnav-toggle"
+                className="arccheo-nav-toggle"
                 aria-expanded={open}
-                aria-controls="lnav-menu"
+                aria-controls="arccheo-mobile-menu"
                 onClick={() => setOpen((value) => !value)}
               >
-                <span className="sr-only">Menu</span>
-                <span aria-hidden="true" />
-                <span aria-hidden="true" />
+                <span className="sr-only">Toggle navigation menu</span>
+                <span className="toggle-bar" aria-hidden="true" />
+                <span className="toggle-bar" aria-hidden="true" />
               </button>
             </div>
           </div>
 
+          {/* Mobile Overlay Menu */}
           {open && (
-            <nav id="lnav-menu" className="lnav-menu" aria-label="Sections">
-              {LINKS.map((link) => (
+            <nav id="arccheo-mobile-menu" className="arccheo-nav-mobile" aria-label="Mobile Navigation">
+              {NAV_LINKS.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className="lnav-menu-item"
+                  className="arccheo-nav-mobile-item"
                   onClick={() => setOpen(false)}
                 >
                   {link.label}
                 </a>
               ))}
+              <div className="arccheo-nav-mobile-cta">
+                <Button href="/dashboard" size="sm" className="arccheo-btn-primary-small" style={{ width: "100%" }}>
+                  Open app
+                </Button>
+              </div>
             </nav>
           )}
         </div>
