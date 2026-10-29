@@ -66,7 +66,7 @@ policies read back), smoke deal Completed, fee paid, solvency delta 0.
 - A mistake in the configuration is fixed by editing `.env` and rerunning `configure:mainnet` (it only
   sends what differs). Admin changes never touch escrowed funds or deals already in flight.
 - `PAUSER_ROLE` can pause new listings and acceptances; settlements still work while paused.
-- Before real users: move `DEFAULT_ADMIN_ROLE` to a multisig (SECURITY.md §5).
+- Before real users: move `DEFAULT_ADMIN_ROLE` to a multisig ([SECURITY.md](../.github/SECURITY.md) §5).
 
 ## 5. Later: the app on mainnet
 

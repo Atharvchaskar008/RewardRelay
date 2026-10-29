@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Network: MST Testnet](https://img.shields.io/badge/network-MST%20Testnet-6f42c1.svg)](https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A)
 [![Solidity 0.8.24](https://img.shields.io/badge/solidity-0.8.24-363636.svg)](packages/contracts)
-[![Node.js 22+](https://img.shields.io/badge/node-%3E%3D22-339933.svg)](.nvmrc)
+[![Node.js 22+](https://img.shields.io/badge/node-%3E%3D22-339933.svg)](package.json)
 [![Contract coverage: 100%](https://img.shields.io/badge/contract%20coverage-100%25-brightgreen.svg)](docs/testing.md)
 [![Live: rewardrelay.vercel.app](https://img.shields.io/badge/live-rewardrelay.vercel.app-black.svg)](https://rewardrelay.vercel.app)
 [![Health: ok](https://img.shields.io/badge/health-ok-brightgreen.svg)](https://rewardrelay.vercel.app/api/health)
@@ -448,7 +448,7 @@ Measured on the live Vercel production deployment (`bom1` Mumbai functions conne
 
 ### Prerequisites
 
-- **Node.js**: `v22.0.0+` (see `.nvmrc`)
+- **Node.js**: `v22.0.0+` (see `engines` in `package.json`)
 - **npm**: `v10.0.0+`
 - **Java**: `OpenJDK 21+` (Required only if running local Firebase emulators for integration tests)
 
@@ -532,7 +532,7 @@ npm run build                  # Typecheck and build all monorepo packages
 - **Hardened RPC Relay**: The `/api/rpc/testnet` endpoint strictly allowlists safe JSON-RPC methods (`eth_call`, `eth_sendRawTransaction`, `eth_getTransactionReceipt`, etc.) to prevent node abuse.
 - **Prohibited Goods Filter**: Automatic programmatic rejection for high-risk categories (direct cashout, employee/student credentials, IRCTC railway tickets, OTP sharing, and regulated substances).
 
-For vulnerability disclosure and security details, see [SECURITY.md](SECURITY.md).
+For vulnerability disclosure and security details, see [SECURITY.md](.github/SECURITY.md).
 
 ---
 

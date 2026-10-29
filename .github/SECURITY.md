@@ -2,7 +2,7 @@
 
 Status: **MVP on MST Testnet** (test MSTC only, no real money). This document covers the web app and
 API (`apps/web`); the smart-contract protocol, its invariants and its threat model are in
-[docs/protocol.md](docs/protocol.md) (§4 invariants, §10 threat model, §12 static analysis).
+[docs/protocol.md](../docs/protocol.md) (§4 invariants, §10 threat model, §12 static analysis).
 
 **Reporting a vulnerability:** please do not open a public issue. Use GitHub's private
 [security advisory form](https://github.com/Atharvchaskar008/SAKAR/security/advisories/new);

@@ -5,7 +5,7 @@ the conventions every change follows.
 
 ## Prerequisites
 
-- **Node.js 22 or newer** (`.nvmrc`; Node 24 works too) and npm 10+
+- **Node.js 22 or newer** (`engines` in `package.json`; Node 24 works too) and npm 10+
 - **Java 21** for the Firebase emulators used by the integration tests
 - Git, and a wallet/explorer for MST Testnet if you deploy contracts
 
@@ -23,7 +23,7 @@ npm run dev                         # local Hardhat node + Next.js dev server
 ```
 
 Every variable is documented in the two `.env.example` files; the server validates its environment
-at startup and names any missing or malformed variable. See [docs/deployment.md](docs/deployment.md)
+at startup and names any missing or malformed variable. See [docs/deployment.md](../docs/deployment.md)
 for Firebase, testnet and Vercel setup.
 
 ## Repository layout
@@ -54,7 +54,7 @@ for Firebase, testnet and Vercel setup.
 2. Write short, plain commit messages: two to four words that say what changed ("Testnet
    deployment", "Faster deal pages"), without prefixes such as `feat:` or `fix:`. Keep each commit
    to one change.
-3. Add a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) for any user-visible change.
+3. Add a line under **Unreleased** in [CHANGELOG.md](../docs/CHANGELOG.md) for any user-visible change.
 4. Open a pull request; CI must be green (lint, tests, build, integration tests).
 5. Merge with a merge commit once CI passes; never force-push `main`.
 

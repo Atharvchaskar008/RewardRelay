@@ -101,4 +101,4 @@ MST Mainnet uses the same scripts with `:mainnet`; see [mainnet.md](mainnet.md).
 ## Operations
 
 - `GET /api/health`: RPC and latest block, Firestore, signer balances, contract addresses.
-- Key rotation, pausing and incident response: see [SECURITY.md](../SECURITY.md#6-operations).
+- Key rotation, pausing and incident response: see [SECURITY.md](../.github/SECURITY.md#6-operations).

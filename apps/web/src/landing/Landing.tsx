@@ -380,7 +380,7 @@ export function Landing() {
                 Contracts
               </a>
               <a
-                href={`${GITHUB_URL}/blob/main/SECURITY.md`}
+                href={`${GITHUB_URL}/blob/main/.github/SECURITY.md`}
                 target="_blank"
                 rel="noreferrer noopener"
               >

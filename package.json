@@ -52,5 +52,20 @@
       "zod": "^4.6.7"
     },
     "jose": "^5.10.0"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "endOfLine": "auto",
+    "plugins": [
+      "prettier-plugin-solidity"
+    ],
+    "overrides": [
+      {
+        "files": "*.sol",
+        "options": {
+          "tabWidth": 4
+        }
+      }
+    ]
   }
 }

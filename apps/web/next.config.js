@@ -14,7 +14,7 @@ function originOf(url) {
 /**
  * Content-Security-Policy. No 'unsafe-eval' in production (dev needs it for React Refresh).
  * 'unsafe-inline' scripts are still required by the App Router's inline bootstrap without nonces;
- * a nonce-based policy (middleware) is the production upgrade (see SECURITY.md).
+ * a nonce-based policy (middleware) is the production upgrade (see .github/SECURITY.md).
  * Google/Firebase origins: phone sign-in (reCAPTCHA, Identity Toolkit, the authDomain iframe).
  */
 function contentSecurityPolicy() {

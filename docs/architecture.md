@@ -117,7 +117,7 @@ badge, private-data checks and every privileged action read the chain fresh.
 **Independent work runs side by side**: the deal view starts the chain clock, the listing and the
 timeline before the deal and the caller's wallet are known; the health checks run in parallel; wallet
 set-up mints the badge and sends the top-up at the same time. Reads without private data use lighter
-session and rate-limit checks (see SECURITY.md §5); writes keep the strict ones.
+session and rate-limit checks (see [SECURITY.md](../.github/SECURITY.md) §5); writes keep the strict ones.
 
 **Measured** (production build against Firebase and MST Testnet, median of warm requests): a deal page
 in about 0.3 s (was 1.5 s), `/api/me` 0.3 s, the listings feed 0.05 s; 150 simultaneous requests are
