@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
 import type { CSSProperties } from "react";
 import { Avatar, Button, IconArrowRight, IconExternal, Pill, SectionHeader } from "@/components/ds";
 import { DealDiagram } from "./DealDiagram";
@@ -11,14 +14,17 @@ const GITHUB_URL = "https://github.com/Atharvchaskar008/SAKAR";
 
 const REASONS = [
   {
+    idx: "01",
     title: "Escrow on every deal",
     text: "Your payment sits in a smart contract, never in a company's account.",
   },
   {
+    idx: "02",
     title: "Deposits on both sides",
     text: "Cheat or miss a deadline, and your deposit goes to the other side.",
   },
   {
+    idx: "03",
     title: "Refund if it never arrives",
     text: "No delivery by the deadline? The contract refunds you on its own.",
   },
@@ -102,37 +108,65 @@ function TierMark({ density }: { density: number }) {
   );
 }
 
+/** Corner crosses matching the Arccheo architectural visual style */
+function Crosses() {
+  return (
+    <>
+      <span className="corner-cross corner-cross-tl" aria-hidden="true" />
+      <span className="corner-cross corner-cross-tr" aria-hidden="true" />
+      <span className="corner-cross corner-cross-bl" aria-hidden="true" />
+      <span className="corner-cross corner-cross-br" aria-hidden="true" />
+    </>
+  );
+}
+
 export function Landing() {
   return (
     <>
       <LandingNav />
-      <main id="top">
+      <main id="top" className="landing-main">
         {/* Hero */}
         <section className="hero">
+          {/* Arccheo Halftone Architectural Backdrop */}
+          <div className="hero-bg-art" aria-hidden="true">
+            <Image
+              src="/arccheo/0w0qwEFKa288EqQq2SBotntUpbE.png"
+              alt=""
+              fill
+              priority
+              className="hero-art-img"
+            />
+          </div>
           <PixelField
             className="hero-field"
             seed={3}
-            clearZone={{ x: 0, y: 0.5, w: 0.55, h: 0.5 }}
+            clearZone={{ x: 0, y: 0.45, w: 0.6, h: 0.55 }}
           />
+
           <div className="container hero-inner">
-            <div className="hero-copy stack">
-              <span className="eyebrow">Escrow for card offers · on MST Blockchain</span>
-              <h1 className="display">
-                Their card.
-                <br />
-                Your discount.
-              </h1>
-              <p className="lead">
-                Someone else holds the bank offer you need. SAKAR lets them buy for you, while your
-                money waits in a smart contract until the order arrives.
-              </p>
-              <div className="row" style={{ gap: 12, marginTop: 8 }}>
-                <Button href="/dashboard" size="lg">
-                  Open app
-                </Button>
-                <Button href="#how" variant="outline" size="lg">
-                  How it works
-                </Button>
+            <div className="hero-card has-crosses">
+              <Crosses />
+              <div className="hero-copy stack">
+                <div className="eyebrow-wrapper">
+                  <span className="eyebrow">Escrow for card offers · on MST Blockchain</span>
+                </div>
+                <h1 className="display">
+                  Their card.
+                  <br />
+                  Your discount.
+                </h1>
+                <p className="lead">
+                  Someone else holds the bank offer you need. SAKAR lets them buy for you, while
+                  your money waits in a smart contract until the order arrives.
+                </p>
+                <div className="row hero-actions">
+                  <Button href="/dashboard" size="lg" className="hero-btn-primary">
+                    Open app
+                  </Button>
+                  <Button href="#how" variant="outline" size="lg" className="hero-btn-secondary">
+                    How it works
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -140,35 +174,65 @@ export function Landing() {
 
         {/* Proof strip */}
         <div className="proof">
-          <div className="container row-between">
+          <div className="container row-between proof-inner">
             <p className="mono proof-items">
               <span>Built on MST Blockchain</span>
               <span>Contracts verified on mstscan</span>
               <span>Works with BridgeKey and MetaMask</span>
             </p>
-            <a
-              className="mono proof-link"
-              href={ESCROW_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              View contract <IconExternal />
-            </a>
+            <div className="row proof-right-col" style={{ gap: 24, alignItems: "center" }}>
+              <div className="proof-logos" aria-hidden="true">
+                <Image
+                  src="/arccheo/aO7VZrPNpr17rAk31OBOjUvQtM.svg"
+                  alt=""
+                  width={56}
+                  height={20}
+                  className="proof-svg"
+                />
+                <Image
+                  src="/arccheo/WCnJFcqKv9UbCn8e5O52hdSAsQ.svg"
+                  alt=""
+                  width={56}
+                  height={20}
+                  className="proof-svg"
+                />
+                <Image
+                  src="/arccheo/hq51MC556sUgci2Mvg5s7IwaM0Y.svg"
+                  alt=""
+                  width={42}
+                  height={20}
+                  className="proof-svg"
+                />
+              </div>
+              <a
+                className="mono proof-link"
+                href={ESCROW_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                View contract <IconExternal />
+              </a>
+            </div>
           </div>
         </div>
 
         {/* Problem */}
         <section className="lsection">
-          <div className="container split">
-            <SectionHeader
-              eyebrow="The problem"
-              title="Every card hides a discount someone else needs."
-              size={1}
-            />
-            <p className="lead split-aside">
-              Bank offers, cashback and no-cost EMI are locked to a few cardholders. The buyer who
-              wants the deal has no card. The cardholder has no reason to trust a stranger.
-            </p>
+          <div className="container">
+            <div className="split-box has-crosses">
+              <Crosses />
+              <div className="split">
+                <SectionHeader
+                  eyebrow="The problem"
+                  title="Every card hides a discount someone else needs."
+                  size={1}
+                />
+                <p className="lead split-aside">
+                  Bank offers, cashback and no-cost EMI are locked to a few cardholders. The buyer
+                  who wants the deal has no card. The cardholder has no reason to trust a stranger.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -176,9 +240,11 @@ export function Landing() {
         <section className="lsection lsection-line">
           <div className="container stack" style={{ gap: 48 }}>
             <SectionHeader eyebrow="Why SAKAR" title="Trust, without the middleman." size={1} />
-            <div className="grid" style={{ "--cols": 3, gap: 0 } as CSSProperties}>
+            <div className="grid reasons-grid" style={{ "--cols": 3 } as CSSProperties}>
               {REASONS.map((reason) => (
-                <div key={reason.title} className="reason">
+                <div key={reason.title} className="reason-card has-crosses">
+                  <Crosses />
+                  <span className="mono reason-idx">[ {reason.idx} ]</span>
                   <h3 className="title-3">— {reason.title}</h3>
                   <p className="muted">{reason.text}</p>
                 </div>
@@ -196,13 +262,18 @@ export function Landing() {
               lead="One deal, three moves. Every step is a transaction you can check on mstscan."
               size={1}
             />
-            <div className="card diagram">
+            <div className="card diagram-card has-crosses">
+              <Crosses />
               <DealDiagram />
             </div>
-            <div className="grid" style={{ "--cols": 3 } as CSSProperties}>
+            <div className="grid loop-grid" style={{ "--cols": 3 } as CSSProperties}>
               {LOOP.map((step) => (
-                <div key={step.n} className="card step-card">
-                  <span className="num step-n">{step.n}</span>
+                <div key={step.n} className="card step-card has-crosses">
+                  <Crosses />
+                  <div className="row-between">
+                    <span className="mono step-tag">PHASE {step.n}</span>
+                    <span className="num step-n">{step.n}</span>
+                  </div>
                   <h3 className="title-2">{step.title}</h3>
                   <p className="muted">{step.text}</p>
                 </div>
@@ -213,18 +284,21 @@ export function Landing() {
 
         {/* Stats */}
         <section className="stats">
-          <div className="container grid" style={{ "--cols": 3, gap: 0 } as CSSProperties}>
-            <div className="stats-item">
-              <span className="stats-value num">2%</span>
-              <span className="label">Fee, only on the payout</span>
-            </div>
-            <div className="stats-item">
-              <span className="stats-value num">0</span>
-              <span className="label">Card numbers or OTPs shared</span>
-            </div>
-            <div className="stats-item">
-              <span className="stats-value num">~3s</span>
-              <span className="label">Per block on MST</span>
+          <div className="container">
+            <div className="stats-grid has-crosses">
+              <Crosses />
+              <div className="stats-item">
+                <span className="stats-value num">2%</span>
+                <span className="label">Fee, only on the payout</span>
+              </div>
+              <div className="stats-item">
+                <span className="stats-value num">0</span>
+                <span className="label">Card numbers or OTPs shared</span>
+              </div>
+              <div className="stats-item">
+                <span className="stats-value num">~3s</span>
+                <span className="label">Per block on MST</span>
+              </div>
             </div>
           </div>
         </section>
@@ -237,21 +311,46 @@ export function Landing() {
               title="One flow, two kinds of rewards."
               size={1}
             />
-            <div className="grid" style={{ "--cols": 2 } as CSSProperties}>
-              <div className="card way">
-                <Pill tone="accent">Card offers</Pill>
-                <h3 className="title-2">Buy-for-you</h3>
-                <p className="muted">
-                  The cardholder orders in their own account and ships to you. The payout waits for
-                  the return window.
-                </p>
+            <div className="grid ways-grid" style={{ "--cols": 2 } as CSSProperties}>
+              <div className="card way-card has-crosses">
+                <Crosses />
+                <div className="way-art">
+                  <Image
+                    src="/arccheo/gxCnqw18lajATdEzbHQtI9Ud4c.png"
+                    alt=""
+                    width={400}
+                    height={220}
+                    className="way-img"
+                  />
+                </div>
+                <div className="way-body stack" style={{ gap: 12 }}>
+                  <Pill tone="accent">Card offers</Pill>
+                  <h3 className="title-2">Buy-for-you</h3>
+                  <p className="muted">
+                    The cardholder orders in their own account and ships to you. The payout waits
+                    for the return window.
+                  </p>
+                </div>
               </div>
-              <div className="card way">
-                <Pill>Codes and vouchers</Pill>
-                <h3 className="title-2">Pass-on</h3>
-                <p className="muted">
-                  A shareable code is sealed on-chain and revealed only to the buyer who paid.
-                </p>
+
+              <div className="card way-card has-crosses">
+                <Crosses />
+                <div className="way-art">
+                  <Image
+                    src="/arccheo/2kfLIBd1mfhRBldMqHLvDwR0tY.png"
+                    alt=""
+                    width={400}
+                    height={220}
+                    className="way-img"
+                  />
+                </div>
+                <div className="way-body stack" style={{ gap: 12 }}>
+                  <Pill>Codes and vouchers</Pill>
+                  <h3 className="title-2">Pass-on</h3>
+                  <p className="muted">
+                    A shareable code is sealed on-chain and revealed only to the buyer who paid.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -266,9 +365,10 @@ export function Landing() {
               lead="Every finished deal adds to a soulbound Trust Badge on MST. Better reputation, smaller deposits."
               size={1}
             />
-            <div className="grid" style={{ "--cols": 3 } as CSSProperties}>
+            <div className="grid tiers-grid" style={{ "--cols": 3 } as CSSProperties}>
               {TIERS.map((tier) => (
-                <div key={tier.name} className="card tier">
+                <div key={tier.name} className="card tier-card has-crosses">
+                  <Crosses />
                   <div className="row-between">
                     <span className="label">Trust Badge</span>
                     <TierMark density={tier.density} />
@@ -290,11 +390,12 @@ export function Landing() {
         <section id="team" className="lsection lsection-line">
           <div className="container stack" style={{ gap: 48 }}>
             <SectionHeader eyebrow="The team" title="Two people, one escrow." size={1} />
-            <div className="grid" style={{ "--cols": 2 } as CSSProperties}>
+            <div className="grid team-grid" style={{ "--cols": 2 } as CSSProperties}>
               {TEAM.map((person) => (
-                <div key={person.name} className="card person">
-                  <Avatar initials={person.initials} size={56} label={person.name} />
-                  <div className="stack" style={{ gap: 4 }}>
+                <div key={person.name} className="card person-card has-crosses">
+                  <Crosses />
+                  <Avatar initials={person.initials} size={64} label={person.name} />
+                  <div className="stack" style={{ gap: 6 }}>
                     <h3 className="title-3">{person.name}</h3>
                     <p className="muted">{person.role}</p>
                     <a
@@ -303,7 +404,7 @@ export function Landing() {
                       target="_blank"
                       rel="noreferrer noopener"
                     >
-                      {person.handle}
+                      {person.handle} <IconExternal />
                     </a>
                   </div>
                 </div>
@@ -316,38 +417,64 @@ export function Landing() {
         <section id="faq" className="lsection lsection-line">
           <div className="container split">
             <SectionHeader eyebrow="Questions" title="Before you start." size={1} />
-            <div className="accordion split-aside">
-              {FAQ.map((item) => (
-                <details key={item.q}>
-                  <summary>{item.q}</summary>
-                  <p>{item.a}</p>
-                </details>
-              ))}
+            <div className="accordion-wrapper has-crosses">
+              <Crosses />
+              <div className="accordion">
+                {FAQ.map((item) => (
+                  <details key={item.q} className="faq-item">
+                    <summary className="faq-summary">
+                      <span>{item.q}</span>
+                      <span className="faq-icon" aria-hidden="true" />
+                    </summary>
+                    <div className="faq-answer">
+                      <p>{item.a}</p>
+                    </div>
+                  </details>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
         {/* Closing */}
         <section className="closing">
+          <div className="closing-art" aria-hidden="true">
+            <Image
+              src="/arccheo/Gin5w9Fy7PmtsSiAcRhgvL7X3T4.png"
+              alt=""
+              fill
+              className="closing-img"
+            />
+          </div>
           <PixelField
             className="closing-field"
             seed={11}
             bias={-0.06}
             clearZone={{ x: 0, y: 0, w: 0.62, h: 1 }}
           />
-          <div className="container closing-inner stack">
-            <h2 className="title-1">
-              Your card has a discount
-              <br />
-              someone else needs.
-            </h2>
-            <div className="row" style={{ gap: 12 }}>
-              <Button href="/dashboard" size="lg">
-                Open app
-              </Button>
-              <Button href="/explore" variant="outline" size="lg">
-                Explore offers <IconArrowRight />
-              </Button>
+          <div className="container">
+            <div className="closing-card has-crosses">
+              <Crosses />
+              <div className="closing-inner stack">
+                <h2 className="title-1">
+                  Your card has a discount
+                  <br />
+                  someone else needs.
+                </h2>
+                <div className="row closing-actions" style={{ gap: 12 }}>
+                  <Button href="/dashboard" size="lg" className="hero-btn-primary">
+                    Open app
+                  </Button>
+                  <Button
+                    href="/explore"
+                    variant="outline"
+                    size="lg"
+                    className="hero-btn-secondary"
+                  >
+                    Explore offers <IconArrowRight />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -359,7 +486,7 @@ export function Landing() {
             <Link href="/" className="wordmark">
               SAKAR
             </Link>
-            <p className="muted" style={{ maxWidth: 280 }}>
+            <p className="muted" style={{ maxWidth: 320 }}>
               Card offers for everyone, settled by smart contracts on MST Blockchain.
             </p>
           </div>
