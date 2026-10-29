@@ -25,5 +25,5 @@ describe("firebase admin", () => {
     // The settings apply: an undefined field is dropped instead of rejected (checked locally by set()).
     expect(() => b.batch().set(b.doc("probe/doc"), { kept: 1, dropped: undefined })).not.toThrow();
     // Two fresh imports of firebase-admin take seconds on a busy or freshly installed machine.
-  }, 20_000);
+  }, 60_000);
 });
