@@ -1,10 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { Button, IconArrowRight, IconExternal, Pill, SectionHeader } from "@/components/ds";
 import { DealDiagram } from "./DealDiagram";
 import { LandingNav } from "./LandingNav";
-import { PixelField } from "./PixelField";
 
 const ESCROW_URL =
   "https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A#code";
@@ -37,7 +38,7 @@ const TIERS = [
   { name: "Verified", deposit: "20%", how: "20 deals, 10 people", density: 0.8 },
 ];
 
-const TEAM = [
+const TEAM_MEMBERS = [
   {
     name: "Atharv Chaskar",
     role: "Founder · Blockchain & Protocol Architecture",
@@ -52,28 +53,35 @@ const TEAM = [
     href: "https://github.com/bhavsingh-gpu",
     handle: "github.com/bhavsingh-gpu",
   },
+  {
+    name: "MST Protocol Network",
+    role: "Decentralized Settlement & Validator Network",
+    img: "/media/cmjlrrueqiipWw7B3nGrsSe6I64.png",
+    href: "https://testnet.mstscan.com",
+    handle: "testnet.mstscan.com",
+  },
 ];
 
-const FAQ = [
+const FAQ_ITEMS = [
   {
-    q: "Do I ever share my card?",
-    a: "No. The cardholder orders in their own account and ships to you. No card number, login or OTP ever changes hands.",
+    q: "Do I ever share my credit card number or OTP?",
+    a: "Never. The cardholder places the order through their own verified account and ships to your specified address. No card credentials, CVVs, or OTPs are ever transmitted.",
   },
   {
-    q: "What if the order is cancelled or returned?",
-    a: "The payout stays frozen until the return window ends. A dispute goes to an arbiter, and if nothing is delivered in time the contract refunds you automatically.",
+    q: "What happens if the order is cancelled, returned, or never delivered?",
+    a: "The escrow remains safely locked until the return period elapses. If the seller fails to deliver before the deadline, the smart contract automatically triggers a full refund of your escrow.",
   },
   {
-    q: "What do I need to start?",
-    a: "Just a phone number. A wallet is created for you. If you already use crypto, connect BridgeKey or MetaMask instead.",
+    q: "What do I need to start trading on SAKAR?",
+    a: "Just a phone number or an MST-compatible Web3 wallet like BridgeKey or MetaMask. SAKAR creates an embedded wallet on phone signup automatically.",
   },
   {
-    q: "Why a blockchain?",
-    a: "Your money sits in public code nobody can run off with, the same code can never be sold twice, and your reputation travels with you.",
+    q: "Why is SAKAR built on MST Blockchain?",
+    a: "Your funds sit in immutable open-source code that no central company or rogue actor can confiscate. Deals settle in ~3 seconds with cryptographic auditability.",
   },
   {
-    q: "Is it live?",
-    a: "Yes, on MST Testnet with test MSTC, so no real money moves yet. Mainnet is next.",
+    q: "Is the platform currently live on mainnet?",
+    a: "SAKAR is live on the MST Testnet with test tokens (MSTC) so you can safely simulate deals end-to-end before mainnet deployment.",
   },
 ];
 
@@ -116,6 +124,12 @@ function TierMark({ density }: { density: number }) {
 }
 
 export function Landing() {
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
+
   return (
     <>
       <LandingNav />
@@ -305,11 +319,22 @@ export function Landing() {
         </section>
 
         {/* Team */}
-        <section id="team" className="lsection lsection-line">
-          <div className="container stack" style={{ gap: 48 }}>
-            <SectionHeader eyebrow="The team" title="Two people, one escrow." size={1} />
+        <section id="team" className="arccheo-team-section">
+          <div className="arccheo-team-container">
+            <div className="arccheo-section-header">
+              <div className="arccheo-eyebrow has-crosses">
+                <span className="corner-cross corner-cross-tl" aria-hidden="true" />
+                <span className="arccheo-eyebrow-text">SAKAR&apos;S TEAM</span>
+              </div>
+              <h2 className="arccheo-section-heading">The people behind the protocol.</h2>
+              <p className="arccheo-section-lead">
+                SAKAR is built by a focused team bringing together smart contract architecture,
+                cryptographic security, and consumer commerce.
+              </p>
+            </div>
+
             <div className="arccheo-team-grid">
-              {TEAM.map((member) => (
+              {TEAM_MEMBERS.map((member) => (
                 <div key={member.name} className="arccheo-team-card has-crosses">
                   <Crosses />
                   <div className="arccheo-team-portrait">
@@ -340,89 +365,187 @@ export function Landing() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="lsection lsection-line">
-          <div className="container split">
-            <SectionHeader eyebrow="Questions" title="Before you start." size={1} />
-            <div className="accordion split-aside">
-              {FAQ.map((item) => (
-                <details key={item.q}>
-                  <summary>{item.q}</summary>
-                  <p>{item.a}</p>
-                </details>
-              ))}
+        <section className="arccheo-faq-section" id="faq">
+          <div className="arccheo-faq-container">
+            <div className="arccheo-faq-grid">
+              {/* Left Column: Heading and Intro */}
+              <div className="arccheo-faq-left">
+                <div className="arccheo-eyebrow has-crosses">
+                  <span className="corner-cross corner-cross-tl" aria-hidden="true" />
+                  <span className="arccheo-eyebrow-text">FREQUENTLY ASKED QUESTIONS</span>
+                </div>
+                <h2 className="arccheo-section-heading">The Inquiry</h2>
+                <p className="arccheo-faq-subhead">
+                  Answers to practical questions buyers and cardholders ask before putting escrow
+                  into operation.
+                </p>
+              </div>
+
+              {/* Right Column: Accordion with hairline borders */}
+              <div className="arccheo-faq-right has-crosses">
+                <Crosses />
+                <div className="arccheo-accordion">
+                  {FAQ_ITEMS.map((item, idx) => {
+                    const isOpen = openFaq === idx;
+                    return (
+                      <div
+                        key={idx}
+                        className={`arccheo-accordion-item ${isOpen ? "is-open" : ""}`}
+                      >
+                        <button
+                          type="button"
+                          className="arccheo-accordion-trigger"
+                          onClick={() => toggleFaq(idx)}
+                          aria-expanded={isOpen}
+                        >
+                          <span className="arccheo-accordion-question">{item.q}</span>
+                          <span className="arccheo-accordion-icon" aria-hidden="true">
+                            {isOpen ? "−" : "+"}
+                          </span>
+                        </button>
+                        {isOpen && (
+                          <div className="arccheo-accordion-body">
+                            <p className="arccheo-accordion-answer">{item.a}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Closing */}
-        <section className="closing">
-          <PixelField
-            className="closing-field"
-            seed={11}
-            bias={-0.06}
-            clearZone={{ x: 0, y: 0, w: 0.62, h: 1 }}
-          />
-          <div className="container closing-inner stack">
-            <h2 className="title-1">
-              Your card has a discount
-              <br />
-              someone else needs.
-            </h2>
-            <div className="row" style={{ gap: 12 }}>
-              <Button href="/dashboard" size="lg">
-                Open app
-              </Button>
-              <Button href="/explore" variant="outline" size="lg">
-                Explore offers <IconArrowRight />
-              </Button>
+        {/* Closing CTA */}
+        <section className="arccheo-cta-section">
+          <div className="arccheo-cta-art" aria-hidden="true">
+            <Image
+              src="/arccheo/Gin5w9Fy7PmtsSiAcRhgvL7X3T4.png"
+              alt=""
+              fill
+              className="arccheo-cta-img"
+            />
+          </div>
+
+          <div className="arccheo-cta-container">
+            <div className="arccheo-cta-card has-crosses">
+              <Crosses />
+
+              <div className="arccheo-eyebrow has-crosses">
+                <span className="corner-cross corner-cross-tl" aria-hidden="true" />
+                <span className="arccheo-eyebrow-text">BEGIN WITH SAKAR</span>
+              </div>
+
+              <h2 className="arccheo-cta-heading">Put card rewards into motion.</h2>
+
+              <p className="arccheo-cta-lead">
+                Trade credit card offers with autonomous smart contract escrow—without middleman
+                counterparty risk.
+              </p>
+
+              <div className="arccheo-cta-actions">
+                <Button href="/dashboard" size="lg">
+                  Open app
+                </Button>
+                <Button href="/explore" variant="outline" size="lg">
+                  Explore offers <IconArrowRight />
+                </Button>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="lfooter">
-        <div className="container lfooter-top">
-          <div className="stack" style={{ gap: 8 }}>
-            <Link href="/" className="wordmark">
-              SAKAR
-            </Link>
-            <p className="muted" style={{ maxWidth: 280 }}>
-              Card offers for everyone, settled by smart contracts on MST Blockchain.
-            </p>
+      {/* Architectural Footer */}
+      <footer className="arccheo-footer">
+        <div className="arccheo-footer-container">
+          <div className="arccheo-footer-top has-crosses">
+            <Crosses />
+
+            {/* Left Column: Brand & Bio */}
+            <div className="arccheo-footer-brand">
+              <Link href="/" className="arccheo-footer-logo">
+                SAKAR
+              </Link>
+              <p className="arccheo-footer-desc">
+                Card offers for everyone, settled by smart contracts on MST Blockchain.
+              </p>
+              <span className="arccheo-footer-copy">
+                © 2026 SAKAR Protocol. All rights reserved.
+              </span>
+            </div>
+
+            {/* Right 3 Navigation Columns */}
+            <div className="arccheo-footer-nav">
+              <div className="arccheo-footer-col">
+                <h4 className="arccheo-footer-col-title">Platform</h4>
+                <Link href="/explore" className="arccheo-footer-link">
+                  Explore offers
+                </Link>
+                <Link href="/listings/new" className="arccheo-footer-link">
+                  Share an offer
+                </Link>
+                <Link href="/deals" className="arccheo-footer-link">
+                  My deals
+                </Link>
+                <Link href="/wallet" className="arccheo-footer-link">
+                  Wallet profile
+                </Link>
+              </div>
+
+              <div className="arccheo-footer-col">
+                <h4 className="arccheo-footer-col-title">Protocol</h4>
+                <a
+                  href={GITHUB_URL}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="arccheo-footer-link"
+                >
+                  GitHub
+                </a>
+                <a
+                  href={ESCROW_URL}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="arccheo-footer-link"
+                >
+                  Smart Contracts
+                </a>
+                <a
+                  href="https://testnet.mstscan.com"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="arccheo-footer-link"
+                >
+                  MST Explorer
+                </a>
+                <a
+                  href={`${GITHUB_URL}/blob/main/.github/SECURITY.md`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="arccheo-footer-link"
+                >
+                  Security
+                </a>
+              </div>
+
+              <div className="arccheo-footer-col">
+                <h4 className="arccheo-footer-col-title">Legal</h4>
+                <Link href="/terms" className="arccheo-footer-link">
+                  Terms of Service
+                </Link>
+                <Link href="/terms" className="arccheo-footer-link">
+                  Privacy Policy
+                </Link>
+              </div>
+            </div>
           </div>
-          <nav className="lfooter-cols" aria-label="Footer">
-            <div className="stack" style={{ gap: 10 }}>
-              <span className="label">Product</span>
-              <Link href="/explore">Explore</Link>
-              <Link href="/listings/new">Share an offer</Link>
-              <Link href="/deals">My deals</Link>
-              <Link href="/wallet">Profile</Link>
-            </div>
-            <div className="stack" style={{ gap: 10 }}>
-              <span className="label">Project</span>
-              <a href={GITHUB_URL} target="_blank" rel="noreferrer noopener">
-                GitHub
-              </a>
-              <a href={ESCROW_URL} target="_blank" rel="noreferrer noopener">
-                Contracts
-              </a>
-              <a
-                href={`${GITHUB_URL}/blob/main/.github/SECURITY.md`}
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                Security
-              </a>
-            </div>
-            <div className="stack" style={{ gap: 10 }}>
-              <span className="label">Legal</span>
-              <Link href="/terms">Terms</Link>
-            </div>
-          </nav>
-        </div>
-        <div className="container lfooter-bottom mono">
-          <span>© 2026 SAKAR · Built on MST Blockchain</span>
-          <span>Designed by Atharv Chaskar</span>
+
+          <div className="arccheo-footer-bottom">
+            <span>© 2026 SAKAR · Built on MST Blockchain</span>
+            <span>Designed by Atharv Chaskar</span>
+          </div>
         </div>
       </footer>
     </>

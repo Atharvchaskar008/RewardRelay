@@ -430,3 +430,504 @@
   font-size: 12px;
   color: var(--ink-3);
 }
+
+/* ==========================================================================
+   Arccheo Structural Components (Team, FAQ, CTA, Footer)
+   ========================================================================== */
+
+.corner-cross {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.corner-cross::before,
+.corner-cross::after {
+  content: "";
+  position: absolute;
+  background-color: #1e17fc;
+  transition: transform 0.2s ease;
+}
+
+/* Horizontal cross bar: 5px width x 1px height */
+.corner-cross::before {
+  top: 2px;
+  left: 0;
+  width: 5px;
+  height: 1px;
+}
+
+/* Vertical cross bar: 1px width x 5px height */
+.corner-cross::after {
+  top: 0;
+  left: 2px;
+  width: 1px;
+  height: 5px;
+}
+
+.corner-cross-tl {
+  top: -2.5px;
+  left: -2.5px;
+}
+
+.corner-cross-tr {
+  top: -2.5px;
+  right: -2.5px;
+}
+
+.corner-cross-bl {
+  bottom: -2.5px;
+  left: -2.5px;
+}
+
+.corner-cross-br {
+  bottom: -2.5px;
+  right: -2.5px;
+}
+
+.has-crosses:hover .corner-cross::before {
+  transform: scaleX(1.4);
+}
+
+.has-crosses:hover .corner-cross::after {
+  transform: scaleY(1.4);
+}
+
+/* --------------------------------------------------------------------------
+   Arccheo Eyebrow
+   -------------------------------------------------------------------------- */
+.arccheo-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  background: rgba(30, 23, 252, 0.04);
+  border: 1px solid rgba(30, 23, 252, 0.16);
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.arccheo-eyebrow-text {
+  font-family: var(--font-mono-stack);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1e17fc;
+}
+
+.arccheo-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 56px;
+}
+
+.arccheo-section-heading {
+  font-family: var(--font-display-stack);
+  font-size: clamp(34px, 4vw, 52px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  color: #000000;
+  margin: 0;
+}
+
+.arccheo-section-lead {
+  font-size: 18px;
+  line-height: 1.55;
+  color: rgba(0, 0, 0, 0.7);
+  max-width: 640px;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   11. Team Section (The People Behind the Protocol)
+   -------------------------------------------------------------------------- */
+.arccheo-team-section {
+  padding: 120px 32px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.arccheo-team-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.arccheo-team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.arccheo-team-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.arccheo-team-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px -4px rgba(30, 23, 252, 0.1);
+  border-color: rgba(30, 23, 252, 0.3);
+}
+
+.arccheo-team-portrait {
+  height: 280px;
+  position: relative;
+  background-color: #0700ff;
+  overflow: hidden;
+}
+
+.arccheo-team-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.arccheo-team-info {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.arccheo-team-name {
+  font-family: var(--font-display-stack);
+  font-size: 19px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.arccheo-team-role {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
+}
+
+.arccheo-team-link {
+  font-family: var(--font-mono-stack);
+  font-size: 12px;
+  color: #1e17fc;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  transition: opacity 0.2s ease;
+}
+
+.arccheo-team-link:hover {
+  opacity: 0.75;
+}
+
+@media (max-width: 900px) {
+  .arccheo-team-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12. FAQ Section (The Inquiry)
+   -------------------------------------------------------------------------- */
+.arccheo-faq-section {
+  padding: 120px 32px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.arccheo-faq-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.arccheo-faq-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 64px;
+  align-items: flex-start;
+}
+
+.arccheo-faq-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arccheo-faq-subhead {
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.7);
+  margin: 0;
+}
+
+.arccheo-accordion {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.arccheo-accordion-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  transition: background 0.2s ease;
+}
+
+.arccheo-accordion-item:last-child {
+  border-bottom: none;
+}
+
+.arccheo-accordion-item.is-open {
+  background: rgba(30, 23, 252, 0.015);
+}
+
+.arccheo-accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  gap: 16px;
+}
+
+.arccheo-accordion-question {
+  font-family: var(--font-display-stack);
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.arccheo-accordion-icon {
+  font-size: 20px;
+  font-weight: 400;
+  color: #1e17fc;
+  line-height: 1;
+}
+
+.arccheo-accordion-body {
+  padding: 0 28px 24px;
+}
+
+.arccheo-accordion-answer {
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(0, 0, 0, 0.7);
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .arccheo-faq-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   13. Closing CTA Section
+   -------------------------------------------------------------------------- */
+.arccheo-cta-section {
+  position: relative;
+  padding: 140px 32px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.arccheo-cta-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.22;
+  mix-blend-mode: multiply;
+}
+
+.arccheo-cta-img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.arccheo-cta-container {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.arccheo-cta-card {
+  background: rgba(245, 245, 245, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 64px 48px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04);
+}
+
+.arccheo-cta-heading {
+  font-family: var(--font-display-stack);
+  font-size: clamp(38px, 4.5vw, 64px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  color: #000000;
+  margin: 0;
+}
+
+.arccheo-cta-lead {
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.7);
+  max-width: 560px;
+  margin: 0;
+}
+
+.arccheo-cta-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .arccheo-cta-section {
+    padding: 80px 16px;
+  }
+  .arccheo-cta-card {
+    padding: 40px 20px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   14. Architectural Footer
+   -------------------------------------------------------------------------- */
+.arccheo-footer {
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.arccheo-footer-container {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.arccheo-footer-top {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr;
+  gap: 64px;
+  padding: 80px 48px 60px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.arccheo-footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arccheo-footer-logo {
+  font-family: var(--font-display-stack);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #000000;
+  text-decoration: none;
+}
+
+.arccheo-footer-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.65);
+  max-width: 340px;
+  margin: 0;
+}
+
+.arccheo-footer-copy {
+  font-family: var(--font-mono-stack);
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: 8px;
+}
+
+.arccheo-footer-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.arccheo-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.arccheo-footer-col-title {
+  font-family: var(--font-mono-stack);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.45);
+  margin: 0 0 4px;
+}
+
+.arccheo-footer-link {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.7);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.arccheo-footer-link:hover {
+  color: #1e17fc;
+}
+
+.arccheo-footer-bottom {
+  padding: 24px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono-stack);
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .arccheo-footer-top {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    padding: 60px 24px 40px;
+  }
+  .arccheo-footer-nav {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .arccheo-footer-bottom {
+    padding: 20px 24px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

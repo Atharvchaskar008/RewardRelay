@@ -11,5 +11,12 @@ package-lock.json
 .private
 harness.md
 
+# untracked scraped files
+apps/web/public/framerusercontent.com
+apps/web/public/app.framerstatic.com
+apps/web/public/events.framer.com
+apps/web/public/fonts.gstatic.com
+apps/web/public/landing.html
+
 # generated deployment records (written by the deploy scripts)
 packages/contracts/deployments
