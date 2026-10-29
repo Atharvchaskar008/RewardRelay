@@ -1,13 +1,11 @@
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 
 /**
  * SAKAR's three typefaces, downloaded at build time and served from this site (no third-party font
- * requests at runtime). Display: Instrument Serif; text: Geist; labels and numbers: Geist Mono.
+ * requests at runtime). Display: Inter; text: Geist; labels and numbers: Geist Mono.
  */
-export const displayFont = Instrument_Serif({
+export const displayFont = Inter({
   subsets: ["latin", "latin-ext"],
-  weight: "400",
-  style: ["normal", "italic"],
   variable: "--font-display",
   display: "swap",
 });
