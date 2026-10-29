@@ -54,6 +54,8 @@ Every year, billions of rupees in credit card offers, airport lounge access pass
    Personal shipping details, merchant order IDs, and vouchers are encrypted using AES-256-GCM envelope encryption. Only `keccak256` commitment hashes, EIP-712 digital signatures, and HMAC-SHA256 fingerprints touch the blockchain.
 6. **Autonomous Keeper Network**  
    Smart contracts cannot self-execute. A scheduled keeper calls `release()` for expired return windows, triggers default dispute rulings, purges expired PII, and cleans up rate-limiting records every 2 minutes. Any network participant can trigger these public release methods.
+7. **Native Gas Relayer Service (`/api/relay`)**  
+   Users never need to hold or manage MSTC tokens for gas fees. SAKAR integrates a dedicated server-side transaction relayer (`src/server/signer.ts`, `/api/relay`) that sponsors gas, manages strict nonce sequencing with exponential backoff, and provides a seamless zero-gas transaction experience.
 
 ---
 
@@ -402,6 +404,19 @@ _Note: Any lost dispute automatically demotes the user back to Tier 0._
 ---
 
 ## Live Deployments & MSTScan Records
+
+### MST Mainnet (Chain ID `4646`)
+
+- **RPC URL:** `https://mariorpc.mstblockchain.com`
+- **Block Explorer:** [mstscan.com](https://mstscan.com)
+- **Gas Model:** Legacy transactions, 1 gwei fixed gas price.
+
+| Contract          | Address                                                                                                                   | Source Verification / Explorer                                                                               | Deployment Tx Hash                                                                                                           |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **ReputationSBT** | [`0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e`](https://mstscan.com/address/0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e) | [View on MSTScan](https://mstscan.com/address/0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e)                   | [`0x0402f22b...`](https://mstscan.com/tx/0x0402f22bf88a617615947124ed84472def918cdad6d085b41d6b7b5c2fc0e121)               |
+| **RelayEscrow**   | [`0xE13c653b082E8243eD0ceE972463a949AB2743a7`](https://mstscan.com/address/0xE13c653b082E8243eD0ceE972463a949AB2743a7) | [View on MSTScan](https://mstscan.com/address/0xE13c653b082E8243eD0ceE972463a949AB2743a7)                   | [`0x575c9bf7...`](https://mstscan.com/tx/0x575c9bf7c07e1b9ca88c75f03c4a981e5fb4182c60ba5962ccaafb1c12fe5b74)               |
+
+---
 
 ### MST Testnet (Chain ID `91562037`)
 

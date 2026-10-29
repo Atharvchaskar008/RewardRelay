@@ -13,6 +13,8 @@ typechain-types/
 # env files and secrets (only the committed examples are allowed)
 .env*
 !.env.example
+*service-account*.json
+service-account.json
 
 # logs
 *.log
