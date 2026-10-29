@@ -101,8 +101,20 @@
   pointer-events: none;
   z-index: 1;
   /* Soft fade at the bottom where the blue gradient/pixels accumulate */
-  mask-image: linear-gradient(to bottom, black 0%, black 72%, rgba(0, 0, 0, 0.25) 90%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 72%, rgba(0, 0, 0, 0.25) 90%, transparent 100%);
+  mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 72%,
+    rgba(0, 0, 0, 0.25) 90%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 72%,
+    rgba(0, 0, 0, 0.25) 90%,
+    transparent 100%
+  );
 }
 
 .hero-art-img {
