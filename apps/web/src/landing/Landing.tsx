@@ -53,13 +53,6 @@ const TEAM_MEMBERS = [
     href: "https://github.com/bhavsingh-gpu",
     handle: "github.com/bhavsingh-gpu",
   },
-  {
-    name: "MST Protocol Network",
-    role: "Decentralized Settlement & Validator Network",
-    img: "/media/cmjlrrueqiipWw7B3nGrsSe6I64.png",
-    href: "https://testnet.mstscan.com",
-    handle: "testnet.mstscan.com",
-  },
 ];
 
 const FAQ_ITEMS = [
@@ -191,16 +184,36 @@ export function Landing() {
 
         {/* Problem */}
         <section className="lsection">
-          <div className="container split">
-            <SectionHeader
-              eyebrow="The problem"
-              title="Every card hides a discount someone else needs."
-              size={1}
-            />
-            <p className="lead split-aside">
-              Bank offers, cashback and no-cost EMI are locked to a few cardholders. The buyer who
-              wants the deal has no card. The cardholder has no reason to trust a stranger.
-            </p>
+          <div className="container split problem-split">
+            <div className="problem-main stack" style={{ gap: 20 }}>
+              <SectionHeader
+                eyebrow="The problem"
+                title="Every card hides a discount someone else needs."
+                size={1}
+              />
+              <p className="lead">
+                Bank offers, cashback and no-cost EMI are locked to a few cardholders. The buyer who
+                wants the deal has no card. The cardholder has no reason to trust a stranger.
+              </p>
+            </div>
+            <div className="problem-aside stack" style={{ gap: 14 }}>
+              <div className="problem-dilemma-card">
+                <span className="problem-dilemma-tag mono">The Buyer Dilemma</span>
+                <h4 className="problem-dilemma-title">Locked out of tier rewards</h4>
+                <p className="problem-dilemma-desc">
+                  Shoppers miss out on 10%–20% instant merchant bank discounts and cashback simply
+                  because they don&apos;t hold a specific premium card.
+                </p>
+              </div>
+              <div className="problem-dilemma-card">
+                <span className="problem-dilemma-tag mono">The Cardholder Dilemma</span>
+                <h4 className="problem-dilemma-title">Unused quotas, zero trust</h4>
+                <p className="problem-dilemma-desc">
+                  Cardholders let valuable promotional credit quotas expire each month because
+                  ordering for an unverified stranger is too risky.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -211,7 +224,7 @@ export function Landing() {
             <div className="grid" style={{ "--cols": 3, gap: 0 } as CSSProperties}>
               {REASONS.map((reason) => (
                 <div key={reason.title} className="reason">
-                  <h3 className="title-3">— {reason.title}</h3>
+                  <h3 className="title-3">{reason.title}</h3>
                   <p className="muted">{reason.text}</p>
                 </div>
               ))}

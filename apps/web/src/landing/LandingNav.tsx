@@ -14,9 +14,16 @@ const LINKS = [
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 8);
+      const total = document.documentElement.scrollHeight - window.innerHeight;
+      if (total > 0) {
+        setProgress(Math.min(100, Math.max(0, (window.scrollY / total) * 100)));
+      }
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -24,6 +31,7 @@ export function LandingNav() {
 
   return (
     <header className="lnav" data-scrolled={scrolled || open}>
+      <div className="lnav-progress-bar" style={{ width: `${progress}%` }} aria-hidden="true" />
       <div className="container lnav-inner">
         <Link href="/" className="wordmark" aria-label="SAKAR home">
           SAKAR
