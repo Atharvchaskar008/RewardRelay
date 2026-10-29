@@ -11,7 +11,7 @@ import type { EmbeddedWallet } from "@/client/wallet";
 import type { ApiClient } from "./api";
 import * as tx from "./chain";
 import type { ChainContext, TxOutcome } from "./chain";
-import { ChainError, toChainError } from "./errors";
+import { ChainError, REVERT_MESSAGES, toChainError } from "./errors";
 import type {
   DealView,
   DeliveryDetails,
@@ -138,8 +138,11 @@ async function publish(sdk: SdkContext, dealId: bigint, draft: ListingDraft): Pr
  * deposit fails the simulation first with "not enough MSTC". Checking the limit before anything is
  * signed gives the reason that actually applies.
  */
-async function assertWithinLimit(_sdk: SdkContext, _price: bigint): Promise<void> {
-  // Deal value limits lifted for open trading
+async function assertWithinLimit(sdk: SdkContext, price: bigint): Promise<void> {
+  const me = await sdk.api.me();
+  if (me && price > BigInt(me.badge.maxDealValue.wei)) {
+    throw new ChainError(REVERT_MESSAGES.DealValueAboveLimit, "DealValueAboveLimit");
+  }
 }
 
 export async function listBuyForYou(sdk: SdkContext, draft: ListingDraft) {
