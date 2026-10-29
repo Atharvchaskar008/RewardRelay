@@ -10,8 +10,8 @@
 [![Solidity 0.8.24](https://img.shields.io/badge/solidity-0.8.24-363636.svg)](packages/contracts)
 [![Node.js 22+](https://img.shields.io/badge/node-%3E%3D22-339933.svg)](package.json)
 [![Contract coverage: 100%](https://img.shields.io/badge/contract%20coverage-100%25-brightgreen.svg)](docs/testing.md)
-[![Live: rewardrelay.vercel.app](https://img.shields.io/badge/live-rewardrelay.vercel.app-black.svg)](https://rewardrelay.vercel.app)
-[![Health: ok](https://img.shields.io/badge/health-ok-brightgreen.svg)](https://rewardrelay.vercel.app/api/health)
+[![Live: sakar-app.vercel.app](https://img.shields.io/badge/live-sakar--app.vercel.app-black.svg)](https://sakar-app.vercel.app)
+[![Health: ok](https://img.shields.io/badge/health-ok-brightgreen.svg)](https://sakar-app.vercel.app/api/health)
 
 [Overview](#overview) · [How It Works](#how-it-works) · [Architecture](#system-architecture) · [Frontend Integration & SDK](#frontend-integration--client-sdk) · [Smart Contracts](#smart-contracts--economics) · [Deployments](#live-deployments--mstscan-records) · [Development](#getting-started) · [Testing](#testing--verification) · [Docs](#documentation)
 
@@ -36,7 +36,7 @@ Every year, billions of rupees in credit card offers, airport lounge access pass
 > wallet address. Landing page designed by Atharv Chaskar.
 
 > **MST Blockchain Buildathon #2** (Round 2 MVP). Deployed on **MST Testnet** (Chain ID `91562037`) with test MSTC (tMSTC).  
-> **Production Live App:** [rewardrelay.vercel.app](https://rewardrelay.vercel.app) · **System Health:** [rewardrelay.vercel.app/api/health](https://rewardrelay.vercel.app/api/health)
+> **Production Live App:** [sakar-app.vercel.app](https://sakar-app.vercel.app) · **System Health:** [sakar-app.vercel.app/api/health](https://sakar-app.vercel.app/api/health)
 
 ---
 

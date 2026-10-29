@@ -7,7 +7,7 @@ delivery, 10 minutes for dispute evidence**. Production windows are days (see
 
 ## The live site
 
-Everything below works on **https://rewardrelay.vercel.app** (MST Testnet). The landing page is at
+Everything below works on **https://sakar-app.vercel.app** (MST Testnet). The landing page is at
 `/`; **Open app** leads to the app (`/dashboard`) with **Explore · Share · Deals · Profile** in the top
 bar (bottom bar on phones). A quick path for a live demo on one laptop:
 

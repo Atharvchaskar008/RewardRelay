@@ -85,7 +85,7 @@ MST Mainnet uses the same scripts with `:mainnet`; see [mainnet.md](mainnet.md).
 - Import the repository, set the **Root Directory** to `apps/web` (framework: Next.js, Node 22+).
   Set Settings → Functions → **Function Region** to Mumbai (`bom1`), next to Firestore in
   `asia-south1` (`apps/web/vercel.json` says the same, but a CLI deploy from the repository root
-  does not read it). The site is live at https://rewardrelay.vercel.app.
+  does not read it). The site is live at https://sakar-app.vercel.app.
 - Copy every variable from `apps/web/.env.example` into the project settings (server secrets are
   never prefixed with `NEXT_PUBLIC_`). Set `APP_URL` to the production origin: wallet-link messages
   name it.

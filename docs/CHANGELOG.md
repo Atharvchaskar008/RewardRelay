@@ -8,6 +8,7 @@ All notable changes to SAKAR are recorded here. The format follows
 
 ### Changed
 
+- The live site moved to https://sakar-app.vercel.app (Vercel project `sakar`).
 - The deal view is cached per signed-in account, so a deal opened before the session was ready no
   longer shows "Sign in to pay" to a signed-in buyer.
 
