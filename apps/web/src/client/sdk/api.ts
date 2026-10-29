@@ -19,7 +19,7 @@ import type {
 } from "./types";
 
 /**
- * Typed client for the SAKAR API. Adds the Firebase ID token and an Idempotency-Key to every
+ * Typed client for the SAKER API. Adds the Firebase ID token and an Idempotency-Key to every
  * state-changing call, unwraps the `{ ok, data }` envelope and throws `ApiError` with the server's
  * catalogue code. A network failure is retried once with the *same* idempotency key, so a retried
  * POST can never run twice.
@@ -79,11 +79,11 @@ export function createApiClient(options: ApiClientOptions) {
         response = await doFetch(target, { method, headers, body });
       } catch {
         if (attempt === 2) {
-          throw new ApiError("NETWORK", "We could not reach SAKAR. Check your connection.", 0);
+          throw new ApiError("NETWORK", "We could not reach SAKER. Check your connection.", 0);
         }
       }
     }
-    if (!response) throw new ApiError("NETWORK", "We could not reach SAKAR.", 0);
+    if (!response) throw new ApiError("NETWORK", "We could not reach SAKER.", 0);
     if (opts.raw && response.ok) return (await response.blob()) as T;
 
     const json = (await response.json().catch(() => null)) as

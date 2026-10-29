@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Atharvchaskar008/SAKAR.git"
+    "url": "https://github.com/Atharvchaskar008/__SAKER_REPO__.git"
   },
   "workspaces": [
     "packages/shared",

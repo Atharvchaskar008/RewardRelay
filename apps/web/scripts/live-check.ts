@@ -4,7 +4,7 @@
  *   npm run check:live -w @rewardrelay/web                  # read-only checks
  *   LIVE_DEALS=1 npm run check:live -w @rewardrelay/web     # plus real deal flows on the chain
  *
- * - LIVE_URL: the deployment (default https://sakar-app.vercel.app).
+ * - LIVE_URL: the deployment (default https://__SAKER_APP_URL__).
  * - Deal flows use Firebase **test** phone numbers, never in the repo: LIVE_SHARER_PHONE / _CODE /
  *   _PIN, LIVE_SEEKER_PHONE / _CODE / _PIN and LIVE_ADMIN_PHONE / _CODE (an ADMIN_UIDS account).
  *   LIVE_ENV_FILE may name a dotenv file holding them, so they stay out of shell history. Wallets
@@ -362,7 +362,7 @@ async function main(): Promise<void> {
   const fileEnv = parse(readFileSync(path.join(__dirname, "..", ".env")));
   const extra = process.env.LIVE_ENV_FILE ? parse(readFileSync(process.env.LIVE_ENV_FILE)) : {};
   const env: Env = { ...fileEnv, ...extra, ...process.env };
-  const base = (env.LIVE_URL ?? "https://sakar-app.vercel.app").replace(/\/$/, "");
+  const base = (env.LIVE_URL ?? "https://__SAKER_APP_URL__").replace(/\/$/, "");
   console.log(`Checking ${base}`);
   await readOnlyChecks(base, env);
   if (env.LIVE_DEALS === "1") await dealChecks(base, env);

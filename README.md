@@ -1,17 +1,17 @@
 <div align="center">
 
-# SAKAR
+# SAKER
 
 **A trusted peer-to-peer marketplace for unused rewards and card perks, secured by smart contract escrow and on-chain reputation on MST Blockchain.**
 
-[![CI](https://github.com/Atharvchaskar008/SAKAR/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharvchaskar008/SAKAR/actions/workflows/ci.yml)
+[![CI](https://github.com/Atharvchaskar008/__SAKER_REPO__/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharvchaskar008/__SAKER_REPO__/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Network: MST Testnet](https://img.shields.io/badge/network-MST%20Testnet-6f42c1.svg)](https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A)
 [![Solidity 0.8.24](https://img.shields.io/badge/solidity-0.8.24-363636.svg)](packages/contracts)
 [![Node.js 22+](https://img.shields.io/badge/node-%3E%3D22-339933.svg)](package.json)
 [![Contract coverage: 100%](https://img.shields.io/badge/contract%20coverage-100%25-brightgreen.svg)](docs/testing.md)
-[![Live: sakar-app.vercel.app](https://img.shields.io/badge/live-sakar--app.vercel.app-black.svg)](https://sakar-app.vercel.app)
-[![Health: ok](https://img.shields.io/badge/health-ok-brightgreen.svg)](https://sakar-app.vercel.app/api/health)
+[![Live: __SAKER_APP_URL__](https://img.shields.io/badge/live-sakar--app.vercel.app-black.svg)](https://__SAKER_APP_URL__)
+[![Health: ok](https://img.shields.io/badge/health-ok-brightgreen.svg)](https://__SAKER_APP_URL__/api/health)
 
 [Overview](#overview) · [How It Works](#how-it-works) · [Architecture](#system-architecture) · [Frontend Integration & SDK](#frontend-integration--client-sdk) · [Smart Contracts](#smart-contracts--economics) · [Deployments](#live-deployments--mstscan-records) · [Development](#getting-started) · [Testing](#testing--verification) · [Docs](#documentation)
 
@@ -23,7 +23,7 @@
 
 Every year, billions of rupees in credit card offers, airport lounge access passes, hotel discounts, wallet cashbacks, and subscription perks expire unused. The cardholders and reward owners who hold them rarely need all of them, while buyers seeking discounts have no safe, trustless mechanism to purchase them from strangers without risking scams or credential theft.
 
-**SAKAR** bridges this gap by creating a trust-minimized, peer-to-peer benefit relay:
+**SAKER** bridges this gap by creating a trust-minimized, peer-to-peer benefit relay:
 
 - A **Sharer** (the cardholder or reward owner) uses their benefit on behalf of a **Seeker** (the buyer).
 - The Seeker's payment sits locked in the `RelayEscrow` smart contract until the benefit is delivered and verified.
@@ -36,7 +36,7 @@ Every year, billions of rupees in credit card offers, airport lounge access pass
 > wallet address. Landing page designed by Atharv Chaskar.
 
 > **MST Blockchain Buildathon #2** (Round 2 MVP). Deployed on **MST Testnet** (Chain ID `91562037`) with test MSTC (tMSTC).  
-> **Production Live App:** [sakar-app.vercel.app](https://sakar-app.vercel.app) · **System Health:** [sakar-app.vercel.app/api/health](https://sakar-app.vercel.app/api/health)
+> **Production Live App:** [**SAKER_APP_URL**](https://__SAKER_APP_URL__) · **System Health:** [**SAKER_APP_URL**/api/health](https://__SAKER_APP_URL__/api/health)
 
 ---
 
@@ -55,13 +55,13 @@ Every year, billions of rupees in credit card offers, airport lounge access pass
 6. **Autonomous Keeper Network**  
    Smart contracts cannot self-execute. A scheduled keeper calls `release()` for expired return windows, triggers default dispute rulings, purges expired PII, and cleans up rate-limiting records every 2 minutes. Any network participant can trigger these public release methods.
 7. **Native Gas Relayer Service (`/api/relay`)**  
-   Users never need to hold or manage MSTC tokens for gas fees. SAKAR integrates a dedicated server-side transaction relayer (`src/server/signer.ts`, `/api/relay`) that sponsors gas, manages strict nonce sequencing with exponential backoff, and provides a seamless zero-gas transaction experience.
+   Users never need to hold or manage MSTC tokens for gas fees. SAKER integrates a dedicated server-side transaction relayer (`src/server/signer.ts`, `/api/relay`) that sponsors gas, manages strict nonce sequencing with exponential backoff, and provides a seamless zero-gas transaction experience.
 
 ---
 
 ## How It Works
 
-SAKAR supports two distinct trade mechanisms based on whether the perk is an ordered purchase or a digital voucher code:
+SAKER supports two distinct trade mechanisms based on whether the perk is an ordered purchase or a digital voucher code:
 
 | Deal Type                   | Description                                                                                                                                                | Target Categories                                                                       | Release / Verification Mechanism                                                                                 |
 | :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
@@ -76,7 +76,7 @@ SAKAR supports two distinct trade mechanisms based on whether the perk is an ord
 sequenceDiagram
     autonumber
     actor Sharer as Sharer (Cardholder)
-    participant UI as SAKAR App & SDK
+    participant UI as SAKER App & SDK
     participant API as Server API & Vault
     participant Escrow as RelayEscrow (MST)
     actor Seeker as Seeker (Buyer)
@@ -142,7 +142,7 @@ stateDiagram-v2
 
 ## System Architecture
 
-SAKAR implements a modern layered Web3 architecture where the blockchain serves as the absolute source of truth for financial commitments, state transitions, and reputation, while zero-knowledge-style off-chain envelope encryption guarantees user privacy.
+SAKER implements a modern layered Web3 architecture where the blockchain serves as the absolute source of truth for financial commitments, state transitions, and reputation, while zero-knowledge-style off-chain envelope encryption guarantees user privacy.
 
 ```mermaid
 flowchart TB
@@ -222,17 +222,17 @@ The frontend application communicates entirely through `@/client/sdk` (and `@/co
 
 ### 1. Provider Setup
 
-Wrap your application in `SakarProvider` (or `RewardRelayProvider`) to inject the client SDK context, chain configuration, and wallet session:
+Wrap your application in `SakerProvider` (or `RewardRelayProvider`) to inject the client SDK context, chain configuration, and wallet session:
 
 ```tsx
-import { SakarProvider } from "@/client/sdk";
+import { SakerProvider } from "@/client/sdk";
 import { auth } from "@/client/firebase";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(auth.currentUser);
 
   return (
-    <SakarProvider
+    <SakerProvider
       config={{
         chain: {
           chainId: 91562037,
@@ -246,7 +246,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       accountId={user?.uid ?? null} // Isolates device wallet keys per account
     >
       {children}
-    </SakarProvider>
+    </SakerProvider>
   );
 }
 ```
@@ -255,7 +255,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 ### 2. Dual Wallet Architecture
 
-SAKAR supports two parallel wallet experiences through the `useWallet()` hook:
+SAKER supports two parallel wallet experiences through the `useWallet()` hook:
 
 1. **Embedded PIN Wallet (Web2 Friendly)**
    - Keys are generated locally via WebCrypto and never transmitted in plaintext.
@@ -471,8 +471,8 @@ Measured on the live Vercel production deployment (`bom1` Mumbai functions conne
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/Atharvchaskar008/SAKAR.git
-cd SAKAR
+git clone https://github.com/Atharvchaskar008/__SAKER_REPO__.git
+cd SAKER
 
 # 2. Install dependencies
 npm install

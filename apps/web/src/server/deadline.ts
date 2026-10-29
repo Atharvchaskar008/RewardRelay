@@ -33,7 +33,7 @@ export function withDeadline<T>(
       () =>
         reject(
           new AppError("INTERNAL", {
-            message: "SAKAR is temporarily unavailable. Please try again shortly.",
+            message: "SAKER is temporarily unavailable. Please try again shortly.",
             cause: new DeadlineExceeded(operation, ms),
           }),
         ),

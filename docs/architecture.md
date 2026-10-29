@@ -1,6 +1,6 @@
 # Architecture
 
-SAKAR is a trusted buy-it-for-me marketplace on MST Blockchain. A **Sharer** holds a benefit
+SAKER is a trusted buy-it-for-me marketplace on MST Blockchain. A **Sharer** holds a benefit
 (card offer, wallet credit, membership price, shareable code); a **Seeker** wants the discount and pays
 in MSTC, held by an escrow smart contract until delivery.
 
@@ -96,7 +96,7 @@ Firestore rules deny every client write and every read except `listings`.
 
 **Every backend call is bounded.** Firestore and Firebase Auth calls have an 8 s deadline, an MST RPC
 read 9 s (retries included), the deal timeline 5 s and the secondary parts of a deal view 3 s. A
-timeout names the operation in the logs and reaches the user as "SAKAR is temporarily
+timeout names the operation in the logs and reaches the user as "SAKER is temporarily
 unavailable", never as a hang. Sending a signed transaction is the one call that is not cut short.
 
 | When this fails or hangs         | What users see                                                                                                               |

@@ -1,6 +1,6 @@
 # @rewardrelay/contracts
 
-Solidity 0.8.24 (Shanghai EVM, OpenZeppelin 5.0.2) contracts for SAKAR on MST Blockchain.
+Solidity 0.8.24 (Shanghai EVM, OpenZeppelin 5.0.2) contracts for SAKER on MST Blockchain.
 
 | Contract            | Purpose                                                                                                                                    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |

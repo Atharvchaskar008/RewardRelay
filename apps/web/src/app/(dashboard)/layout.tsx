@@ -7,11 +7,11 @@ import "@/styles/ds.css";
 import "@/styles/app.css";
 
 export const metadata: Metadata = {
-  title: { default: "SAKAR", template: "%s · SAKAR" },
+  title: { default: "SAKER", template: "%s · SAKER" },
   description: "Card offers for everyone, settled by smart contracts on MST Blockchain.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
-  appleWebApp: { capable: true, title: "SAKAR", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "SAKER", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -20,7 +20,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-/** The SAKAR app: session, SDK, top bar (desktop) and bottom bar (mobile). */
+/** The SAKER app: session, SDK, top bar (desktop) and bottom bar (mobile). */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={fontVariables}>

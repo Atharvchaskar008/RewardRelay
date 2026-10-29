@@ -1,6 +1,6 @@
 import type { Address } from "viem";
 import { chainById, deployments, MST_TESTNET, rpcRelayPath } from "@rewardrelay/shared";
-import type { SakarConfig } from "@/client/sdk";
+import type { SakerConfig } from "@/client/sdk";
 
 /**
  * Public (browser) configuration from NEXT_PUBLIC_* variables. The chain id selects the defaults
@@ -24,7 +24,7 @@ export const networkName = chain?.name ?? `Chain ${chainId}`;
 /** How the coin is called in copy: "test MSTC" away from mainnet. */
 export const coinLabel = isMainnet ? "MSTC" : "test MSTC";
 
-export const appConfig: SakarConfig = {
+export const appConfig: SakerConfig = {
   apiBaseUrl: "",
   chain: {
     chainId,

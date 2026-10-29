@@ -72,6 +72,12 @@ export const IconExternal = (p: SVGProps<SVGSVGElement>) => (
   </Icon>
 );
 
+export const IconArrowLeft = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}>
+    <path d="M19 12H5M12 19l-7-7 7-7" />
+  </Icon>
+);
+
 export const IconArrowRight = (p: SVGProps<SVGSVGElement>) => (
   <Icon {...p}>
     <path d="M5 12h14M13 6l6 6-6 6" />

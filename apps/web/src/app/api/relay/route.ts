@@ -10,9 +10,9 @@ export const maxDuration = 60;
 
 /**
  * POST /api/relay
- * Gas Relayer service for SAKAR dApp on MST Blockchain.
+ * Gas Relayer service for SAKER dApp on MST Blockchain.
  * Allows users to execute transactions without holding native MSTC tokens for gas fees.
- * SAKAR sponsors the gas via server TxManager.
+ * SAKER sponsors the gas via server TxManager.
  */
 export const POST = withRoute(
   {

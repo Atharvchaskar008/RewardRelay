@@ -221,7 +221,7 @@ describe("withDeadline", () => {
 });
 
 describe("errors from an RPC outage", () => {
-  const unavailable = "SAKAR is temporarily unavailable. Please try again shortly.";
+  const unavailable = "SAKER is temporarily unavailable. Please try again shortly.";
 
   it("surfaces a user-safe error raised deep inside a library call", () => {
     const deadline = new AppError("INTERNAL", {

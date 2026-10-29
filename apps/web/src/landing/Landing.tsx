@@ -9,7 +9,7 @@ import { LandingNav } from "./LandingNav";
 
 const ESCROW_URL =
   "https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A#code";
-const GITHUB_URL = "https://github.com/Atharvchaskar008/SAKAR";
+const GITHUB_URL = "https://github.com/Atharvchaskar008/__SAKER_REPO__";
 
 const REASONS = [
   {
@@ -65,16 +65,16 @@ const FAQ_ITEMS = [
     a: "The escrow remains safely locked until the return period elapses. If the seller fails to deliver before the deadline, the smart contract automatically triggers a full refund of your escrow.",
   },
   {
-    q: "What do I need to start trading on SAKAR?",
+    q: "What do I need to start trading on SAKER?",
     a: "An MST-compatible Web3 wallet like BridgeKey or MetaMask. Connect your wallet with one click to browse deals, lock escrow, or share your card offers with zero counterparty risk.",
   },
   {
-    q: "Why is SAKAR built on MST Blockchain?",
+    q: "Why is SAKER built on MST Blockchain?",
     a: "Your funds sit in immutable open-source smart contracts that no central company or rogue actor can confiscate. Deals settle in ~3 seconds with sub-cent gas fees and cryptographic auditability.",
   },
   {
     q: "Is the platform currently live on mainnet?",
-    a: "Yes. SAKAR smart contracts are live on MST Blockchain. All escrow locks, deliveries, releases, and dispute settlements execute autonomously on-chain without any central middleman.",
+    a: "Yes. SAKER smart contracts are live on MST Blockchain. All escrow locks, deliveries, releases, and dispute settlements execute autonomously on-chain without any central middleman.",
   },
 ];
 
@@ -133,7 +133,7 @@ export function Landing() {
           <div className="hero-bg-art" aria-hidden="true">
             <Image
               src="/media/0w0qwEFKa288EqQq2SBotntUpbE.png"
-              alt="Halftone sculpture representing SAKAR escrow"
+              alt="Halftone sculpture representing SAKER escrow"
               fill
               priority
               className="hero-art-img"
@@ -148,7 +148,7 @@ export function Landing() {
                 Your discount.
               </h1>
               <p className="lead">
-                Someone else holds the bank offer you need. SAKAR lets them buy for you, while your
+                Someone else holds the bank offer you need. SAKER lets them buy for you, while your
                 money waits in a smart contract until the order arrives.
               </p>
               <div className="row" style={{ gap: 12, marginTop: 8 }}>
@@ -220,7 +220,7 @@ export function Landing() {
         {/* Why */}
         <section className="lsection lsection-line">
           <div className="container stack" style={{ gap: 48 }}>
-            <SectionHeader eyebrow="Why SAKAR" title="Trust, without the middleman." size={1} />
+            <SectionHeader eyebrow="Why SAKER" title="Trust, without the middleman." size={1} />
             <div className="grid" style={{ "--cols": 3, gap: 0 } as CSSProperties}>
               {REASONS.map((reason) => (
                 <div key={reason.title} className="reason">
@@ -337,11 +337,11 @@ export function Landing() {
             <div className="arccheo-section-header">
               <div className="arccheo-eyebrow has-crosses">
                 <span className="corner-cross corner-cross-tl" aria-hidden="true" />
-                <span className="arccheo-eyebrow-text">SAKAR&apos;S TEAM</span>
+                <span className="arccheo-eyebrow-text">SAKER&apos;S TEAM</span>
               </div>
               <h2 className="arccheo-section-heading">The people behind the protocol.</h2>
               <p className="arccheo-section-lead">
-                SAKAR is built by a focused team bringing together smart contract architecture,
+                SAKER is built by a focused team bringing together smart contract architecture,
                 cryptographic security, and consumer commerce.
               </p>
             </div>
@@ -447,7 +447,7 @@ export function Landing() {
 
               <div className="arccheo-eyebrow has-crosses">
                 <span className="corner-cross corner-cross-tl" aria-hidden="true" />
-                <span className="arccheo-eyebrow-text">BEGIN WITH SAKAR</span>
+                <span className="arccheo-eyebrow-text">BEGIN WITH SAKER</span>
               </div>
 
               <h2 className="arccheo-cta-heading">Put card rewards into motion.</h2>
@@ -479,13 +479,13 @@ export function Landing() {
             {/* Left Column: Brand & Bio */}
             <div className="arccheo-footer-brand">
               <Link href="/" className="arccheo-footer-logo">
-                SAKAR
+                SAKER
               </Link>
               <p className="arccheo-footer-desc">
                 Card offers for everyone, settled by smart contracts on MST Blockchain.
               </p>
               <span className="arccheo-footer-copy">
-                © 2026 SAKAR Protocol. All rights reserved.
+                © 2026 SAKER Protocol. All rights reserved.
               </span>
             </div>
 
@@ -556,7 +556,7 @@ export function Landing() {
           </div>
 
           <div className="arccheo-footer-bottom">
-            <span>© 2026 SAKAR · Built on MST Blockchain</span>
+            <span>© 2026 SAKER · Built on MST Blockchain</span>
             <span>Designed by Atharv Chaskar</span>
           </div>
         </div>

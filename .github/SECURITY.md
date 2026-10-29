@@ -1,11 +1,11 @@
-# SAKAR security
+# SAKER security
 
 Status: **MVP on MST Testnet** (test MSTC only, no real money). This document covers the web app and
 API (`apps/web`); the smart-contract protocol, its invariants and its threat model are in
 [docs/protocol.md](../docs/protocol.md) (§4 invariants, §10 threat model, §12 static analysis).
 
 **Reporting a vulnerability:** please do not open a public issue. Use GitHub's private
-[security advisory form](https://github.com/Atharvchaskar008/SAKAR/security/advisories/new);
+[security advisory form](https://github.com/Atharvchaskar008/__SAKER_REPO__/security/advisories/new);
 expect an acknowledgement within 72 hours.
 
 ---
@@ -136,7 +136,7 @@ private-key/API-token patterns and forbidden paths (`.env`, keys, service-accoun
 10. **Vercel Blob adapter** exists behind the file-store interface but is not exercised by the tests
     (Firestore storage is used).
 11. **EOA signatures only** for wallet linking (no ERC-1271 smart-contract wallets); a linked browser
-    wallet (BridgeKey, MetaMask) holds its own key, so SAKAR keeps no backup for it.
+    wallet (BridgeKey, MetaMask) holds its own key, so SAKER keeps no backup for it.
 12. **Release-on-visit** is best effort; the cron (every 2 minutes) is the guarantee.
 13. **Lighter checks on public reads** (for speed): reads that return no private data (deal views,
     feeds, `/api/me`, badges) accept a revoked session for up to a minute after the last per-user
@@ -154,7 +154,7 @@ private-key/API-token patterns and forbidden paths (`.env`, keys, service-accoun
   the env, revoke the old address's roles.
 - **Incident**: `pause()` the escrow (blocks new listings and payments only; every open deal can still
   finish), revoke compromised roles, rotate secrets, check `/api/health` and the audit collection.
-- **Live deployment** (sakar-app.vercel.app): deployed from the Vercel CLI without a Git
+- **Live deployment** (**SAKER_APP_URL**): deployed from the Vercel CLI without a Git
   integration, so no bot has access to the repository; `.vercelignore` keeps every `.env` file and
   private notes out of the upload; server secrets are Vercel _sensitive_ variables (write-only, never
   shown in the dashboard); functions run in Mumbai (`bom1`). Logs carry request ids, routes and

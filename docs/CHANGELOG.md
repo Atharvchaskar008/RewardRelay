@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to SAKAR are recorded here. The format follows
+All notable changes to SAKER are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -8,7 +8,7 @@ All notable changes to SAKAR are recorded here. The format follows
 
 ### Changed
 
-- The live site moved to https://sakar-app.vercel.app (Vercel project `sakar`).
+- The live site moved to https://**SAKER_APP_URL** (Vercel project `sakar`).
 - The deal view is cached per signed-in account, so a deal opened before the session was ready no
   longer shows "Sign in to pay" to a signed-in buyer.
 
@@ -31,7 +31,7 @@ All notable changes to SAKAR are recorded here. The format follows
 
 ### Added
 
-- **New interface.** A SAKAR landing page at `/` (generative pixel field, deal diagram, how it
+- **New interface.** A SAKER landing page at `/` (generative pixel field, deal diagram, how it
   works, Trust Badge tiers, team of two, FAQ) and a redesigned app on one design system
   (`src/styles/tokens.css`, `ds.css`, `src/components/ds`): overview, explore cards, a deal room with a
   progress stepper and one sticky next step, share with a live summary, profile, my deals, login,
@@ -73,7 +73,7 @@ All notable changes to SAKAR are recorded here. The format follows
 
 - Firestore queries, the file store, the keeper's lease and Firebase Auth lookups now have the 8 s
   deadline, and a timeout names the operation in the logs.
-- When the MST RPC hangs, a deal or badge page now answers "SAKAR is temporarily unavailable"
+- When the MST RPC hangs, a deal or badge page now answers "SAKER is temporarily unavailable"
   within about 10 s (it took about 25 s and said "something went wrong"): every RPC read is capped
   at 9 s, the error mapper finds a user-safe error inside wrapped library errors, and the server
   signer still retries a timed-out call as a network error.

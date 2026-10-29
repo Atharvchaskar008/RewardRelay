@@ -9,14 +9,14 @@ export default function TermsPage() {
     <main className="page">
       <article className="reading stack" style={{ gap: 16 }}>
         <span className="eyebrow">Terms</span>
-        <h1 className="title-1">The rules of SAKAR.</h1>
+        <h1 className="title-1">The rules of SAKER.</h1>
         {isMainnet ? (
           <p>
-            SAKAR runs on {networkName}. Payments are in MSTC; ₹ amounts are estimates at {rate}.
+            SAKER runs on {networkName}. Payments are in MSTC; ₹ amounts are estimates at {rate}.
           </p>
         ) : (
           <p>
-            SAKAR is a test MVP on {networkName}. Payments use test MSTC (tMSTC), which has no
+            SAKER is a test MVP on {networkName}. Payments use test MSTC (tMSTC), which has no
             monetary value; ₹ amounts are shown at a demo rate ({rate}).
           </p>
         )}
@@ -59,7 +59,7 @@ export default function TermsPage() {
         <p>
           Raise a dispute from the deal page within the check window. An arbiter reviews both
           sides&apos; evidence; if no ruling is made in time, either party can apply a 50/50 default
-          ruling. For anything else, write to the SAKAR team through the contact listed on our
+          ruling. For anything else, write to the SAKER team through the contact listed on our
           GitHub repository.
         </p>
       </article>

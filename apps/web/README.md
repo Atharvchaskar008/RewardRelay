@@ -1,6 +1,6 @@
 # @rewardrelay/web
 
-The SAKAR web app: a Next.js (App Router) PWA whose API routes are the backend.
+The SAKER web app: a Next.js (App Router) PWA whose API routes are the backend.
 
 ```
 src/

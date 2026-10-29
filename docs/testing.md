@@ -1,6 +1,6 @@
 # Testing
 
-SAKAR is tested in four layers, from fast and isolated to slow and real. Every layer runs
+SAKER is tested in four layers, from fast and isolated to slow and real. Every layer runs
 without the real `.env` values: tests generate throwaway keys and use fake phone numbers.
 
 | Layer                      | Where                                                 | Runs on                                   | Count                |

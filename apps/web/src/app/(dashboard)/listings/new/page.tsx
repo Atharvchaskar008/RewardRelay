@@ -225,7 +225,7 @@ function ListingForm() {
             )}
           </div>
 
-          {blocked && <p className="alert alert-danger">Not allowed on SAKAR: {blocked.label}.</p>}
+          {blocked && <p className="alert alert-danger">Not allowed on SAKER: {blocked.label}.</p>}
           <label className="checkbox">
             <input
               type="checkbox"

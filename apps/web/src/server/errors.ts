@@ -72,7 +72,7 @@ export function toAppError(error: unknown): AppError {
   if (inner) return inner;
   if (causes(error).some((cause) => cause instanceof Error && UNREACHABLE.has(cause.name))) {
     return new AppError("INTERNAL", {
-      message: "SAKAR is temporarily unavailable. Please try again shortly.",
+      message: "SAKER is temporarily unavailable. Please try again shortly.",
       cause: error,
     });
   }

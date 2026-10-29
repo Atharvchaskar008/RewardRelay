@@ -33,8 +33,8 @@ export function LandingNav() {
     <header className="lnav" data-scrolled={scrolled || open}>
       <div className="lnav-progress-bar" style={{ width: `${progress}%` }} aria-hidden="true" />
       <div className="container lnav-inner">
-        <Link href="/" className="wordmark" aria-label="SAKAR home">
-          SAKAR
+        <Link href="/" className="wordmark" aria-label="SAKER home">
+          SAKER
         </Link>
         <nav className="lnav-links" aria-label="Sections">
           {LINKS.map((link) => (

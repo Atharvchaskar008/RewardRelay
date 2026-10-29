@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import type { CSSProperties } from "react";
 import { LoadingCard, Page, isActiveStatus } from "@/components/ui";
@@ -8,6 +9,7 @@ import {
   Button,
   Card,
   EmptyState,
+  IconArrowLeft,
   IconArrowRight,
   Pill,
   SectionHeader,
@@ -27,7 +29,18 @@ export default function OverviewPage() {
   const { ready, user } = useSession();
   return (
     <Page>
-      <div className="stack" style={{ gap: 48 }}>
+      <div className="stack" style={{ gap: 28 }}>
+        <div>
+          <Link
+            href="/"
+            className="dashboard-back-link"
+            aria-label="Return to SAKER landing page"
+            title="Return to SAKER landing page"
+          >
+            <IconArrowLeft />
+            <span>Landing page</span>
+          </Link>
+        </div>
         {!ready ? <LoadingCard /> : user ? <Account /> : <Welcome />}
         <NewOffers />
       </div>
@@ -39,7 +52,7 @@ function Welcome() {
   return (
     <Card className="welcome">
       <div className="signin-card" style={{ maxWidth: "none" }}>
-        <span className="eyebrow">Welcome to SAKAR</span>
+        <span className="eyebrow">Welcome to SAKER</span>
         <h1 className="title-1" style={{ maxWidth: "16ch" }}>
           Card offers, minus the card.
         </h1>

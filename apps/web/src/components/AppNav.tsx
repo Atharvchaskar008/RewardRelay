@@ -4,7 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMe } from "@/client/sdk";
 import { useSession } from "@/app/providers";
-import { Avatar, Button, IconDeals, IconExplore, IconPlus, IconUser, inr } from "@/components/ds";
+import {
+  Avatar,
+  Button,
+  IconArrowLeft,
+  IconDeals,
+  IconExplore,
+  IconPlus,
+  IconUser,
+  inr,
+} from "@/components/ds";
 
 const ITEMS = [
   { href: "/explore", label: "Explore", Icon: IconExplore },
@@ -46,8 +55,14 @@ export function AppNav() {
       <header className="topbar">
         <div className="topbar-inner">
           <div className="row" style={{ gap: 32 }}>
-            <Link href="/" className="wordmark" aria-label="SAKAR home">
-              SAKAR
+            <Link
+              href="/"
+              className="topbar-back-link"
+              aria-label="Return to SAKER landing page"
+              title="Return to SAKER landing page"
+            >
+              <IconArrowLeft />
+              <span className="wordmark">SAKER</span>
             </Link>
             <nav className="topbar-nav" aria-label="Main">
               <Link href="/dashboard" aria-current={pathname === "/dashboard" ? "page" : undefined}>

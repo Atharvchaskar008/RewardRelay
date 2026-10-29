@@ -1,6 +1,6 @@
 {
   "name": "@rewardrelay/contracts",
-  "description": "SAKAR smart contracts (RelayEscrow, ReputationSBT), tests and deployment scripts.",
+  "description": "SAKER smart contracts (RelayEscrow, ReputationSBT), tests and deployment scripts.",
   "license": "MIT",
   "version": "0.1.0",
   "private": true,

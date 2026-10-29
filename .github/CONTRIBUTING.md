@@ -1,6 +1,6 @@
-# Contributing to SAKAR
+# Contributing to SAKER
 
-Thanks for helping build SAKAR. This guide covers the local setup, the repository layout and
+Thanks for helping build SAKER. This guide covers the local setup, the repository layout and
 the conventions every change follows.
 
 ## Prerequisites
@@ -12,8 +12,8 @@ the conventions every change follows.
 ## Setup
 
 ```bash
-git clone https://github.com/Atharvchaskar008/SAKAR.git
-cd SAKAR
+git clone https://github.com/Atharvchaskar008/__SAKER_REPO__.git
+cd SAKER
 npm install
 npm run compile                    # Solidity → ABIs + TypeChain types (needed by tests and builds)
 

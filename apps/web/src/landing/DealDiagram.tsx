@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * DealDiagram: High-contrast, responsive visual representation of the SAKAR
+ * DealDiagram: High-contrast, responsive visual representation of the SAKER
  * escrow transaction flow between Seeker, RelayEscrow smart contract, and Sharer.
  */
 export function DealDiagram() {

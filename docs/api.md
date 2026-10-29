@@ -1,6 +1,6 @@
-# SAKAR API and client SDK
+# SAKER API and client SDK
 
-Everything the UI needs to build SAKAR screens without touching the chain, keys or crypto.
+Everything the UI needs to build SAKER screens without touching the chain, keys or crypto.
 Server code lives in `apps/web/src/server/` (Next.js route handlers under `apps/web/src/app/api/`),
 the SDK in `apps/web/src/client/sdk/` (import from `@/client/sdk`).
 

@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 
 /**
- * SAKAR's three typefaces, downloaded at build time and served from this site (no third-party font
+ * SAKER's three typefaces, downloaded at build time and served from this site (no third-party font
  * requests at runtime). Display: Inter; text: Geist; labels and numbers: Geist Mono.
  */
 export const displayFont = Inter({

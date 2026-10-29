@@ -1,4 +1,4 @@
-/* SAKAR app (dashboard): shell, page frame and screen layouts. */
+/* SAKER app (dashboard): shell, page frame and screen layouts. */
 
 /* ---------- Top bar (desktop) ---------- */
 .topbar {
@@ -19,6 +19,72 @@
   max-width: calc(var(--content) + 2 * var(--gutter));
   margin: 0 auto;
   padding: 0 var(--gutter);
+}
+
+.topbar-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  transition:
+    transform var(--dur) var(--ease),
+    opacity var(--dur) var(--ease);
+}
+
+.topbar-back-link:hover {
+  transform: translateX(-2px);
+  opacity: 0.85;
+}
+
+.topbar-back-link .icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.2px;
+  color: var(--ink-2);
+  transition:
+    transform var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.topbar-back-link:hover .icon {
+  color: #1e17fc;
+  transform: translateX(-2px);
+}
+
+.dashboard-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono-stack);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition: all var(--dur) var(--ease);
+  width: fit-content;
+}
+
+.dashboard-back-link:hover {
+  color: var(--ink);
+  border-color: #1e17fc;
+  background: rgba(30, 23, 252, 0.04);
+  transform: translateX(-2px);
+}
+
+.dashboard-back-link .icon {
+  width: 15px;
+  height: 15px;
+  transition: transform var(--dur) var(--ease);
+}
+
+.dashboard-back-link:hover .icon {
+  color: #1e17fc;
+  transform: translateX(-2px);
 }
 
 .topbar-nav {

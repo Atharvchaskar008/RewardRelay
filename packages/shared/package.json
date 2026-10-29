@@ -1,6 +1,6 @@
 {
   "name": "@rewardrelay/shared",
-  "description": "ABIs, deployed addresses, chain config and protocol rules shared by SAKAR packages.",
+  "description": "ABIs, deployed addresses, chain config and protocol rules shared by SAKER packages.",
   "license": "MIT",
   "version": "0.1.0",
   "private": true,

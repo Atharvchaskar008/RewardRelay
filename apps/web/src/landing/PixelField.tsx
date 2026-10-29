@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 /**
- * SAKAR's signature visual: a slowly drifting field of accent-blue pixels. Density comes from a
+ * SAKER's signature visual: a slowly drifting field of accent-blue pixels. Density comes from a
  * small value-noise function plus a diagonal flow; `clearZone` keeps a calm area for text. It only
  * animates while visible, at a low frame rate, and stays still for users who prefer reduced motion.
  */

@@ -73,7 +73,7 @@ function methodNotFound(id: RpcCall["id"]): RpcErrorReply {
   return {
     jsonrpc: "2.0",
     id,
-    error: { code: -32601, message: "Method not found: not available through SAKAR." },
+    error: { code: -32601, message: "Method not found: not available through SAKER." },
   };
 }
 
