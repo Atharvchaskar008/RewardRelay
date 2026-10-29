@@ -345,10 +345,17 @@ export function useListings(filter: { category?: string; status?: "open" | "all"
 const ACTIVE = new Set(["Listed", "Locked", "Delivered", "Disputed"]);
 
 /** One deal's view model, polled every 5 s while it is still active. */
+/**
+ * The deal view depends on who asks (role, next action, private panels), so it is cached per account:
+ * a view fetched before the session was ready is refetched as soon as the account is known.
+ */
+export const dealQueryKey = (id: string | undefined, accountId: string | null | undefined) =>
+  ["deal", id, accountId ?? null] as const;
+
 export function useDeal(id: string | undefined) {
-  const { api } = useRewardRelay();
+  const { api, accountId } = useRewardRelay();
   return useQuery({
-    queryKey: ["deal", id],
+    queryKey: dealQueryKey(id, accountId),
     queryFn: () => api.deals.get(id as string),
     enabled: Boolean(id),
     refetchInterval: (query) =>
@@ -359,12 +366,13 @@ export function useDeal(id: string | undefined) {
 /** Runs a deal button (`nextAction` or a secondary action) and refreshes the deal and the user. */
 export function useDealAction(id: string) {
   const sdk = useSdkContext();
+  const { accountId } = useRewardRelay();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ action, input }: { action: DealAction; input?: DealActionInput }) =>
       runDealAction(sdk(), { id }, action, input),
     onSuccess: (result) => {
-      queryClient.setQueryData(["deal", id], result.deal);
+      queryClient.setQueryData(dealQueryKey(id, accountId), result.deal);
       void queryClient.invalidateQueries({ queryKey: ["me"] });
       void queryClient.invalidateQueries({ queryKey: ["listings"] });
     },
@@ -374,9 +382,10 @@ export function useDealAction(id: string) {
 /** Seeker of a paid Buy-for-you deal: sends the delivery address when it was not sent with PAY. */
 export function useSendDeliveryDetails(id: string) {
   const sdk = useSdkContext();
+  const { accountId } = useRewardRelay();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (details: DeliveryDetails) => sendDeliveryDetails(sdk(), id, details),
-    onSuccess: (deal) => queryClient.setQueryData(["deal", id], deal),
+    onSuccess: (deal) => queryClient.setQueryData(dealQueryKey(id, accountId), deal),
   });
 }

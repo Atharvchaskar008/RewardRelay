@@ -7,7 +7,7 @@ import { PixelField } from "./PixelField";
 
 const ESCROW_URL =
   "https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A#code";
-const GITHUB_URL = "https://github.com/Atharvchaskar008/RewardRelay";
+const GITHUB_URL = "https://github.com/Atharvchaskar008/SAKAR";
 
 const REASONS = [
   {

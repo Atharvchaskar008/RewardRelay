@@ -358,6 +358,11 @@ a.list-row:hover {
   .deal-aside {
     position: static;
   }
+
+  /* On a deal, the next step comes first on narrow screens. */
+  .deal-layout > .deal-aside {
+    order: -1;
+  }
 }
 
 .timeline {

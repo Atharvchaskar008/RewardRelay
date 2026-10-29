@@ -8,6 +8,9 @@ All notable changes to SAKAR are recorded here. The format follows
 
 ### Changed
 
+- The deal view is cached per signed-in account, so a deal opened before the session was ready no
+  longer shows "Sign in to pay" to a signed-in buyer.
+
 - A listing above the Sharer's Trust Badge limit is refused with that reason before anything is
   signed (a wallet that could not cover the deposit used to see "not enough MSTC" instead).
 - The keeper starts no new action after 20 s, so a busy run stays inside cron-job.org's 30 s timeout.
@@ -26,6 +29,13 @@ All notable changes to SAKAR are recorded here. The format follows
 - The browser SDK checks for transaction receipts every second instead of every 4 s.
 
 ### Added
+
+- **New interface.** A SAKAR landing page at `/` (generative pixel field, deal diagram, how it
+  works, Trust Badge tiers, team of two, FAQ) and a redesigned app on one design system
+  (`src/styles/tokens.css`, `ds.css`, `src/components/ds`): overview, explore cards, a deal room with a
+  progress stepper and one sticky next step, share with a live summary, profile, my deals, login,
+  public badge, admin desk. Instrument Serif, Geist and Geist Mono are served from the site.
+- Demo offers rewritten card-first (`scripts/demo-listings.ts`).
 
 - Live deployment: https://rewardrelay.vercel.app (Vercel, functions in Mumbai). `npm run check:live`
   checks a deployment from the outside: health, feed, deal view, RPC relay, auth and keeper refusals,

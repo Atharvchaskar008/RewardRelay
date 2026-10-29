@@ -30,6 +30,11 @@ Every year, billions of rupees in credit card offers, airport lounge access pass
 - Both sides post collateral deposits; any malicious actor is slashed to compensate the victim.
 - Every successfully settled deal builds a soulbound **Trust Badge** (`ReputationSBT`, ERC-5192) on MST Blockchain, automatically raising deal limits and lowering deposit requirements.
 
+> **Interface:** a light, minimal design system shared by the landing page (`/`) and the app
+> (`/dashboard`, `/explore`, `/listings/new`, `/deals`, `/profile`): Instrument Serif, Geist and
+> Geist Mono, one electric-blue accent, a generative pixel field and pixel avatars derived from each
+> wallet address. Landing page designed by Atharv Chaskar.
+
 > **MST Blockchain Buildathon #2** (Round 2 MVP). Deployed on **MST Testnet** (Chain ID `91562037`) with test MSTC (tMSTC).  
 > **Production Live App:** [rewardrelay.vercel.app](https://rewardrelay.vercel.app) · **System Health:** [rewardrelay.vercel.app/api/health](https://rewardrelay.vercel.app/api/health)
 
@@ -142,10 +147,12 @@ flowchart TB
     subgraph ClientLayer["Frontend Application Layer (Next.js 15 PWA)"]
         direction TB
         subgraph UI["UI Screens & Components"]
+            P_LAND["/<br/>Landing Page"]
+            P_OVR["/dashboard<br/>Overview"]
             P_EXP["/explore<br/>Offer Feed"]
             P_NEW["/listings/new<br/>Listing Studio"]
             P_DEAL["/deal/[id]<br/>Action-Driven Deal Room"]
-            P_WAL["/wallet<br/>Funds & Withdrawals"]
+            P_WAL["/wallet · /profile<br/>Profile, Funds & Security"]
             P_BDG["/badge/[address]<br/>Reputation SBT"]
         end
         subgraph SDK["Client SDK (@/client/sdk)"]

@@ -7,8 +7,9 @@ delivery, 10 minutes for dispute evidence**. Production windows are days (see
 
 ## The live site
 
-Everything below works on **https://rewardrelay.vercel.app** (MST Testnet). A quick path for a live
-demo on one laptop:
+Everything below works on **https://rewardrelay.vercel.app** (MST Testnet). The landing page is at
+`/`; **Open app** leads to the app (`/dashboard`) with **Explore · Share · Deals · Profile** in the top
+bar (bottom bar on phones). A quick path for a live demo on one laptop:
 
 1. **Two browser windows side by side** (for example Chrome and Chrome Incognito): the Sharer on the
    left, the Seeker on the right. Each phone account keeps its own wallet in the browser, so one
