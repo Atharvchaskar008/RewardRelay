@@ -34,7 +34,6 @@ function WalletScreen() {
   const me = useMe();
   const wallet = useWallet();
   const sdk = useSdkContext();
-  const [pin, setPin] = useState("");
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
   const [qr, setQr] = useState<string>("");
@@ -83,11 +82,7 @@ function WalletScreen() {
           <AddressChip address={view.address} href={view.mstscanUrl} />
           <div className="row" style={{ gap: 8 }}>
             <Pill tone="accent">{view.badge.tierName}</Pill>
-            <Pill>
-              {wallet.kind === "injected"
-                ? (wallet.browserWalletName ?? "Crypto wallet")
-                : "PIN wallet"}
-            </Pill>
+            <Pill>{wallet.browserWalletName ?? "Crypto wallet"}</Pill>
           </div>
         </div>
       </header>
@@ -149,36 +144,13 @@ function WalletScreen() {
         <Card>
           <div className="stack" style={{ gap: 16 }}>
             <span className="label">Send MSTC</span>
-            {!wallet.unlocked && view.walletKind === "injected" ? (
+            {!wallet.unlocked ? (
               <p className="muted">
                 <Link className="link" href="/login">
                   Connect your wallet
                 </Link>{" "}
                 to send or withdraw.
               </p>
-            ) : !wallet.unlocked ? (
-              <form
-                className="row"
-                style={{ gap: 8, flexWrap: "nowrap", alignItems: "flex-end" }}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void run(() => wallet.unlock(pin));
-                }}
-              >
-                <Field label="PIN" htmlFor="pin">
-                  <input
-                    id="pin"
-                    className="input input-mono"
-                    type="password"
-                    inputMode="numeric"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                  />
-                </Field>
-                <Button type="submit" size="lg" loading={busy}>
-                  Unlock
-                </Button>
-              </form>
             ) : (
               <>
                 <Field label="To" htmlFor="to">

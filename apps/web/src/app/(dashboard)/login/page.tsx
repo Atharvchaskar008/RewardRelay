@@ -13,14 +13,8 @@ import {
   inr,
   shortAddress,
 } from "@/components/ds";
-import {
-  useBrowserWallets,
-  useMe,
-  useWallet,
-  validatePin,
-  type InjectedWallet,
-} from "@/client/sdk";
-import { coinLabel, firebaseConfigured } from "@/client/config";
+import { useBrowserWallets, useMe, useWallet, type InjectedWallet } from "@/client/sdk";
+import { firebaseConfigured } from "@/client/config";
 import { sendOtp } from "@/client/firebase";
 import { toE164 } from "@/client/phone";
 import { useSession } from "@/app/providers";
@@ -173,24 +167,16 @@ export default function LoginPage() {
       </>
     );
   }
-  return <PinStep />;
+  return <WalletStep />;
 }
 
-function PinStep() {
+function WalletStep() {
   const wallet = useWallet();
   const me = useMe();
-  const [pin, setPin] = useState("");
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
 
-  async function run(work: () => Promise<unknown>) {
-    return runWithoutPin(async () => {
-      validatePin(pin);
-      await work();
-    });
-  }
-
-  async function runWithoutPin(work: () => Promise<unknown>) {
+  async function runConnect(work: () => Promise<unknown>) {
     setBusy(true);
     setError(null);
     try {
@@ -218,9 +204,7 @@ function PinStep() {
           <div className="stack" style={{ gap: 2 }}>
             <span className="num">{shortAddress(me.data.address)}</span>
             <span className="faint" style={{ fontSize: 13 }}>
-              {wallet.kind === "injected"
-                ? `Signing with ${wallet.browserWalletName}`
-                : "PIN wallet on this device"}
+              Signing with {wallet.browserWalletName ?? "Crypto wallet"}
             </span>
           </div>
         </div>
@@ -239,89 +223,23 @@ function PinStep() {
           <Button href="/dashboard" variant="outline" block>
             Go to overview
           </Button>
-          {wallet.kind === "injected" && (
-            <Button variant="ghost" block onClick={() => wallet.disconnectBrowserWallet()}>
-              Disconnect wallet
-            </Button>
-          )}
+          <Button variant="ghost" block onClick={() => wallet.disconnectBrowserWallet()}>
+            Disconnect wallet
+          </Button>
         </div>
       </AuthCard>
     );
   }
 
-  // An account linked to a browser wallet signs with that wallet: there is no PIN backup.
-  if (me.data?.walletKind === "injected") {
-    return (
-      <AuthCard step="Step 3 of 3" title="Connect your wallet">
-        <p className="muted">
-          Choose the account <span className="num">{shortAddress(me.data.address)}</span> in your
-          wallet.
-        </p>
-        <BrowserWalletPicker
-          busy={busy}
-          onPick={(picked) =>
-            runWithoutPin(() => wallet.connectBrowserWallet(picked, me.data?.address))
-          }
-        />
-        <ErrorText error={error} />
-      </AuthCard>
-    );
-  }
-
-  const linkedElsewhere = me.data && !wallet.exists;
-  const title = wallet.exists
-    ? "Unlock your wallet"
-    : linkedElsewhere
-      ? "Restore your wallet"
-      : "Create your PIN";
   return (
-    <AuthCard step="Step 3 of 3" title={title}>
-      <form
-        className="stack"
-        style={{ gap: 16 }}
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (wallet.exists) void run(() => (me.data ? wallet.unlock(pin) : wallet.create(pin)));
-          else if (linkedElsewhere) void run(() => wallet.restore(pin));
-          else void run(() => wallet.create(pin));
-        }}
-      >
-        <Field
-          label="PIN"
-          htmlFor="pin"
-          hint="6–12 digits. It encrypts your wallet on this device; we can't recover it."
-        >
-          <input
-            id="pin"
-            className="input input-mono"
-            type="password"
-            inputMode="numeric"
-            autoComplete={wallet.exists ? "current-password" : "new-password"}
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-          />
-        </Field>
-        <Button type="submit" block size="lg" loading={busy}>
-          {wallet.exists ? "Unlock" : linkedElsewhere ? "Restore from backup" : "Create wallet"}
-        </Button>
-        {busy && (
-          <p className="faint" style={{ fontSize: 13 }}>
-            Setting up your Trust Badge and {coinLabel} for fees…
-          </p>
-        )}
-      </form>
-      {!me.data && (
-        <>
-          <div className="or">or</div>
-          <div className="stack" style={{ gap: 8 }}>
-            <span className="label">Use a crypto wallet</span>
-            <BrowserWalletPicker
-              busy={busy}
-              onPick={(picked) => runWithoutPin(() => wallet.connectBrowserWallet(picked))}
-            />
-          </div>
-        </>
-      )}
+    <AuthCard step="Step 3 of 3" title="Connect your wallet">
+      <p className="muted">
+        Connect your BridgeKey or MetaMask wallet to sign transactions securely on MST Blockchain.
+      </p>
+      <BrowserWalletPicker
+        busy={busy}
+        onPick={(picked) => runConnect(() => wallet.connectBrowserWallet(picked, me.data?.address))}
+      />
       <ErrorText error={error} />
     </AuthCard>
   );

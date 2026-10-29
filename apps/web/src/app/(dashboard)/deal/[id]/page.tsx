@@ -20,7 +20,6 @@ import {
 import {
   useDeal,
   useDealAction,
-  useMe,
   useRewardRelay,
   useSendDeliveryDetails,
   useWallet,
@@ -32,7 +31,6 @@ import {
   type ProofView,
   type RevealedCode,
 } from "@/client/sdk";
-import { useSession } from "@/app/providers";
 
 /** The deal room: one primary button from nextAction, secondary actions, private-data panels. */
 export default function DealPage() {
@@ -129,8 +127,6 @@ function progress(deal: DealView) {
 function DealRoom({ deal }: { deal: DealView }) {
   const wallet = useWallet();
   const action = useDealAction(deal.id);
-  const { user } = useSession();
-  const [pin, setPin] = useState("");
   const [details, setDetails] = useState<DeliveryDetails>(EMPTY_DETAILS);
   const [orderId, setOrderId] = useState("");
   const [notes, setNotes] = useState("");
@@ -145,7 +141,6 @@ function DealRoom({ deal }: { deal: DealView }) {
   async function run(name: DealAction, input?: DealActionInput) {
     setError(null);
     try {
-      if (!wallet.unlocked) await wallet.unlock(pin);
       const result = await action.mutateAsync({ action: name, input });
       setLastTx(result.tx?.explorerUrl ?? null);
       setOpenForm(null);
@@ -155,9 +150,7 @@ function DealRoom({ deal }: { deal: DealView }) {
   }
 
   const evidence = { claim, text: evidenceText, files };
-  const me = useMe();
-  const needsBrowserWallet = !wallet.unlocked && me.data?.walletKind === "injected";
-  const needsPin = !wallet.unlocked && user && !needsBrowserWallet;
+  const needsBrowserWallet = !wallet.unlocked;
   const actionable = deal.nextAction !== "WAIT" && deal.nextAction !== "NONE";
   const anyAction = actionable || deal.secondaryActions.length > 0;
   const terms = Object.entries(deal.listing?.terms ?? {});
@@ -332,23 +325,11 @@ function DealRoom({ deal }: { deal: DealView }) {
               )}
               {needsBrowserWallet && anyAction && (
                 <p className="alert">
-                  Your account signs with a crypto wallet.&nbsp;
+                  Connect your crypto wallet to sign.&nbsp;
                   <Link className="link" href="/login">
                     Connect it
                   </Link>
                 </p>
-              )}
-              {needsPin && anyAction && (
-                <Field label="Wallet PIN" htmlFor="pin">
-                  <input
-                    id="pin"
-                    className="input input-mono"
-                    type="password"
-                    inputMode="numeric"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                  />
-                </Field>
               )}
 
               {deal.nextAction === "PAY" && deal.type === "BuyForYou" && (

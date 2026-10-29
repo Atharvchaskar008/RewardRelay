@@ -47,7 +47,6 @@ function ListingForm() {
   const [validTill, setValidTill] = useState("");
   const [code, setCode] = useState("");
   const [declared, setDeclared] = useState(false);
-  const [pin, setPin] = useState("");
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
 
@@ -58,7 +57,6 @@ function ListingForm() {
     return value > 0 ? inrToWei(value, appConfig.inrPerMstc) : 0n;
   }, [price]);
   const blocked = findBlockedTopic(title, description);
-  const overLimit = me.data && priceWei > BigInt(me.data.badge.maxDealValue.wei);
   const depositBps = DEPOSIT_BPS[me.data?.tier ?? 0] ?? DEPOSIT_BPS[0];
   const depositWei = (priceWei * BigInt(depositBps)) / 10_000n;
   const saving = Math.max(0, (Number(faceValue) || 0) - (Number(price) || 0));
@@ -72,7 +70,6 @@ function ListingForm() {
     setBusy(true);
     setError(null);
     try {
-      if (!wallet.unlocked) await wallet.unlock(pin);
       const draft = {
         title: title.trim(),
         description: description.trim(),
@@ -184,15 +181,7 @@ function ListingForm() {
                 onChange={(e) => setFaceValue(e.target.value)}
               />
             </Field>
-            <Field
-              label="Price (₹)"
-              htmlFor="price"
-              error={
-                overLimit
-                  ? `Above your limit (${me.data?.badge.maxDealValue.mstc} MSTC)`
-                  : undefined
-              }
-            >
+            <Field label="Price (₹)" htmlFor="price">
               <input
                 id="price"
                 className="input input-mono"
@@ -275,25 +264,13 @@ function ListingForm() {
             <p className="faint" style={{ fontSize: 12 }}>
               Your deposit comes back when the deal ends well.
             </p>
-            {!wallet.unlocked && me.data?.walletKind === "injected" && (
+            {!wallet.unlocked && (
               <p className="alert">
-                Signs with your crypto wallet.&nbsp;
+                Connect your crypto wallet to sign.&nbsp;
                 <Link className="link" href="/login">
                   Connect it
                 </Link>
               </p>
-            )}
-            {!wallet.unlocked && me.data?.walletKind !== "injected" && (
-              <Field label="Wallet PIN" htmlFor="pin">
-                <input
-                  id="pin"
-                  className="input input-mono"
-                  type="password"
-                  inputMode="numeric"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                />
-              </Field>
             )}
             <Button block size="lg" loading={busy} disabled={disabled} onClick={submit}>
               List offer

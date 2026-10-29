@@ -33,9 +33,9 @@ const LOOP = [
 ];
 
 const TIERS = [
-  { name: "New", deposit: "50%", how: "Phone sign-up", density: 0.25 },
-  { name: "Trusted", deposit: "30%", how: "5 deals, 3 people", density: 0.5 },
-  { name: "Verified", deposit: "20%", how: "20 deals, 10 people", density: 0.8 },
+  { name: "Standard", deposit: "50%", how: "Wallet connected", density: 0.25 },
+  { name: "Trusted", deposit: "30%", how: "5 deals completed", density: 0.5 },
+  { name: "Verified", deposit: "20%", how: "20 deals completed", density: 0.8 },
 ];
 
 const TEAM_MEMBERS = [
@@ -66,15 +66,15 @@ const FAQ_ITEMS = [
   },
   {
     q: "What do I need to start trading on SAKAR?",
-    a: "Just a phone number or an MST-compatible Web3 wallet like BridgeKey or MetaMask. SAKAR creates an embedded wallet on phone signup automatically.",
+    a: "An MST-compatible Web3 wallet like BridgeKey or MetaMask. Connect your wallet with one click to browse deals, lock escrow, or share your card offers with zero counterparty risk.",
   },
   {
     q: "Why is SAKAR built on MST Blockchain?",
-    a: "Your funds sit in immutable open-source code that no central company or rogue actor can confiscate. Deals settle in ~3 seconds with cryptographic auditability.",
+    a: "Your funds sit in immutable open-source smart contracts that no central company or rogue actor can confiscate. Deals settle in ~3 seconds with sub-cent gas fees and cryptographic auditability.",
   },
   {
     q: "Is the platform currently live on mainnet?",
-    a: "SAKAR is live on the MST Testnet with test tokens (MSTC) so you can safely simulate deals end-to-end before mainnet deployment.",
+    a: "Yes. SAKAR smart contracts are live on MST Blockchain. All escrow locks, deliveries, releases, and dispute settlements execute autonomously on-chain without any central middleman.",
   },
 ];
 
@@ -117,7 +117,7 @@ function TierMark({ density }: { density: number }) {
 }
 
 export function Landing() {
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
