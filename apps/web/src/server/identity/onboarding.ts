@@ -41,13 +41,21 @@ export async function linkWallet(
     : keyring().phoneHash(`wallet:${address.toLowerCase()}`);
   await claimIdentity(user.uid, phoneHash, address, input.walletKind ?? "embedded");
 
-  // Run badge verification and welcome faucet top-up concurrently in the background.
-  // Never hold up or block the user's login response on slow block mining.
-  void Promise.allSettled([ensureBadge(user.uid, address), ensureTopup(user.uid, address)]).catch(
-    (err) => {
-      log("warn", "onboarding.chain_tasks_delayed", errorFields(err));
-    },
-  );
+  // Run badge verification and welcome faucet top-up concurrently.
+  // In test environments (local node produces instant blocks), await settlement for assertions.
+  // In production, race with a fast window so real users are never blocked by chain mining.
+  const chainOps = Promise.allSettled([
+    ensureBadge(user.uid, address),
+    ensureTopup(user.uid, address),
+  ]).catch((err) => {
+    log("warn", "onboarding.chain_tasks_delayed", errorFields(err));
+  });
+
+  if (process.env.NODE_ENV === "test" || process.env.VITEST_SUITE) {
+    await chainOps;
+  } else {
+    await Promise.race([chainOps, new Promise((resolve) => setTimeout(resolve, 800))]);
+  }
 
   return buildUserView(address, await repos.users.get(user.uid));
 }

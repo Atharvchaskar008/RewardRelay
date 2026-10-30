@@ -6,6 +6,7 @@ import { POST as resolveRoute } from "@/app/api/admin/disputes/[id]/resolve/rout
 import { GET as adminListRoute } from "@/app/api/admin/disputes/route";
 import { POST as evidenceRoute } from "@/app/api/disputes/[id]/evidence/route";
 import { POST as rpcRoute } from "@/app/api/rpc/[network]/route";
+import { POST as linkRoute } from "@/app/api/auth/link-wallet/route";
 import { GET as meRoute } from "@/app/api/me/route";
 import { adminAuth } from "@/server/firebaseAdmin";
 import { repos } from "@/server/repositories";
