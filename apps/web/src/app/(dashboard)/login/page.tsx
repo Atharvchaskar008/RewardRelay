@@ -155,14 +155,43 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
     win?.BridgeKey ??
     win?.Bridgekey ??
     win?.mst ??
-    win?.MST) as InjectedWallet["provider"] | undefined;
+    win?.MST ??
+    win?.mstWallet ??
+    win?.mstChain ??
+    win?.mstscan ??
+    win?.bridgeKeyProvider) as InjectedWallet["provider"] | undefined;
+
   const directEth = win?.ethereum as
-    (InjectedWallet["provider"] & { isMetaMask?: boolean }) | undefined;
+    | (InjectedWallet["provider"] & {
+        isMetaMask?: boolean;
+        isBridgeKey?: boolean;
+        bridgeKey?: boolean;
+        isMST?: boolean;
+        providers?: (InjectedWallet["provider"] & {
+          isBridgeKey?: boolean;
+          bridgeKey?: boolean;
+          isMST?: boolean;
+          name?: string;
+        })[];
+      })
+    | undefined;
+
+  const bkFromProviders = directEth?.providers?.find(
+    (p) => p.isBridgeKey || p.bridgeKey || p.isMST || p.name?.toLowerCase().includes("bridgekey"),
+  );
+
+  const bkProvider =
+    directBk ??
+    bkFromProviders ??
+    (directEth &&
+    (directEth.isBridgeKey || directEth.bridgeKey || directEth.isMST || !directEth.isMetaMask)
+      ? directEth
+      : undefined);
 
   const displayWallets = [...(wallets ?? [])];
 
-  // If BridgeKey is in window but not in EIP-6963 list, prepend it
-  if (directBk && !displayWallets.some((w) => w.info.name.toLowerCase().includes("bridgekey"))) {
+  // If BridgeKey is detected, ensure it is in displayWallets
+  if (bkProvider && !displayWallets.some((w) => w.info.name.toLowerCase().includes("bridgekey"))) {
     displayWallets.unshift({
       info: {
         uuid: "bridgekey-direct-picker",
@@ -170,18 +199,22 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
         icon: "",
         rdns: "io.bridgekey.wallet",
       },
-      provider: directBk,
+      provider: bkProvider,
     });
   }
 
-  // If window.ethereum exists and BridgeKey is still not in the list, offer BridgeKey option
-  if (directEth && !displayWallets.some((w) => w.info.name.toLowerCase().includes("bridgekey"))) {
-    displayWallets.unshift({
+  // If MetaMask is installed, ensure it is in displayWallets
+  if (
+    directEth &&
+    directEth.isMetaMask &&
+    !displayWallets.some((w) => w.info.name.toLowerCase().includes("metamask"))
+  ) {
+    displayWallets.push({
       info: {
-        uuid: "bridgekey-injected-picker",
-        name: "BridgeKey",
+        uuid: "metamask-direct-picker",
+        name: "MetaMask",
         icon: "",
-        rdns: "io.bridgekey.wallet",
+        rdns: "io.metamask",
       },
       provider: directEth,
     });
@@ -244,6 +277,9 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
           <IconChevronRight />
         </button>
       ))}
+      <p className="faint" style={{ fontSize: "12px", textAlign: "center", margin: "4px 0 0" }}>
+        Please unlock your wallet extension with your password/PIN before connecting.
+      </p>
     </div>
   );
 }

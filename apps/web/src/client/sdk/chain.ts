@@ -117,11 +117,12 @@ export async function injectedChainContext(
 
 /** Asks a browser wallet for its account (shows the wallet's connect prompt if needed). */
 export async function requestWalletAddress(provider: EIP1193Provider): Promise<Address> {
+  let lastError: unknown;
   try {
     const [address] = await createWalletClient({ transport: custom(provider) }).requestAddresses();
     if (address) return getAddress(address);
-  } catch {
-    // Continue to direct provider requests below
+  } catch (err) {
+    lastError = err;
   }
 
   const raw = provider as unknown as {
@@ -136,7 +137,8 @@ export async function requestWalletAddress(provider: EIP1193Provider): Promise<A
   try {
     const accounts = (await raw.request({ method: "eth_requestAccounts" })) as string[];
     if (accounts && accounts[0]) return getAddress(accounts[0]);
-  } catch {
+  } catch (err) {
+    lastError = err;
     try {
       const accounts = (await raw.request({ method: "eth_accounts" })) as string[];
       if (accounts && accounts[0]) return getAddress(accounts[0]);
@@ -156,8 +158,25 @@ export async function requestWalletAddress(provider: EIP1193Provider): Promise<A
     return getAddress(raw.accounts[0]);
   }
 
+  if (lastError) {
+    const msg = (lastError as { message?: string }).message ?? "";
+    const code = (lastError as { code?: number }).code;
+    if (code === 4001 || /rejected|denied|cancel/i.test(msg)) {
+      throw new ChainError(
+        "Connection request was rejected or closed in your wallet.",
+        "UserRejected",
+      );
+    }
+    if (code === -32002 || /already pending|pending/i.test(msg)) {
+      throw new ChainError(
+        "A connection prompt is already pending. Please click the wallet extension icon in your browser toolbar to approve it.",
+        "PendingRequest",
+      );
+    }
+  }
+
   throw new ChainError(
-    "Your wallet did not share an account. Please open your BridgeKey or MetaMask extension, unlock it, and try again.",
+    "Your wallet did not share an account. Please open your BridgeKey or MetaMask extension, unlock it with your password/PIN, and try again.",
     "NoAccount",
   );
 }
