@@ -369,26 +369,38 @@ function DealRoom({ deal }: { deal: DealView }) {
                 </>
               )}
               {actionable && (
-                <Button
-                  block
-                  size="lg"
-                  loading={action.isPending}
-                  onClick={() =>
-                    run(deal.nextAction, {
-                      details:
-                        deal.nextAction === "PAY" && deal.type === "BuyForYou"
-                          ? cleanDetails(details)
-                          : undefined,
-                      proof:
-                        deal.nextAction === "MARK_DELIVERED"
-                          ? { orderId, notes: notes || undefined, invoice }
-                          : undefined,
-                    })
-                  }
-                >
-                  {PRIMARY_LABELS[deal.nextAction]}
-                  {deal.nextAction === "PAY" && ` ${inr(deal.payAmount.inr)}`}
-                </Button>
+                <>
+                  <Button
+                    block
+                    size="lg"
+                    loading={action.isPending}
+                    onClick={() =>
+                      run(deal.nextAction, {
+                        details:
+                          deal.nextAction === "PAY" && deal.type === "BuyForYou"
+                            ? cleanDetails(details)
+                            : undefined,
+                        proof:
+                          deal.nextAction === "MARK_DELIVERED"
+                            ? { orderId, notes: notes || undefined, invoice }
+                            : undefined,
+                      })
+                    }
+                  >
+                    {action.isPending ? "Confirming in wallet…" : PRIMARY_LABELS[deal.nextAction]}
+                    {!action.isPending &&
+                      deal.nextAction === "PAY" &&
+                      ` ${inr(deal.payAmount.inr)}`}
+                  </Button>
+                  {action.isPending && (
+                    <p
+                      className="faint"
+                      style={{ fontSize: 13, textAlign: "center", margin: "4px 0 0" }}
+                    >
+                      Please approve the prompt in your BridgeKey or MetaMask extension.
+                    </p>
+                  )}
+                </>
               )}
 
               {deal.secondaryActions.length > 0 && (

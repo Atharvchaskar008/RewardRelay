@@ -189,14 +189,22 @@ export async function ensureWalletChain(
   walletClient: WalletClient,
   config: ChainConfig,
 ): Promise<void> {
-  if ((await walletClient.getChainId()) === config.chainId) return;
+  try {
+    const currentChainId = await walletClient.getChainId().catch(() => null);
+    if (currentChainId === config.chainId) return;
+  } catch {
+    // Continue to switch attempt
+  }
+
   try {
     await walletClient.switchChain({ id: config.chainId });
   } catch (error) {
     if (!isUnknownChain(error)) throw toChainError(error);
     await walletClient.addChain({ chain: publicChain(config) });
-    if ((await walletClient.getChainId()) !== config.chainId)
+    const afterChainId = await walletClient.getChainId().catch(() => null);
+    if (afterChainId !== config.chainId) {
       await walletClient.switchChain({ id: config.chainId });
+    }
   }
 }
 
@@ -392,7 +400,10 @@ async function sendEscrow(
   } as never;
   let hash: Hash | undefined;
   try {
-    await Promise.all([ctx.ensureChain?.(), ctx.publicClient.simulateContract(call)]);
+    await Promise.all([
+      ctx.ensureChain?.().catch(() => null),
+      ctx.publicClient.simulateContract(call),
+    ]);
     hash = await ctx.walletClient.writeContract({
       ...(call as object),
       chain: ctx.chain,
@@ -402,6 +413,7 @@ async function sendEscrow(
     const receipt = await ctx.publicClient.waitForTransactionReceipt({
       hash,
       timeout: RECEIPT_TIMEOUT_MS,
+      pollingInterval: POLLING_MS,
     });
     if (receipt.status !== "success")
       throw new ChainError("The transaction failed on-chain.", "Reverted", hash);

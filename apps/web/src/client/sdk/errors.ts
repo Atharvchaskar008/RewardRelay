@@ -109,8 +109,26 @@ export function toChainError(error: unknown, hash?: string): ChainError {
       error,
     );
   }
-  if (text.includes("user rejected") || text.includes("denied")) {
-    return new ChainError("You cancelled the request in your wallet.", "UserRejected", hash, error);
+  if (
+    text.includes("user rejected") ||
+    text.includes("denied") ||
+    text.includes("rejected the request") ||
+    (error as { code?: unknown })?.code === 4001
+  ) {
+    return new ChainError(
+      "You cancelled or rejected the prompt in your wallet.",
+      "UserRejected",
+      hash,
+      error,
+    );
+  }
+  if (text.includes("already pending") || (error as { code?: unknown })?.code === -32002) {
+    return new ChainError(
+      "A wallet prompt is already open. Please open your BridgeKey or MetaMask extension popup to approve it.",
+      "PendingRequest",
+      hash,
+      error,
+    );
   }
   if (text.includes("timed out") || text.includes("timeout")) {
     return new ChainError(
