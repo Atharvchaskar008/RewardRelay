@@ -56,6 +56,7 @@ export const GET = withRoute(
       status: z.enum(["open", "all"]).default("open"),
     }),
     rateLimit: { capacity: 60, refillPerMinute: 60 },
+    cacheControl: "public, s-maxage=5, stale-while-revalidate=20",
   },
   async ({ query }) => listListings(query),
 );

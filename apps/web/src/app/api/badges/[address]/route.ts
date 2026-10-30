@@ -8,7 +8,12 @@ export const dynamic = "force-dynamic";
 
 /** GET /api/badges/:address → the public Trust Badge of any address (read from chain). */
 export const GET = withRoute(
-  { name: "badges.get", auth: "none", rateLimit: { capacity: 60, refillPerMinute: 60 } },
+  {
+    name: "badges.get",
+    auth: "none",
+    rateLimit: { capacity: 60, refillPerMinute: 60 },
+    cacheControl: "public, s-maxage=10, stale-while-revalidate=30",
+  },
   async ({ params }) => {
     if (!params.address || !isAddress(params.address)) {
       throw new AppError("VALIDATION_FAILED", { message: "Invalid address." });

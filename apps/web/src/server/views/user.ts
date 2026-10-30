@@ -2,11 +2,11 @@ import "server-only";
 import type { Address, Hash } from "viem";
 import { weiToInr, weiToMstc } from "@rewardrelay/shared";
 import {
-  escrowContract,
   explorerAddressUrl,
   explorerTxUrl,
-  publicClient,
+  readBalance,
   readTrust,
+  readWithdrawable,
 } from "../chain";
 import { serverEnv } from "../env";
 import type { UserDoc, WalletKind } from "../repositories";
@@ -58,11 +58,17 @@ export function money(wei: bigint): Money {
   };
 }
 
-export async function buildUserView(address: Address, user?: UserDoc): Promise<UserView> {
+export async function buildUserView(
+  address: Address,
+  user?: UserDoc,
+  options: { fresh?: boolean } = {},
+): Promise<UserView> {
+  const isTest = process.env.NODE_ENV === "test";
+  const fresh = options.fresh ?? isTest;
   const [trust, balance, withdrawable] = await Promise.all([
-    readTrust(address, { fresh: true }),
-    publicClient().getBalance({ address }),
-    escrowContract().read.withdrawable([address]),
+    readTrust(address, { fresh }),
+    readBalance(address, { fresh }),
+    readWithdrawable(address, { fresh }),
   ]);
   const tierName = TIER_NAMES[trust.tier] ?? `Tier ${trust.tier}`;
   const balanceMoney = money(balance);

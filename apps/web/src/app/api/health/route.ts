@@ -8,7 +8,12 @@ export const dynamic = "force-dynamic";
  * addresses. 200 when ok or degraded, 503 when the chain is unreachable. No secrets.
  */
 export const GET = withRoute(
-  { name: "health", auth: "none", rateLimit: { capacity: 30, refillPerMinute: 30 } },
+  {
+    name: "health",
+    auth: "none",
+    rateLimit: { capacity: 30, refillPerMinute: 30 },
+    cacheControl: "public, s-maxage=3, stale-while-revalidate=10",
+  },
   async () => {
     const report = await healthReport();
     return respond(report, { status: report.status === "down" ? 503 : 200 });

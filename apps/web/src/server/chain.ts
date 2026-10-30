@@ -2,6 +2,7 @@ import "server-only";
 import {
   createPublicClient,
   defineChain,
+  fallback,
   getContract,
   http,
   type Address,
@@ -50,17 +51,37 @@ export function mstChain(env: ServerEnv = serverEnv()): Chain {
 }
 
 /**
- * HTTP transport with timeout and exponential retry (viem retries network errors and 5xx/429).
+ * HTTP transport with timeout, exponential retry and automatic multi-endpoint fallback.
  * Every call is reported to the request timing as `chain`.
  */
 export function rpcTransport(env: ServerEnv = serverEnv()): Transport {
-  const inner = http(env.MST_RPC_URL, {
-    timeout: RPC_TIMEOUT_MS,
-    retryCount: RPC_RETRIES,
-    retryDelay: RPC_RETRY_DELAY_MS,
-    // MST has no Multicall3; concurrent reads are grouped into JSON-RPC batches instead.
-    batch: { batchSize: 25, wait: 10 },
-  });
+  const urls = [env.MST_RPC_URL];
+  const known = chainById(env.MST_CHAIN_ID);
+  if (known) {
+    for (const url of known.rpcUrls.default.http) {
+      if (!urls.includes(url)) urls.push(url);
+    }
+  }
+
+  const inner =
+    urls.length > 1
+      ? fallback(
+          urls.map((url) =>
+            http(url, {
+              timeout: RPC_TIMEOUT_MS,
+              retryCount: RPC_RETRIES,
+              retryDelay: RPC_RETRY_DELAY_MS,
+              batch: { batchSize: 25, wait: 10 },
+            }),
+          ),
+          { rank: false },
+        )
+      : http(env.MST_RPC_URL, {
+          timeout: RPC_TIMEOUT_MS,
+          retryCount: RPC_RETRIES,
+          retryDelay: RPC_RETRY_DELAY_MS,
+          batch: { batchSize: 25, wait: 10 },
+        });
   return ((params) => {
     const transport = inner(params);
     const request = ((args: { method: string }, options?: unknown) => {
@@ -175,6 +196,38 @@ export function readTrust(
 /** Call after the server itself changes an account's badge (mint, ruling). */
 export function invalidateTrust(account: Address): void {
   trustCache.invalidate(account.toLowerCase());
+}
+
+const balanceCache = new TtlCache<bigint>({ ttlMs: 4_000, max: 5_000 });
+const withdrawableCache = new TtlCache<bigint>({ ttlMs: 10_000, max: 5_000 });
+
+/** Native MSTC balance with short TTL cache to avoid repeated RPC load. */
+export function readBalance(account: Address, options: { fresh?: boolean } = {}): Promise<bigint> {
+  const load = () => publicClient().getBalance({ address: account });
+  const key = account.toLowerCase();
+  return options.fresh || process.env.NODE_ENV === "test"
+    ? balanceCache.refresh(key, load)
+    : balanceCache.get(key, load);
+}
+
+/** Payouts the escrow could not push directly to the recipient. */
+export function readWithdrawable(
+  account: Address,
+  options: { fresh?: boolean } = {},
+): Promise<bigint> {
+  const load = () => escrowContract().read.withdrawable([account]);
+  const key = account.toLowerCase();
+  return options.fresh || process.env.NODE_ENV === "test"
+    ? withdrawableCache.refresh(key, load)
+    : withdrawableCache.get(key, load);
+}
+
+export function invalidateBalance(account: Address): void {
+  balanceCache.invalidate(account.toLowerCase());
+}
+
+export function invalidateWithdrawable(account: Address): void {
+  withdrawableCache.invalidate(account.toLowerCase());
 }
 
 const pausedCache = new TtlCache<boolean>({ ttlMs: 10_000, max: 1 });
@@ -375,6 +428,8 @@ export function resetChainClientForTests(): void {
 /** Drops every cached chain read (tests that move the local chain's clock call this). */
 export function resetChainCaches(): void {
   trustCache.invalidate();
+  balanceCache.invalidate();
+  withdrawableCache.invalidate();
   pausedCache.invalidate();
   latestCache.invalidate();
   blockTimes.invalidate();

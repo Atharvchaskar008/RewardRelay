@@ -76,6 +76,8 @@ export interface RouteOptions<B extends Schema, Q extends Schema> {
   idempotent?: boolean;
   /** Maximum JSON body size in bytes (default 64 KiB). */
   maxBodyBytes?: number;
+  /** Cache-Control header (e.g. for CDN / Edge caching on public reads). Default: "no-store". */
+  cacheControl?: string;
 }
 
 export interface RouteContext<B, Q> {
@@ -125,7 +127,7 @@ function jsonResponse(
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
+      "Cache-Control": headers["Cache-Control"] ?? "no-store",
       "X-Request-Id": requestId,
       ...headers,
     },
@@ -294,6 +296,7 @@ export function withRoute<B extends Schema = undefined, Q extends Schema = undef
       }
       logRequest("info", { status: result.status });
       return jsonResponse(payload, result.status, requestId, {
+        ...(options.cacheControl ? { "Cache-Control": options.cacheControl } : {}),
         ...result.headers,
         ...timingHeaders(),
       });
