@@ -278,34 +278,10 @@ export class TxManager {
 /** Best-effort custom-error name from a viem contract error (e.g. "InvalidStatus"). */
 export function revertName(error: unknown): string | undefined {
   let current: unknown = error;
-  for (let depth = 0; current && depth < 8; depth++) {
-    const errObj = current as {
-      data?: { errorName?: unknown };
-      errorName?: unknown;
-      message?: string;
-      errors?: unknown[];
-      cause?: unknown;
-    };
-    if (typeof errObj.data?.errorName === "string") return errObj.data.errorName;
-    if (typeof errObj.errorName === "string") return errObj.errorName;
-
-    if (Array.isArray(errObj.errors)) {
-      for (const inner of errObj.errors) {
-        const found = revertName(inner);
-        if (found) return found;
-      }
-    }
-
-    if (errObj.message) {
-      const match =
-        errObj.message.match(/reverted with custom error ['"]([^'"]+)['"]/i) ||
-        errObj.message.match(
-          /\b(DealNotFound|InvalidStatus|Unauthorized|PriceMismatch|TermsMismatch|FeeMismatch|SelfDeal|BadgeRequired|TierLimitExceeded|CannotCancelYet|EvidenceWindowClosed|AlreadyDelivered|AlreadyResolved)\b/,
-        );
-      if (match) return match[1];
-    }
-
-    current = errObj.cause;
+  for (let depth = 0; current && depth < 6; depth++) {
+    const data = (current as { data?: { errorName?: unknown } }).data;
+    if (data && typeof data.errorName === "string") return data.errorName;
+    current = (current as { cause?: unknown }).cause;
   }
   return undefined;
 }

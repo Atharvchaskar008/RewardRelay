@@ -2,7 +2,6 @@ import "server-only";
 import {
   createPublicClient,
   defineChain,
-  fallback,
   getContract,
   http,
   type Address,
@@ -51,44 +50,17 @@ export function mstChain(env: ServerEnv = serverEnv()): Chain {
 }
 
 /**
- * HTTP transport with timeout, exponential retry and automatic multi-endpoint fallback.
+ * HTTP transport with timeout and exponential retry (viem retries network errors and 5xx/429).
  * Every call is reported to the request timing as `chain`.
  */
 export function rpcTransport(env: ServerEnv = serverEnv()): Transport {
-  const normalize = (u: string) => u.replace(/\/+$/, "");
-  const urls = [env.MST_RPC_URL];
-  const isTest = process.env.NODE_ENV === "test" || env.MST_CHAIN_ID === 31337;
-
-  if (!isTest) {
-    const known = chainById(env.MST_CHAIN_ID);
-    if (known) {
-      for (const url of known.rpcUrls.default.http) {
-        if (!urls.some((existing) => normalize(existing) === normalize(url))) {
-          urls.push(url);
-        }
-      }
-    }
-  }
-
-  const inner =
-    urls.length > 1
-      ? fallback(
-          urls.map((url) =>
-            http(url, {
-              timeout: RPC_TIMEOUT_MS,
-              retryCount: RPC_RETRIES,
-              retryDelay: RPC_RETRY_DELAY_MS,
-              batch: { batchSize: 25, wait: 10 },
-            }),
-          ),
-          { rank: false },
-        )
-      : http(env.MST_RPC_URL, {
-          timeout: RPC_TIMEOUT_MS,
-          retryCount: RPC_RETRIES,
-          retryDelay: RPC_RETRY_DELAY_MS,
-          batch: { batchSize: 25, wait: 10 },
-        });
+  const inner = http(env.MST_RPC_URL, {
+    timeout: RPC_TIMEOUT_MS,
+    retryCount: RPC_RETRIES,
+    retryDelay: RPC_RETRY_DELAY_MS,
+    // MST has no Multicall3; concurrent reads are grouped into JSON-RPC batches instead.
+    batch: { batchSize: 25, wait: 10 },
+  });
   return ((params) => {
     const transport = inner(params);
     const request = ((args: { method: string }, options?: unknown) => {
