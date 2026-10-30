@@ -10,7 +10,7 @@ import { listingTermsHash } from "@/common/terms";
 import type { EmbeddedWallet } from "@/client/wallet";
 import type { ApiClient } from "./api";
 import * as tx from "./chain";
-import type { ChainContext, TxOutcome } from "./chain";
+import type { ChainConfig, ChainContext, TxOutcome } from "./chain";
 import { ChainError, REVERT_MESSAGES, toChainError } from "./errors";
 import type {
   DealView,
