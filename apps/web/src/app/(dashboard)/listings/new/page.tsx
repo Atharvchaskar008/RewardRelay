@@ -29,8 +29,8 @@ export default function NewListingPage() {
 }
 
 const WITH_EVENT = new Set(["travel", "movies"]);
-/** Sharer deposit by Trust Badge tier (New, Trusted, Verified), as configured on-chain. */
-const DEPOSIT_BPS = [5000, 3000, 2000];
+/** Sharer deposit by Trust Badge tier (New 5%, Trusted 3%, Verified 2%), as configured on-chain. */
+const DEPOSIT_BPS = [500, 300, 200];
 const FEE_BPS = 200;
 
 function ListingForm() {

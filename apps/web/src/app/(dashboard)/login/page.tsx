@@ -196,8 +196,9 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
 
   const displayWallets = [...(wallets ?? [])];
 
-  // If BridgeKey is detected, ensure it is in displayWallets
-  if (bkProvider && !displayWallets.some((w) => w.info.name.toLowerCase().includes("bridgekey"))) {
+  // Ensure BridgeKey is ALWAYS an option if an injected provider is present
+  const resolvedBk = bkProvider ?? directEth;
+  if (resolvedBk && !displayWallets.some((w) => w.info.name.toLowerCase().includes("bridgekey"))) {
     displayWallets.unshift({
       info: {
         uuid: "bridgekey-direct-picker",
@@ -205,16 +206,12 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
         icon: "",
         rdns: "io.bridgekey.wallet",
       },
-      provider: bkProvider,
+      provider: resolvedBk,
     });
   }
 
   // If MetaMask is installed, ensure it is in displayWallets
-  if (
-    directEth &&
-    directEth.isMetaMask &&
-    !displayWallets.some((w) => w.info.name.toLowerCase().includes("metamask"))
-  ) {
+  if (directEth && !displayWallets.some((w) => w.info.name.toLowerCase().includes("metamask"))) {
     displayWallets.push({
       info: {
         uuid: "metamask-direct-picker",
@@ -321,7 +318,7 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
               </div>
               <p className="faint" style={{ fontSize: 13, lineHeight: 1.5, margin: 0 }}>
                 For the smoothest experience, open the <strong>BridgeKey App</strong> on your phone,
-                tap the <strong>Browser 🧭</strong> tab, and paste:
+                tap the <strong>Discover / DApps / Browser</strong> tab at the bottom, and paste:
               </p>
               <div className="row" style={{ gap: 8, alignItems: "center" }}>
                 <code

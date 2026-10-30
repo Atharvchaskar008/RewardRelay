@@ -120,8 +120,13 @@ export async function registerListing(uid: string, input: ListingInput): Promise
   };
 
   await transaction(async (tx) => {
-    if (await repos.listings.get(dealId, tx)) {
-      throw new AppError("CONFLICT", { message: "This deal is already published." });
+    const existing = await repos.listings.get(dealId, tx);
+    if (existing) {
+      if (getAddress(existing.sharer) === user.address) {
+        throw new AppError("CONFLICT", { message: "This deal is already published." });
+      }
+      // If it is a stale listing from a previous deployment or mock seed with a different sharer,
+      // overwrite it since the on-chain deal is verified to belong to this user.
     }
     const fingerprint = deal.codeFingerprint;
     const vault = fingerprint !== zeroHash ? await repos.vault.get(fingerprint, tx) : undefined;
@@ -131,8 +136,8 @@ export async function registerListing(uid: string, input: ListingInput): Promise
       }
       await repos.vault.update(fingerprint, { status: "listed", dealId }, tx);
     }
-    await repos.listings.create(dealId, doc, tx);
-    await repos.deals.create(
+    await repos.listings.set(dealId, doc, tx);
+    await repos.deals.set(
       dealId,
       {
         dealId,

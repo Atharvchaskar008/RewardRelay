@@ -3,7 +3,7 @@
   "chainId": 4646,
   "deployer": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
   "commit": "0b95a52f0d1879ef67480a34e2bb0a146a99de49-dirty",
-  "updatedAt": "2026-10-29T13:03:57.157Z",
+  "updatedAt": "2026-10-30T15:33:49.738Z",
   "contracts": {
     "ReputationSBT": {
       "address": "0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e",
@@ -159,10 +159,98 @@
       "gasCostWei": "92763000000000",
       "valueWei": "0",
       "kind": "config"
+    },
+    {
+      "label": "escrow: deposit bps",
+      "hash": "0x6b8bd21b5b1ad5b65bf67748d601e0b8f4b888e50e5c695909db504aec559eab",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21784462,
+      "gasUsed": "41040",
+      "gasCostWei": "41040000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "badge: tier limits",
+      "hash": "0x75847bb6ec33ae531ddec413e0c8d39bdc5b0ea9dd49b53b491832cbf6cb8d8d",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e",
+      "blockNumber": 21784934,
+      "gasUsed": "41511",
+      "gasCostWei": "41511000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 0 ecommerce",
+      "hash": "0x9d07e1c4ce4c1993a4dbc043c1158a1b3e453f6e2759de9d08dc7ece21b6a2a0",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21785364,
+      "gasUsed": "36667",
+      "gasCostWei": "36667000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 1 travel",
+      "hash": "0xff7576624c6d7de9fac5bef9ebd08a7cfbb0788db88a83bfdf1a940c91b95cf7",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21785365,
+      "gasUsed": "36739",
+      "gasCostWei": "36739000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 2 food",
+      "hash": "0x5cc75ae3ea9dadda240c2684912b8b590a352ace78cf35b0cf122884d12617e8",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21785366,
+      "gasUsed": "36679",
+      "gasCostWei": "36679000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 3 movies",
+      "hash": "0x7c31a9d333c4e822bff92f4b2bb3080de94e3120b842ffbce0794e82b4ca1229",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21785367,
+      "gasUsed": "36703",
+      "gasCostWei": "36703000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 4 membership",
+      "hash": "0x05e855402966aa4eda38c480717bb040ac1c8afb94e307b05473f06bf857ea65",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21785368,
+      "gasUsed": "36703",
+      "gasCostWei": "36703000000000",
+      "valueWei": "0",
+      "kind": "config"
+    },
+    {
+      "label": "escrow: policy 5 coupon",
+      "hash": "0x21c2099b8f5cef198a7344b504a380e9e39696e4f6db67f23851cf3a95d1a3c9",
+      "from": "0xE16066f38f89c67AC0B7F116FDDe894e5c4581F5",
+      "to": "0xE13c653b082E8243eD0ceE972463a949AB2743a7",
+      "blockNumber": 21785369,
+      "gasUsed": "36483",
+      "gasCostWei": "36483000000000",
+      "valueWei": "0",
+      "kind": "config"
     }
   ],
   "configuration": {
-    "readAt": "2026-10-29T13:03:56.574Z",
+    "readAt": "2026-10-30T15:33:48.305Z",
     "serverSigner": "0xE0b91d46Aa724269B3D66D62310167b9D44fFDCF",
     "roles": {
       "badgeEscrowRole": true,
@@ -171,14 +259,14 @@
       "escrowArbiterRole": true
     },
     "tierLimitsWei": [
-      "5000000000000000",
-      "20000000000000000",
-      "100000000000000000"
+      "1000000000000000000000000",
+      "1000000000000000000000000",
+      "1000000000000000000000000"
     ],
     "sharerDepositBps": [
-      5000,
-      3000,
-      2000
+      500,
+      300,
+      200
     ],
     "seekerDepositBps": 500,
     "feeBps": 200,
@@ -189,50 +277,50 @@
         "id": 0,
         "key": "ecommerce",
         "dealType": "BuyForYou",
-        "deliveryWindow": 300,
-        "releaseDelay": 180,
+        "deliveryWindow": 172800,
+        "releaseDelay": 864000,
         "eventBuffer": 0,
-        "disputeWindow": 600,
+        "disputeWindow": 259200,
         "active": true
       },
       {
         "id": 1,
         "key": "travel",
         "dealType": "BuyForYou",
-        "deliveryWindow": 300,
-        "releaseDelay": 180,
-        "eventBuffer": 300,
-        "disputeWindow": 600,
+        "deliveryWindow": 86400,
+        "releaseDelay": 86400,
+        "eventBuffer": 86400,
+        "disputeWindow": 259200,
         "active": true
       },
       {
         "id": 2,
         "key": "food",
         "dealType": "BuyForYou",
-        "deliveryWindow": 300,
-        "releaseDelay": 180,
+        "deliveryWindow": 7200,
+        "releaseDelay": 21600,
         "eventBuffer": 0,
-        "disputeWindow": 600,
+        "disputeWindow": 86400,
         "active": true
       },
       {
         "id": 3,
         "key": "movies",
         "dealType": "BuyForYou",
-        "deliveryWindow": 300,
-        "releaseDelay": 180,
-        "eventBuffer": 300,
-        "disputeWindow": 600,
+        "deliveryWindow": 7200,
+        "releaseDelay": 7200,
+        "eventBuffer": 10800,
+        "disputeWindow": 86400,
         "active": true
       },
       {
         "id": 4,
         "key": "membership",
         "dealType": "BuyForYou",
-        "deliveryWindow": 300,
-        "releaseDelay": 180,
+        "deliveryWindow": 86400,
+        "releaseDelay": 259200,
         "eventBuffer": 0,
-        "disputeWindow": 600,
+        "disputeWindow": 259200,
         "active": true
       },
       {
@@ -240,9 +328,9 @@
         "key": "coupon",
         "dealType": "PassOn",
         "deliveryWindow": 0,
-        "releaseDelay": 180,
+        "releaseDelay": 86400,
         "eventBuffer": 0,
-        "disputeWindow": 600,
+        "disputeWindow": 172800,
         "active": true
       }
     ]

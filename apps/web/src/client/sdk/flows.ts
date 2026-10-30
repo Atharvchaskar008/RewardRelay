@@ -186,6 +186,25 @@ async function publish(sdk: SdkContext, dealId: bigint, draft: ListingDraft): Pr
   });
 }
 
+async function safePublish(
+  sdk: SdkContext,
+  dealId: bigint,
+  draft: ListingDraft,
+): Promise<ListingView> {
+  try {
+    return await publish(sdk, dealId, draft);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message.includes("already published") ||
+        (error as { code?: string }).code === "CONFLICT")
+    ) {
+      return { dealId: dealId.toString() } as ListingView;
+    }
+    throw error;
+  }
+}
+
 /** Buy-for-you: createListing (deposit from the contract) → publish the chain-verified metadata. */
 /**
  * The contract refuses a price above the Sharer's Trust Badge limit, but a wallet that cannot cover the
@@ -211,7 +230,7 @@ export async function listBuyForYou(sdk: SdkContext, draft: ListingDraft) {
     eventTime: BigInt(draft.eventTime ?? 0),
     termsHash: listingTermsHash(termsFor(draft)),
   });
-  return { tx: created, listing: await publish(sdk, created.dealId, draft) };
+  return { tx: created, listing: await safePublish(sdk, created.dealId, draft) };
 }
 
 /** Pass-on: seal the code in the vault (server signs the authorisation) → createListing → publish. */
@@ -234,7 +253,7 @@ export async function listPassOn(sdk: SdkContext, draft: ListingDraft, code: str
       signature: authorization.auth.signature,
     },
   });
-  return { tx: created, listing: await publish(sdk, created.dealId, draft) };
+  return { tx: created, listing: await safePublish(sdk, created.dealId, draft) };
 }
 
 /** Sharer delivers a Buy-for-you order: proof (+ invoice) to the API → markDelivered(proofHash). */

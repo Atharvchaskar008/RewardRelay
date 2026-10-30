@@ -85,6 +85,12 @@ export function revertReason(error: unknown): string | undefined {
     if (data && typeof data.errorName === "string") return data.errorName;
     current = (current as { cause?: unknown }).cause;
   }
+  const text = error instanceof Error ? `${error.name} ${error.message}` : String(error);
+  const match =
+    text.match(/reverted with custom error '([A-Za-z0-9_]+)/) ??
+    text.match(/execution reverted: ([A-Za-z0-9_]+)/) ??
+    text.match(/custom error `([A-Za-z0-9_]+)/);
+  if (match) return match[1];
   return undefined;
 }
 
@@ -101,9 +107,14 @@ export function toChainError(error: unknown, hash?: string): ChainError {
     );
   const text =
     error instanceof Error ? `${error.name} ${error.message}`.toLowerCase() : String(error);
-  if (text.includes("insufficient funds")) {
+  if (
+    text.includes("insufficient funds") ||
+    text.includes("insufficient balance") ||
+    text.includes("exceeds the balance") ||
+    text.includes("gas required exceeds allowance")
+  ) {
     return new ChainError(
-      "Not enough MSTC for this payment and its gas.",
+      "Not enough MSTC in your wallet for this payment and its gas.",
       "InsufficientFunds",
       hash,
       error,

@@ -42,14 +42,14 @@ const TEAM_MEMBERS = [
   {
     name: "Atharv Chaskar",
     role: "Founder · Blockchain & Protocol Architecture",
-    img: "/media/yQf4bsdDIbC7M7WR70YSu65y0os.png",
+    img: "/media/atharv-chaskar.jpg",
     href: "https://github.com/Atharvchaskar008",
     handle: "github.com/Atharvchaskar008",
   },
   {
     name: "Bhavjot Singh",
     role: "Co-founder · Frontend & Systems Design",
-    img: "/media/pOKsB3QuZXFjT51gGkpeY6f6II.png",
+    img: "/media/bhavjot-singh.jpg",
     href: "https://github.com/bhavsingh-gpu",
     handle: "github.com/bhavsingh-gpu",
   },

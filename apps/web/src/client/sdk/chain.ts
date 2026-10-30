@@ -319,24 +319,17 @@ export function discoverInjectedWallets(waitMs = 120): Promise<InjectedWallet[]>
         }
       }
 
-      // Check if window.ethereum itself is BridgeKey
-      if (winEth) {
-        const isBk =
-          winEth.isBridgeKey ||
-          winEth.bridgeKey ||
-          winEth.isMST ||
-          (!winEth.isMetaMask && !winEth.isCoinbaseWallet);
-        if (isBk && !found.has("io.bridgekey.wallet")) {
-          found.set("io.bridgekey.wallet", {
-            info: {
-              uuid: "bridgekey-injected",
-              name: "BridgeKey",
-              icon: "",
-              rdns: "io.bridgekey.wallet",
-            },
-            provider: winEth,
-          });
-        }
+      // Check if window.ethereum itself is BridgeKey or an injected provider
+      if (winEth && !found.has("io.bridgekey.wallet")) {
+        found.set("io.bridgekey.wallet", {
+          info: {
+            uuid: "bridgekey-injected",
+            name: "BridgeKey",
+            icon: "",
+            rdns: "io.bridgekey.wallet",
+          },
+          provider: (explicitBridgeKey ?? winEth) as EIP1193Provider,
+        });
       }
 
       // Fallback for legacy window.ethereum when no wallets announced through EIP-6963
