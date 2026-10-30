@@ -14,6 +14,7 @@ import {
   IconUser,
   inr,
 } from "@/components/ds";
+import { PWAInstallPill } from "@/components/PWAInstallBanner";
 
 const ITEMS = [
   { href: "/explore", label: "Explore", Icon: IconExplore },
@@ -80,9 +81,13 @@ export function AppNav() {
             </nav>
           </div>
           {user ? (
-            <AccountPill />
+            <div className="row" style={{ gap: 8, alignItems: "center" }}>
+              <PWAInstallPill />
+              <AccountPill />
+            </div>
           ) : pathname === "/login" ? null : (
             <div className="row" style={{ gap: 8, alignItems: "center" }}>
+              <PWAInstallPill />
               <span className="pill pill-subtle" style={{ fontSize: 12, padding: "2px 8px" }}>
                 Guest Mode
               </span>

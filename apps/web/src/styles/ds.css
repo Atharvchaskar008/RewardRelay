@@ -169,6 +169,8 @@
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
     background var(--dur) var(--ease),
     color var(--dur) var(--ease),
@@ -398,6 +400,8 @@
   color: var(--ink-2);
   cursor: pointer;
   white-space: nowrap;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
     border-color var(--dur) var(--ease),
     color var(--dur) var(--ease);

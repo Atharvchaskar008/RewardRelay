@@ -163,6 +163,17 @@
     font-family: var(--font-mono-stack);
     font-size: 11px;
     color: var(--ink-3);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    transition:
+      transform var(--dur) var(--ease),
+      color var(--dur) var(--ease);
+  }
+
+  .bottombar a:active {
+    transform: scale(0.94);
   }
 
   .bottombar a[aria-current="page"] {

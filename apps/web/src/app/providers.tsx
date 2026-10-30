@@ -30,6 +30,16 @@ export function Providers({ children }: { children: ReactNode }) {
     return onIdTokenChanged(auth, (user) => setSession({ ready: true, user }));
   }, []);
 
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      "serviceWorker" in navigator &&
+      process.env.NODE_ENV === "production"
+    ) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
   const getIdToken = useCallback(async () => {
     const user = firebaseAuth()?.currentUser;
     return user ? user.getIdToken() : null;

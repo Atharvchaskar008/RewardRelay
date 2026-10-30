@@ -18,6 +18,7 @@ import {
 } from "@/components/ds";
 import { signOut } from "@/client/firebase";
 import { tx, useMe, useSdkContext, useWallet, type TxOutcome } from "@/client/sdk";
+import { PWAMobileCard } from "@/components/PWAInstallBanner";
 
 /** Profile: balance in MSTC ≈ ₹, Trust Badge, receive QR, send, withdraw deferred payouts, security. */
 export default function WalletPage() {
@@ -252,6 +253,8 @@ function WalletScreen() {
           </div>
         </Card>
       </div>
+
+      <PWAMobileCard />
     </div>
   );
 }

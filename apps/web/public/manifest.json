@@ -1,0 +1,54 @@
+{
+  "name": "SAKER — Reward Relay",
+  "short_name": "SAKER",
+  "description": "A trusted peer-to-peer marketplace for unused rewards and card perks on MST Blockchain.",
+  "start_url": "/dashboard",
+  "id": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "orientation": "portrait-primary",
+  "background_color": "#f5f5f4",
+  "theme_color": "#f5f5f4",
+  "categories": ["finance", "shopping", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Explore Offers",
+      "short_name": "Explore",
+      "url": "/explore",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Deals",
+      "short_name": "Deals",
+      "url": "/deals",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Share Offer",
+      "short_name": "Share",
+      "url": "/listings/new",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -486,6 +486,26 @@ function DealRoom({ deal }: { deal: DealView }) {
           <MissingDeliveryDetails deal={deal} />
           <PrivatePanels deal={deal} />
 
+          <div className="row" style={{ gap: 8, justifyContent: "center", margin: "4px 0" }}>
+            <a
+              href={`bridgekey://open?url=${encodeURIComponent(
+                typeof window !== "undefined" ? window.location.href : "",
+              )}`}
+              className="pill pill-subtle"
+              style={{
+                fontSize: 12,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 10px",
+              }}
+              title="Open deal in BridgeKey mobile wallet"
+            >
+              📱 Open in BridgeKey
+            </a>
+          </div>
+
           <p className="row faint" style={{ gap: 8, fontSize: 13 }}>
             <IconShield /> Never share card numbers, logins or OTPs.
           </p>
