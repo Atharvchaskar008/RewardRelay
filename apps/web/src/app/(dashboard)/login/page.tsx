@@ -104,9 +104,7 @@ export default function LoginPage() {
                   <span className="label">Choose your wallet</span>
                   <BrowserWalletPicker
                     busy={busy}
-                    onPick={(picked) =>
-                      runConnect(() => wallet.connectBrowserWallet(picked, null))
-                    }
+                    onPick={(picked) => runConnect(() => wallet.connectBrowserWallet(picked, null))}
                   />
                 </div>
 

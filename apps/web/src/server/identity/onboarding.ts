@@ -69,7 +69,11 @@ async function claimIdentity(
     const walletClaim = await repos.walletIndex.get(walletKey, tx);
 
     if (existing && existing.wallet.toLowerCase() !== walletKey) {
-      log("info", "onboarding.updating_existing_user_wallet", { uid, old: existing.wallet, new: walletKey });
+      log("info", "onboarding.updating_existing_user_wallet", {
+        uid,
+        old: existing.wallet,
+        new: walletKey,
+      });
     }
     if (phoneClaim && phoneClaim.uid !== uid && !uid.startsWith("wallet:")) {
       throw conflict("This phone number is already linked to another wallet.");
