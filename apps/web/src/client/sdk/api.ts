@@ -125,7 +125,13 @@ export function createApiClient(options: ApiClientOptions) {
           auth: false,
         }),
       challenge: (address: string) =>
-        request<Challenge>("POST", "/api/auth/challenge", { body: { address }, auth: false }),
+        request<Challenge>("POST", "/api/auth/challenge", {
+          body: {
+            address,
+            origin: typeof window !== "undefined" ? window.location.origin : undefined,
+          },
+          auth: false,
+        }),
       linkWallet: (input: {
         address: string;
         message: string;

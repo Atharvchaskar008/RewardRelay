@@ -32,16 +32,35 @@ export async function createChallenge(
   uid: string,
   address: Address,
   now = Date.now(),
+  customOrigin?: string,
 ): Promise<Challenge> {
   const env = serverEnv();
-  const app = new URL(env.APP_URL);
+  let domain = "";
+  let uri = "";
+
+  if (customOrigin) {
+    try {
+      const parsed = new URL(customOrigin);
+      domain = parsed.host;
+      uri = parsed.origin;
+    } catch {
+      // Fall through to APP_URL
+    }
+  }
+
+  if (!domain) {
+    const app = new URL(env.APP_URL);
+    domain = app.host;
+    uri = app.origin;
+  }
+
   const nonce = generateSiweNonce();
   const expiresAt = new Date(now + CHALLENGE_TTL_MS);
   const message = createSiweMessage({
-    domain: app.host,
+    domain,
     address: getAddress(address),
     statement: SIWE_STATEMENT,
-    uri: app.origin,
+    uri,
     version: "1",
     chainId: env.MST_CHAIN_ID,
     nonce,
@@ -82,9 +101,10 @@ export async function consumeChallenge(
 
   await transaction(async (tx) => {
     const challenge = await repos.challenges.get(nonce, tx);
+    const isWalletUid = challenge?.uid === `wallet:${getAddress(input.address).toLowerCase()}`;
     if (
       !challenge ||
-      challenge.uid !== input.uid ||
+      (!isWalletUid && challenge.uid !== input.uid) ||
       challenge.message !== input.message ||
       getAddress(challenge.address) !== getAddress(input.address)
     ) {

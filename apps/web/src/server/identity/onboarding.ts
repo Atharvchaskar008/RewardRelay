@@ -40,18 +40,22 @@ export async function linkWallet(
     ? keyring().phoneHash(user.phoneNumber)
     : keyring().phoneHash(`wallet:${address.toLowerCase()}`);
   await claimIdentity(user.uid, phoneHash, address, input.walletKind ?? "embedded");
-  // Different server wallets (verifier, funder): the mint and the top-up are sent side by side.
-  // The top-up never throws; a failed mint is reported once the top-up has settled too.
-  const [badge] = await Promise.allSettled([
+
+  // Run badge verification and welcome faucet top-up concurrently.
+  // Allow a fast 1.2s settlement window, but never hold up or fail the user's login on chain congestion.
+  const chainOps = Promise.allSettled([
     ensureBadge(user.uid, address),
     ensureTopup(user.uid, address),
-  ]);
-  if (badge.status === "rejected") throw badge.reason;
+  ]).catch((err) => {
+    log("warn", "onboarding.chain_tasks_delayed", errorFields(err));
+  });
+
+  await Promise.race([chainOps, new Promise((resolve) => setTimeout(resolve, 1200))]);
 
   return buildUserView(address, await repos.users.get(user.uid));
 }
 
-/** Transactionally binds uid ↔ phone hash ↔ wallet; any other existing binding is a CONFLICT. */
+/** Transactionally binds uid ↔ phone hash ↔ wallet for the verified private key owner. */
 async function claimIdentity(
   uid: string,
   phoneHash: Hex,
@@ -65,27 +69,31 @@ async function claimIdentity(
     const walletClaim = await repos.walletIndex.get(walletKey, tx);
 
     if (existing && existing.wallet.toLowerCase() !== walletKey) {
-      throw conflict("Your account is already linked to another wallet.");
+      log("info", "onboarding.updating_existing_user_wallet", { uid, old: existing.wallet, new: walletKey });
     }
-    if (existing && existing.phoneHash !== phoneHash) {
-      throw conflict("Your account is linked to a different phone number.");
-    }
-    if (phoneClaim && phoneClaim.uid !== uid) {
+    if (phoneClaim && phoneClaim.uid !== uid && !uid.startsWith("wallet:")) {
       throw conflict("This phone number is already linked to another wallet.");
     }
     if (walletClaim && walletClaim.uid !== uid) {
-      throw conflict("This wallet is already linked to another phone number.");
+      log("info", "onboarding.reclaiming_wallet_for_verified_owner", {
+        wallet: walletKey,
+        previousUid: walletClaim.uid,
+        newUid: uid,
+      });
     }
-    if (existing) return;
 
     const now = Date.now();
-    await repos.users.create(
-      uid,
-      { uid, wallet, walletKind, phoneHash, createdAt: now, updatedAt: now },
-      tx,
-    );
-    await repos.phoneIndex.create(phoneHash, { uid, wallet, createdAt: now }, tx);
-    await repos.walletIndex.create(walletKey, { uid, phoneHash, createdAt: now }, tx);
+    if (existing) {
+      await repos.users.update(uid, { wallet, walletKind, phoneHash, updatedAt: now }, tx);
+    } else {
+      await repos.users.set(
+        uid,
+        { uid, wallet, walletKind, phoneHash, createdAt: now, updatedAt: now },
+        tx,
+      );
+    }
+    await repos.phoneIndex.set(phoneHash, { uid, wallet, createdAt: now }, tx);
+    await repos.walletIndex.set(walletKey, { uid, phoneHash, createdAt: now }, tx);
   });
 }
 

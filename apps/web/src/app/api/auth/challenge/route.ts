@@ -10,11 +10,19 @@ export const POST = withRoute(
   {
     name: "auth.challenge",
     auth: "none",
-    body: z.object({ address: addressInput }),
+    body: z.object({
+      address: addressInput,
+      origin: z.string().url().optional(),
+    }),
     rateLimit: { capacity: 30, refillPerMinute: 30 },
   },
-  async ({ body, user }) => {
+  async ({ body, user, req }) => {
     const uid = user?.uid ?? `wallet:${body.address.toLowerCase()}`;
-    return createChallenge(uid, body.address);
+    const headerOrigin = req.headers.get("origin");
+    const forwardedHost = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+    const forwardedProto = req.headers.get("x-forwarded-proto") ?? "https";
+    const fallbackOrigin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : undefined;
+    const origin = body.origin ?? headerOrigin ?? fallbackOrigin;
+    return createChallenge(uid, body.address, Date.now(), origin);
   },
 );

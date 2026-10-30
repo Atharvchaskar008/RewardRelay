@@ -105,24 +105,9 @@ export default function LoginPage() {
                   <BrowserWalletPicker
                     busy={busy}
                     onPick={(picked) =>
-                      runConnect(() => wallet.connectBrowserWallet(picked, me.data?.address))
+                      runConnect(() => wallet.connectBrowserWallet(picked, null))
                     }
                   />
-                </div>
-
-                <div className="auth-feature-list">
-                  <div className="auth-feature-row">
-                    <span className="auth-feature-bullet" />
-                    <span>Non-custodial: Private keys remain solely in your wallet.</span>
-                  </div>
-                  <div className="auth-feature-row">
-                    <span className="auth-feature-bullet" />
-                    <span>Free authentication: Signing challenge requires zero gas.</span>
-                  </div>
-                  <div className="auth-feature-row">
-                    <span className="auth-feature-bullet" />
-                    <span>Automatic Trust Badge & test MSTC faucet top-up.</span>
-                  </div>
                 </div>
 
                 <ErrorText error={error} />
@@ -133,22 +118,12 @@ export default function LoginPage() {
 
         {/* Right column: Classical Artwork */}
         <div className="auth-split-right">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/art-desert.jpg"
-            alt="Alexander the Great pouring water into the desert sands"
+            alt="Alexander the Great in the desert"
             className="auth-art-image"
           />
-          <div className="auth-art-overlay">
-            <span className="auth-art-tag">Ethos of SAKER</span>
-            <h2 className="auth-art-quote">
-              &ldquo;True trust is proven in action, not promised in words.&rdquo;
-            </h2>
-            <p className="auth-art-caption">
-              Alexander the Great pours the offered helmet of water into the parched Gedrosian
-              desert, sharing the thirst of his men rather than quenching his own. In peer-to-peer
-              commerce, escrow ensures all parties share fairness and integrity.
-            </p>
-          </div>
         </div>
       </div>
     </Page>
@@ -183,6 +158,19 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
         rdns: "io.bridgekey.wallet",
       },
       provider: directBk,
+    });
+  }
+
+  // If window.ethereum exists and BridgeKey is still not in the list, offer BridgeKey option
+  if (directEth && !displayWallets.some((w) => w.info.name.toLowerCase().includes("bridgekey"))) {
+    displayWallets.unshift({
+      info: {
+        uuid: "bridgekey-injected-picker",
+        name: "BridgeKey",
+        icon: "",
+        rdns: "io.bridgekey.wallet",
+      },
+      provider: directEth,
     });
   }
 

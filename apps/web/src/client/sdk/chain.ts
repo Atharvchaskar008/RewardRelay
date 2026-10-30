@@ -5,6 +5,7 @@ import {
   defineChain,
   getAddress,
   http,
+  isAddress,
   parseEventLogs,
   zeroHash,
   type Account,
@@ -128,6 +129,9 @@ export async function requestWalletAddress(provider: EIP1193Provider): Promise<A
       method: string;
       params?: unknown[] | Record<string, unknown>;
     }) => Promise<unknown>;
+    selectedAddress?: string;
+    address?: string;
+    accounts?: string[];
   };
   try {
     const accounts = (await raw.request({ method: "eth_requestAccounts" })) as string[];
@@ -137,12 +141,23 @@ export async function requestWalletAddress(provider: EIP1193Provider): Promise<A
       const accounts = (await raw.request({ method: "eth_accounts" })) as string[];
       if (accounts && accounts[0]) return getAddress(accounts[0]);
     } catch {
-      // Fall through to error
+      // Fall through to direct property checks
     }
   }
 
+  // Check if provider has active address directly exposed (BridgeKey / custom injected providers)
+  if (raw.selectedAddress && isAddress(raw.selectedAddress)) {
+    return getAddress(raw.selectedAddress);
+  }
+  if (raw.address && isAddress(raw.address)) {
+    return getAddress(raw.address);
+  }
+  if (raw.accounts && raw.accounts[0] && isAddress(raw.accounts[0])) {
+    return getAddress(raw.accounts[0]);
+  }
+
   throw new ChainError(
-    "Your wallet did not share an account. Please unlock and select an account.",
+    "Your wallet did not share an account. Please open your BridgeKey or MetaMask extension, unlock it, and try again.",
     "NoAccount",
   );
 }
