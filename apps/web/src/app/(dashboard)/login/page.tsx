@@ -7,6 +7,7 @@ import {
   Avatar,
   Button,
   Card,
+  CopyButton,
   IconArrowLeft,
   IconChevronRight,
   Stat,
@@ -246,52 +247,101 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
       <div className="stack" style={{ gap: "var(--s-3)" }}>
         {isMobile ? (
           <>
-            <div
-              style={{
-                background: "rgba(99, 102, 241, 0.08)",
-                border: "1px solid rgba(99, 102, 241, 0.2)",
-                borderRadius: 8,
-                padding: "12px 14px",
-                fontSize: 13,
-                lineHeight: 1.5,
+            <button
+              type="button"
+              className="wallet-select-option"
+              onClick={() => {
+                const url =
+                  typeof window !== "undefined"
+                    ? window.location.href
+                    : "https://saker-app.vercel.app/login";
+
+                // Auto copy URL to clipboard for effortless pasting in in-app browser
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  void navigator.clipboard.writeText(url);
+                }
+
+                const isAndroid =
+                  typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+
+                if (isAndroid) {
+                  // Direct Android Intent to launch com.bridgekey app with fallback
+                  window.location.href = `intent://${url.replace(
+                    /^https?:\/\//,
+                    "",
+                  )}#Intent;package=com.bridgekey;scheme=https;fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.bridgekey;end`;
+                } else {
+                  window.location.href = `bridgekey://open?url=${encodeURIComponent(url)}`;
+                }
               }}
             >
-              <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>
-                📱 Mobile Web3 Connection
-              </strong>
-              Mobile browsers cannot run extensions. To connect your phone wallet:
-              <ol style={{ margin: "8px 0 0", paddingLeft: 18 }}>
-                <li>
-                  Open your <strong>BridgeKey</strong> app on your phone.
-                </li>
-                <li>
-                  Go to the <strong>Browser / dApp</strong> tab.
-                </li>
-                <li>
-                  Navigate to <code>saker-app.vercel.app</code> to connect and sign with one tap.
-                </li>
-              </ol>
-            </div>
-
-            <a
-              href={`bridgekey://open?url=${encodeURIComponent(
-                typeof window !== "undefined"
-                  ? window.location.href
-                  : "https://saker-app.vercel.app/login",
-              )}`}
-              className="btn btn-primary btn-block"
-              style={{ textDecoration: "none" }}
-            >
-              📱 Open in BridgeKey App
-            </a>
+              <div className="wallet-icon-wrapper" style={{ fontSize: 18 }}>
+                🔑
+              </div>
+              <div className="wallet-text-wrapper">
+                <span className="wallet-title">BridgeKey Mobile</span>
+                <span className="wallet-subtitle">Launch BridgeKey App · Chain 4646</span>
+              </div>
+              <IconChevronRight />
+            </button>
 
             <a
               href="https://metamask.app.link/dapp/saker-app.vercel.app/login"
-              className="btn btn-outline btn-block"
+              className="wallet-select-option"
               style={{ textDecoration: "none" }}
             >
-              🦊 Open in MetaMask Mobile
+              <div className="wallet-icon-wrapper" style={{ fontSize: 18 }}>
+                🦊
+              </div>
+              <div className="wallet-text-wrapper">
+                <span className="wallet-title">MetaMask Mobile</span>
+                <span className="wallet-subtitle">Open in MetaMask dApp Browser</span>
+              </div>
+              <IconChevronRight />
             </a>
+
+            <div
+              className="stack"
+              style={{
+                gap: 8,
+                padding: "12px 14px",
+                background: "var(--canvas)",
+                border: "1px solid var(--line)",
+                borderRadius: "var(--radius-card)",
+                marginTop: 4,
+              }}
+            >
+              <div className="row-between">
+                <span className="label" style={{ fontSize: 11, textTransform: "uppercase" }}>
+                  In-App Browser Setup
+                </span>
+                <span className="pill pill-subtle" style={{ fontSize: 10 }}>
+                  Recommended
+                </span>
+              </div>
+              <p className="faint" style={{ fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                For the smoothest experience, open the <strong>BridgeKey App</strong> on your phone,
+                tap the <strong>Browser 🧭</strong> tab, and paste:
+              </p>
+              <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                <code
+                  style={{
+                    fontSize: 12,
+                    padding: "4px 8px",
+                    background: "var(--surface)",
+                    border: "1px solid var(--line)",
+                    borderRadius: 4,
+                    flex: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  https://saker-app.vercel.app
+                </code>
+                <CopyButton text="https://saker-app.vercel.app" label="Copy" />
+              </div>
+            </div>
           </>
         ) : (
           <>
