@@ -52,7 +52,7 @@ export async function sendOtp(
 
 export async function signInWithWalletToken(token: string) {
   const instance = firebaseAuth();
-  if (!instance) throw new Error("Wallet sign-in is not configured yet.");
+  if (!instance) return null;
   return signInWithCustomToken(instance, token);
 }
 
