@@ -72,7 +72,18 @@ export async function onboardWallet(
 export async function onboardInjectedWallet(
   api: ApiClient,
   provider: EIP1193Provider,
+  config?: ChainConfig,
 ): Promise<{ view: UserView; address: Address }> {
+  // If config is provided (e.g. MST Chain 4646), prompt the wallet to add or switch to it first
+  if (config) {
+    try {
+      const client = createWalletClient({ transport: custom(provider) });
+      await tx.ensureWalletChain(client, config).catch(() => {});
+    } catch {
+      // Continue to address request
+    }
+  }
+
   const address = await tx.requestWalletAddress(provider);
 
   // 1. Fetch SIWE challenge directly

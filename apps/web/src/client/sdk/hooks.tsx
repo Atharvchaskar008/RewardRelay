@@ -289,7 +289,7 @@ export function useWallet() {
           const { signInWithWalletToken } = await import("@/client/firebase");
           await signInWithWalletToken(token);
         } else {
-          ({ address } = await onboardInjectedWallet(api, picked.provider));
+          ({ address } = await onboardInjectedWallet(api, picked.provider, config.chain));
         }
         const chain = await injectedChainContext(config.chain, picked.provider, address);
         saveWalletChoice(

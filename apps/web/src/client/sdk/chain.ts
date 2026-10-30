@@ -166,7 +166,10 @@ export async function requestWalletAddress(provider: EIP1193Provider): Promise<A
  * Switches the wallet to the configured chain, adding it first when the wallet does not know it.
  * Wallets need an absolute public RPC URL to add a chain, not the app's same-origin relay path.
  */
-async function ensureWalletChain(walletClient: WalletClient, config: ChainConfig): Promise<void> {
+export async function ensureWalletChain(
+  walletClient: WalletClient,
+  config: ChainConfig,
+): Promise<void> {
   if ((await walletClient.getChainId()) === config.chainId) return;
   try {
     await walletClient.switchChain({ id: config.chainId });
