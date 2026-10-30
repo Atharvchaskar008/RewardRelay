@@ -55,11 +55,18 @@ export function mstChain(env: ServerEnv = serverEnv()): Chain {
  * Every call is reported to the request timing as `chain`.
  */
 export function rpcTransport(env: ServerEnv = serverEnv()): Transport {
+  const normalize = (u: string) => u.replace(/\/+$/, "");
   const urls = [env.MST_RPC_URL];
-  const known = chainById(env.MST_CHAIN_ID);
-  if (known) {
-    for (const url of known.rpcUrls.default.http) {
-      if (!urls.includes(url)) urls.push(url);
+  const isTest = process.env.NODE_ENV === "test" || env.MST_CHAIN_ID === 31337;
+
+  if (!isTest) {
+    const known = chainById(env.MST_CHAIN_ID);
+    if (known) {
+      for (const url of known.rpcUrls.default.http) {
+        if (!urls.some((existing) => normalize(existing) === normalize(url))) {
+          urls.push(url);
+        }
+      }
     }
   }
 
