@@ -239,20 +239,88 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
   }
 
   if (displayWallets.length === 0) {
+    const isMobile =
+      typeof window !== "undefined" && /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
+
     return (
       <div className="stack" style={{ gap: "var(--s-3)" }}>
-        <p className="alert alert-warning" style={{ fontSize: "14px" }}>
-          No browser wallet detected. Install <strong>BridgeKey</strong> or{" "}
-          <strong>MetaMask</strong> to continue.
-        </p>
-        <a
-          href="https://metamask.io/download/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="button button-outline button-block"
-        >
-          Download MetaMask
-        </a>
+        {isMobile ? (
+          <>
+            <div
+              style={{
+                background: "rgba(99, 102, 241, 0.08)",
+                border: "1px solid rgba(99, 102, 241, 0.2)",
+                borderRadius: 8,
+                padding: "12px 14px",
+                fontSize: 13,
+                lineHeight: 1.5,
+              }}
+            >
+              <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>
+                📱 Mobile Web3 Connection
+              </strong>
+              Mobile browsers cannot run extensions. To connect your phone wallet:
+              <ol style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+                <li>
+                  Open your <strong>BridgeKey</strong> app on your phone.
+                </li>
+                <li>
+                  Go to the <strong>Browser / dApp</strong> tab.
+                </li>
+                <li>
+                  Navigate to <code>saker-app.vercel.app</code> to connect and sign with one tap.
+                </li>
+              </ol>
+            </div>
+
+            <a
+              href={`bridgekey://open?url=${encodeURIComponent(
+                typeof window !== "undefined"
+                  ? window.location.href
+                  : "https://saker-app.vercel.app/login",
+              )}`}
+              className="btn btn-primary btn-block"
+              style={{ textDecoration: "none" }}
+            >
+              📱 Open in BridgeKey App
+            </a>
+
+            <a
+              href="https://metamask.app.link/dapp/saker-app.vercel.app/login"
+              className="btn btn-outline btn-block"
+              style={{ textDecoration: "none" }}
+            >
+              🦊 Open in MetaMask Mobile
+            </a>
+          </>
+        ) : (
+          <>
+            <p className="alert alert-warning" style={{ fontSize: "14px" }}>
+              No browser extension detected. Please unlock or install <strong>BridgeKey</strong> or{" "}
+              <strong>MetaMask</strong> in your browser to continue.
+            </p>
+            <div className="row" style={{ gap: 8 }}>
+              <a
+                href="https://bridgekey.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary btn-block"
+                style={{ flex: 1, textDecoration: "none" }}
+              >
+                Get BridgeKey
+              </a>
+              <a
+                href="https://metamask.io/download/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline btn-block"
+                style={{ flex: 1, textDecoration: "none" }}
+              >
+                Get MetaMask
+              </a>
+            </div>
+          </>
+        )}
       </div>
     );
   }
