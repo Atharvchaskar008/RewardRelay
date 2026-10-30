@@ -74,6 +74,10 @@ export async function onboardInjectedWallet(
   provider: EIP1193Provider,
 ): Promise<{ view: UserView; address: Address }> {
   const address = await tx.requestWalletAddress(provider);
+  const { token } = await api.auth.token(address);
+  const { signInWithWalletToken } = await import("@/client/firebase");
+  await signInWithWalletToken(token);
+
   const challenge = await api.auth.challenge(address);
   let signature: Hex;
   try {

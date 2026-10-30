@@ -5,6 +5,7 @@ import {
   RecaptchaVerifier,
   connectAuthEmulator,
   getAuth,
+  signInWithCustomToken,
   signInWithPhoneNumber,
   type Auth,
   type ConfirmationResult,
@@ -47,6 +48,12 @@ export async function sendOtp(
   if (!instance) throw new Error("Phone sign-in is not configured yet.");
   verifier ??= new RecaptchaVerifier(instance, containerId, { size: "invisible" });
   return signInWithPhoneNumber(instance, phoneNumber, verifier);
+}
+
+export async function signInWithWalletToken(token: string) {
+  const instance = firebaseAuth();
+  if (!instance) throw new Error("Wallet sign-in is not configured yet.");
+  return signInWithCustomToken(instance, token);
 }
 
 export async function signOut(): Promise<void> {

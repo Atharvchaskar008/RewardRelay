@@ -28,9 +28,6 @@ export async function linkWallet(
   user: AuthUser,
   input: { address: Address; message: string; signature: Hex; walletKind?: WalletKind },
 ): Promise<UserView> {
-  if (!user.phoneNumber) {
-    throw new AppError("FORBIDDEN", { message: "Sign in with your phone number first." });
-  }
   const address = getAddress(input.address);
   await consumeChallenge({
     uid: user.uid,
@@ -39,7 +36,9 @@ export async function linkWallet(
     signature: input.signature,
   });
 
-  const phoneHash = keyring().phoneHash(user.phoneNumber);
+  const phoneHash = user.phoneNumber
+    ? keyring().phoneHash(user.phoneNumber)
+    : keyring().phoneHash(`wallet:${address.toLowerCase()}`);
   await claimIdentity(user.uid, phoneHash, address, input.walletKind ?? "embedded");
   // Different server wallets (verifier, funder): the mint and the top-up are sent side by side.
   // The top-up never throws; a failed mint is reported once the top-up has settled too.

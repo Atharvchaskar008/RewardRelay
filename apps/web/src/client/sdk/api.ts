@@ -119,6 +119,11 @@ export function createApiClient(options: ApiClientOptions) {
     health: () => request<HealthReport>("GET", "/api/health", { auth: false }),
 
     auth: {
+      token: (address: string) =>
+        request<{ token: string; uid: string }>("POST", "/api/auth/token", {
+          body: { address },
+          auth: false,
+        }),
       challenge: (address: string) =>
         request<Challenge>("POST", "/api/auth/challenge", { body: { address } }),
       linkWallet: (input: {

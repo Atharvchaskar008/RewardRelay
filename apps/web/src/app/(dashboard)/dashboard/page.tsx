@@ -57,7 +57,7 @@ function Welcome() {
           Card offers, minus the card.
         </h1>
         <p className="lead">
-          Sign in with your phone to buy with someone else&apos;s offer, or share your own.
+          Connect your wallet to buy with someone else&apos;s offer, or share your own.
         </p>
         <div className="row" style={{ gap: 12 }}>
           <Button href="/login" size="lg">

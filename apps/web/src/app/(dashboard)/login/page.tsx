@@ -1,176 +1,21 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import type { ConfirmationResult } from "firebase/auth";
+import { useState } from "react";
+import Link from "next/link";
 import { ErrorText, Page } from "@/components/ui";
 import {
   Avatar,
   Button,
   Card,
-  Field,
+  IconArrowLeft,
   IconChevronRight,
   Stat,
   inr,
   shortAddress,
 } from "@/components/ds";
 import { useBrowserWallets, useMe, useWallet, type InjectedWallet } from "@/client/sdk";
-import { firebaseConfigured } from "@/client/config";
-import { sendOtp } from "@/client/firebase";
-import { toE164 } from "@/client/phone";
-import { useSession } from "@/app/providers";
-
-/**
- * Phone OTP (Firebase) → a wallet linked to the phone: the PIN-protected device wallet, or a browser
- * wallet (BridgeKey, MetaMask) → Trust Badge and test MSTC.
- */
-
-function AuthCard({
-  step,
-  title,
-  children,
-}: {
-  step?: string;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <Page narrow>
-      <div className="auth">
-        <Card className="auth-card">
-          <div className="stack" style={{ gap: 8 }}>
-            {step && <span className="label">{step}</span>}
-            <h1 className="title-2">{title}</h1>
-          </div>
-          {children}
-        </Card>
-      </div>
-    </Page>
-  );
-}
 
 export default function LoginPage() {
-  const { ready, user } = useSession();
-  const [phone, setPhone] = useState("");
-  const [sentTo, setSentTo] = useState("");
-  const [code, setCode] = useState("");
-  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
-  const [error, setError] = useState<unknown>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function run(work: () => Promise<unknown>) {
-    setBusy(true);
-    setError(null);
-    try {
-      await work();
-    } catch (caught) {
-      setError(caught);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (!firebaseConfigured) {
-    return (
-      <AuthCard title="Sign in">
-        <p className="alert alert-danger">Phone sign-in is not configured on this site yet.</p>
-      </AuthCard>
-    );
-  }
-  if (!ready) {
-    return (
-      <AuthCard title="Sign in">
-        <p className="muted">Loading…</p>
-      </AuthCard>
-    );
-  }
-
-  if (!user) {
-    return (
-      <>
-        {!confirmation ? (
-          <AuthCard step="Step 1 of 3" title="Sign in">
-            <form
-              className="stack"
-              style={{ gap: 16 }}
-              onSubmit={(event) => {
-                event.preventDefault();
-                void run(async () => {
-                  const number = toE164(phone.startsWith("+") ? phone : `+91${phone}`);
-                  setConfirmation(await sendOtp(number, "recaptcha"));
-                  setSentTo(number);
-                });
-              }}
-            >
-              <Field label="Mobile number" htmlFor="phone">
-                <div className="prefix-input">
-                  <span>+91</span>
-                  <input
-                    id="phone"
-                    className="input input-mono"
-                    inputMode="tel"
-                    autoComplete="tel-national"
-                    placeholder="98765 43210"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </div>
-              </Field>
-              <Button type="submit" block size="lg" loading={busy}>
-                Send code
-              </Button>
-            </form>
-            <ErrorText error={error} />
-          </AuthCard>
-        ) : (
-          <AuthCard step="Step 2 of 3" title="Enter the code">
-            <form
-              className="stack"
-              style={{ gap: 16 }}
-              onSubmit={(event) => {
-                event.preventDefault();
-                void run(() => confirmation.confirm(code.replace(/\D/g, "")));
-              }}
-            >
-              <Field label={`Sent to ${sentTo}`} htmlFor="code">
-                <input
-                  id="code"
-                  className="input otp"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  placeholder="••••••"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                />
-              </Field>
-              <Button type="submit" block size="lg" loading={busy}>
-                Verify
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                block
-                disabled={busy}
-                onClick={() => {
-                  setConfirmation(null);
-                  setCode("");
-                  setError(null);
-                }}
-              >
-                Change number
-              </Button>
-            </form>
-            <ErrorText error={error} />
-          </AuthCard>
-        )}
-        <div id="recaptcha" />
-      </>
-    );
-  }
-  return <WalletStep />;
-}
-
-function WalletStep() {
   const wallet = useWallet();
   const me = useMe();
   const [error, setError] = useState<unknown>(null);
@@ -188,87 +33,171 @@ function WalletStep() {
     }
   }
 
-  if (!wallet.ready || me.isLoading) {
-    return (
-      <AuthCard title="Your wallet">
-        <p className="muted">Loading…</p>
-      </AuthCard>
-    );
-  }
+  return (
+    <Page>
+      <div className="auth-split-layout">
+        {/* Left column: Pure Web3 Sign in Bar */}
+        <div className="auth-split-left">
+          <Card className="auth-card auth-panel">
+            <div className="stack" style={{ gap: "var(--s-4)" }}>
+              <Link href="/" className="auth-back-link" title="Return to landing page">
+                <IconArrowLeft />
+                <span>Return to landing page</span>
+              </Link>
 
-  if (me.data && wallet.unlocked) {
-    return (
-      <AuthCard title="You're in">
-        <div className="hello">
-          <Avatar address={me.data.address} size={48} />
-          <div className="stack" style={{ gap: 2 }}>
-            <span className="num">{shortAddress(me.data.address)}</span>
-            <span className="faint" style={{ fontSize: 13 }}>
-              Signing with {wallet.browserWalletName ?? "Crypto wallet"}
-            </span>
+              <div className="stack" style={{ gap: "var(--s-2)" }}>
+                <span className="auth-badge-pill">SAKER ESCROW</span>
+                <h1 className="title-2" style={{ fontSize: "28px", letterSpacing: "-0.02em" }}>
+                  {me.data && wallet.unlocked ? "Connected" : "Sign in"}
+                </h1>
+                <p className="muted" style={{ fontSize: "14px", lineHeight: "1.5" }}>
+                  {me.data && wallet.unlocked
+                    ? "Your wallet is securely connected and verified on MST Blockchain."
+                    : "Connect your BridgeKey or MetaMask wallet to sign in, verify your Trust Badge, and participate in peer-to-peer escrow deals."}
+                </p>
+              </div>
+            </div>
+
+            {wallet.ready && me.data && wallet.unlocked ? (
+              <div className="stack" style={{ gap: "var(--s-5)" }}>
+                <div className="hello">
+                  <Avatar address={me.data.address} size={48} />
+                  <div className="stack" style={{ gap: 2 }}>
+                    <span className="num">{shortAddress(me.data.address)}</span>
+                    <span className="faint" style={{ fontSize: 13 }}>
+                      Signing with {wallet.browserWalletName ?? "Crypto wallet"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid" style={{ "--cols": 2 } as React.CSSProperties}>
+                  <Stat label="Trust Badge" value={me.data.badge.tierName} />
+                  <Stat
+                    label="Balance"
+                    value={inr(me.data.balanceInr)}
+                    sub={`${me.data.balanceMstc} MSTC`}
+                  />
+                </div>
+
+                <div className="stack" style={{ gap: "var(--s-3)" }}>
+                  <Button href="/explore" block size="lg">
+                    Explore offers
+                  </Button>
+                  <Button href="/dashboard" variant="outline" block>
+                    Go to overview
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    block
+                    disabled={busy}
+                    onClick={() =>
+                      runConnect(() => Promise.resolve(wallet.disconnectBrowserWallet()))
+                    }
+                  >
+                    Disconnect wallet
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="stack" style={{ gap: "var(--s-4)" }}>
+                <div className="stack" style={{ gap: "var(--s-3)" }}>
+                  <span className="label">Choose your wallet</span>
+                  <BrowserWalletPicker
+                    busy={busy}
+                    onPick={(picked) =>
+                      runConnect(() => wallet.connectBrowserWallet(picked, me.data?.address))
+                    }
+                  />
+                </div>
+
+                <div className="auth-feature-list">
+                  <div className="auth-feature-row">
+                    <span className="auth-feature-bullet" />
+                    <span>Non-custodial: Private keys remain solely in your wallet.</span>
+                  </div>
+                  <div className="auth-feature-row">
+                    <span className="auth-feature-bullet" />
+                    <span>Free authentication: Signing challenge requires zero gas.</span>
+                  </div>
+                  <div className="auth-feature-row">
+                    <span className="auth-feature-bullet" />
+                    <span>Automatic Trust Badge & test MSTC faucet top-up.</span>
+                  </div>
+                </div>
+
+                <ErrorText error={error} />
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Right column: Classical Artwork */}
+        <div className="auth-split-right">
+          <img
+            src="/art-desert.jpg"
+            alt="Alexander the Great pouring water into the desert sands"
+            className="auth-art-image"
+          />
+          <div className="auth-art-overlay">
+            <span className="auth-art-tag">Ethos of SAKER</span>
+            <h2 className="auth-art-quote">
+              &ldquo;True trust is proven in action, not promised in words.&rdquo;
+            </h2>
+            <p className="auth-art-caption">
+              Alexander the Great pours the offered helmet of water into the parched Gedrosian
+              desert, sharing the thirst of his men rather than quenching his own. In peer-to-peer
+              commerce, escrow ensures all parties share fairness and integrity.
+            </p>
           </div>
         </div>
-        <div className="grid" style={{ "--cols": 2 } as React.CSSProperties}>
-          <Stat label="Trust Badge" value={me.data.badge.tierName} />
-          <Stat
-            label="Balance"
-            value={inr(me.data.balanceInr)}
-            sub={`${me.data.balanceMstc} MSTC`}
-          />
-        </div>
-        <div className="stack" style={{ gap: 8 }}>
-          <Button href="/explore" block size="lg">
-            Explore offers
-          </Button>
-          <Button href="/dashboard" variant="outline" block>
-            Go to overview
-          </Button>
-          <Button variant="ghost" block onClick={() => wallet.disconnectBrowserWallet()}>
-            Disconnect wallet
-          </Button>
-        </div>
-      </AuthCard>
-    );
-  }
-
-  return (
-    <AuthCard step="Step 3 of 3" title="Connect your wallet">
-      <p className="muted">
-        Connect your BridgeKey or MetaMask wallet to sign transactions securely on MST Blockchain.
-      </p>
-      <BrowserWalletPicker
-        busy={busy}
-        onPick={(picked) => runConnect(() => wallet.connectBrowserWallet(picked, me.data?.address))}
-      />
-      <ErrorText error={error} />
-    </AuthCard>
+      </div>
+    </Page>
   );
 }
 
-/** The browser wallets found in this browser, one row each. */
 function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWallet) => void }) {
   const wallets = useBrowserWallets();
-  if (wallets === null) return <p className="faint">Looking for wallets…</p>;
+  if (wallets === null) return <p className="faint">Detecting installed wallets…</p>;
   if (wallets.length === 0) {
-    return <p className="faint">No wallet found. Install BridgeKey or MetaMask, then reload.</p>;
+    return (
+      <div className="stack" style={{ gap: "var(--s-3)" }}>
+        <p className="alert alert-warning" style={{ fontSize: "14px" }}>
+          No browser wallet detected. Install <strong>BridgeKey</strong> or{" "}
+          <strong>MetaMask</strong> to continue.
+        </p>
+        <a
+          href="https://metamask.io/download/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="button button-outline button-block"
+        >
+          Download MetaMask
+        </a>
+      </div>
+    );
   }
   return (
-    <div className="stack" style={{ gap: 8 }}>
+    <div className="stack" style={{ gap: "var(--s-2)" }}>
       {wallets.map((candidate) => (
         <button
           key={candidate.info.uuid}
           type="button"
-          className="option"
+          className="wallet-select-option"
           disabled={props.busy}
           onClick={() => props.onPick(candidate)}
         >
-          {candidate.info.icon ? (
-            // eslint-disable-next-line @next/next/no-img-element -- wallet icons are data: URIs
-            <img src={candidate.info.icon} alt="" width={24} height={24} />
-          ) : (
-            <Avatar size={24} />
-          )}
-          {candidate.info.name}
+          <div className="wallet-icon-wrapper">
+            {candidate.info.icon ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={candidate.info.icon} alt="" width={28} height={28} />
+            ) : (
+              <Avatar size={28} />
+            )}
+          </div>
+          <div className="wallet-text-wrapper">
+            <span className="wallet-title">{candidate.info.name}</span>
+            <span className="wallet-subtitle">MST Blockchain Compatible</span>
+          </div>
           <IconChevronRight />
         </button>
       ))}

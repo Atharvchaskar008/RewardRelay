@@ -285,6 +285,9 @@ export function useWallet() {
               "WrongAccount",
             );
           }
+          const { token } = await api.auth.token(address);
+          const { signInWithWalletToken } = await import("@/client/firebase");
+          await signInWithWalletToken(token);
         } else {
           ({ address } = await onboardInjectedWallet(api, picked.provider));
         }
@@ -305,6 +308,10 @@ export function useWallet() {
     disconnectBrowserWallet: () => {
       clearWalletChoice(accountId);
       setBrowserWallet(null);
+      void (async () => {
+        const { signOut } = await import("@/client/firebase");
+        await signOut();
+      })();
     },
     /** Creates or unlocks the device wallet, links it to the phone account and uploads the backup. */
     create: (pin: string) => run(() => onboardWallet(api, wallet, pin)),

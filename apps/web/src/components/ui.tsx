@@ -90,7 +90,7 @@ export function RequireSignIn({ children }: { children: ReactNode }) {
       <DsCard className="signin-card">
         <span className="label">Sign in</span>
         <h2 className="title-3">Sign in to continue</h2>
-        <Button href="/login">Sign in with your phone</Button>
+        <Button href="/login">Connect wallet to sign in</Button>
       </DsCard>
     );
   }
