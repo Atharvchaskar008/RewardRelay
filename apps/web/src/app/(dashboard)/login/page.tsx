@@ -108,6 +108,21 @@ export default function LoginPage() {
                   />
                 </div>
 
+                <div className="row" style={{ alignItems: "center", gap: 12, margin: "4px 0" }}>
+                  <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                  <span
+                    className="faint"
+                    style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}
+                  >
+                    or explore
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                </div>
+
+                <Button href="/dashboard" variant="outline" block size="md">
+                  Enter Guest Mode &rarr;
+                </Button>
+
                 <ErrorText error={error} />
               </div>
             )}

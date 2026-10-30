@@ -82,9 +82,14 @@ export function AppNav() {
           {user ? (
             <AccountPill />
           ) : pathname === "/login" ? null : (
-            <Button href="/login" size="sm">
-              Sign in
-            </Button>
+            <div className="row" style={{ gap: 8, alignItems: "center" }}>
+              <span className="pill pill-subtle" style={{ fontSize: 12, padding: "2px 8px" }}>
+                Guest Mode
+              </span>
+              <Button href="/login" size="sm">
+                Connect Wallet
+              </Button>
+            </div>
           )}
         </div>
       </header>
