@@ -9,8 +9,12 @@ export const dynamic = "force-dynamic";
 export const POST = withRoute(
   {
     name: "auth.challenge",
+    auth: "none",
     body: z.object({ address: addressInput }),
-    rateLimit: { capacity: 10, refillPerMinute: 10 },
+    rateLimit: { capacity: 30, refillPerMinute: 30 },
   },
-  async ({ body, user }) => createChallenge(user!.uid, body.address),
+  async ({ body, user }) => {
+    const uid = user?.uid ?? `wallet:${body.address.toLowerCase()}`;
+    return createChallenge(uid, body.address);
+  },
 );

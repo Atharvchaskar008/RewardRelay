@@ -118,11 +118,27 @@ export async function injectedChainContext(
 export async function requestWalletAddress(provider: EIP1193Provider): Promise<Address> {
   try {
     const [address] = await createWalletClient({ transport: custom(provider) }).requestAddresses();
-    if (!address) throw new ChainError("Your wallet did not share an account.", "NoAccount");
-    return getAddress(address);
-  } catch (error) {
-    throw toChainError(error);
+    if (address) return getAddress(address);
+  } catch {
+    // Continue to direct provider requests below
   }
+
+  try {
+    const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
+    if (accounts && accounts[0]) return getAddress(accounts[0]);
+  } catch {
+    try {
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      if (accounts && accounts[0]) return getAddress(accounts[0]);
+    } catch {
+      // Fall through to error
+    }
+  }
+
+  throw new ChainError(
+    "Your wallet did not share an account. Please unlock and select an account.",
+    "NoAccount",
+  );
 }
 
 /**
@@ -187,16 +203,7 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
     setTimeout(() => {
       window.removeEventListener("eip6963:announceProvider", onAnnounce);
 
-      const win = window as unknown as {
-        bridgekey?: EIP1193Provider;
-        bridgeKey?: EIP1193Provider;
-        mst?: EIP1193Provider;
-        ethereum?: EIP1193Provider & {
-          providers?: (EIP1193Provider & { isBridgeKey?: boolean; isMetaMask?: boolean })[];
-          isBridgeKey?: boolean;
-          isMetaMask?: boolean;
-        };
-      };
+      const win = window as any;
 
       const hasBridgeKey = [...found.values()].some(
         (w) =>
@@ -204,8 +211,17 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
           w.info.rdns.toLowerCase().includes("bridgekey"),
       );
 
-      // Check explicit window.bridgekey or window.bridgeKey
-      const explicitBridgeKey = win.bridgekey ?? win.bridgeKey ?? win.mst;
+      // Check explicit window.bridgekey, window.bridgeKey, window.BridgeKey, or window.mst
+      const explicitBridgeKey =
+        win.bridgekey ??
+        win.bridgeKey ??
+        win.BridgeKey ??
+        win.Bridgekey ??
+        win.mst ??
+        win.MST ??
+        win.mstWallet ??
+        win.mstChain;
+
       if (explicitBridgeKey && !hasBridgeKey) {
         found.set("io.bridgekey.wallet", {
           info: {
@@ -221,7 +237,9 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
       // Check window.ethereum.providers array (when multiple extensions coexist)
       if (win.ethereum?.providers && Array.isArray(win.ethereum.providers)) {
         for (const p of win.ethereum.providers) {
-          if (p.isBridgeKey && !hasBridgeKey) {
+          const isBk =
+            p.isBridgeKey || p.bridgeKey || p.isMST || p.name?.toLowerCase().includes("bridgekey");
+          if (isBk && !found.has("io.bridgekey.wallet")) {
             found.set("io.bridgekey.wallet", {
               info: {
                 uuid: "bridgekey-provider",
@@ -236,16 +254,23 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
       }
 
       // Check if window.ethereum itself is BridgeKey
-      if (win.ethereum?.isBridgeKey && !hasBridgeKey) {
-        found.set("io.bridgekey.wallet", {
-          info: {
-            uuid: "bridgekey-injected",
-            name: "BridgeKey",
-            icon: "",
-            rdns: "io.bridgekey.wallet",
-          },
-          provider: win.ethereum,
-        });
+      if (win.ethereum) {
+        const isBk =
+          win.ethereum.isBridgeKey ||
+          win.ethereum.bridgeKey ||
+          win.ethereum.isMST ||
+          (!win.ethereum.isMetaMask && !win.ethereum.isCoinbaseWallet);
+        if (isBk && !found.has("io.bridgekey.wallet")) {
+          found.set("io.bridgekey.wallet", {
+            info: {
+              uuid: "bridgekey-injected",
+              name: "BridgeKey",
+              icon: "",
+              rdns: "io.bridgekey.wallet",
+            },
+            provider: win.ethereum,
+          });
+        }
       }
 
       // Fallback for legacy window.ethereum when no wallets announced through EIP-6963

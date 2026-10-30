@@ -158,7 +158,42 @@ export default function LoginPage() {
 function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWallet) => void }) {
   const wallets = useBrowserWallets();
   if (wallets === null) return <p className="faint">Detecting installed wallets…</p>;
-  if (wallets.length === 0) {
+
+  // Check if window has an injected provider (BridgeKey or window.ethereum)
+  const win = typeof window !== "undefined" ? (window as any) : undefined;
+  const directBk =
+    win?.bridgekey ?? win?.bridgeKey ?? win?.BridgeKey ?? win?.Bridgekey ?? win?.mst ?? win?.MST;
+  const directEth = win?.ethereum;
+
+  const displayWallets = [...(wallets ?? [])];
+
+  // If BridgeKey is in window but not in EIP-6963 list, prepend it
+  if (directBk && !displayWallets.some((w) => w.info.name.toLowerCase().includes("bridgekey"))) {
+    displayWallets.unshift({
+      info: {
+        uuid: "bridgekey-direct-picker",
+        name: "BridgeKey",
+        icon: "",
+        rdns: "io.bridgekey.wallet",
+      },
+      provider: directBk,
+    });
+  }
+
+  // If no wallets were found via EIP-6963 but window.ethereum exists, provide direct option
+  if (displayWallets.length === 0 && directEth) {
+    displayWallets.push({
+      info: {
+        uuid: "injected-direct-picker",
+        name: directEth.isMetaMask ? "MetaMask" : "BridgeKey",
+        icon: "",
+        rdns: "io.injected.wallet",
+      },
+      provider: directEth,
+    });
+  }
+
+  if (displayWallets.length === 0) {
     return (
       <div className="stack" style={{ gap: "var(--s-3)" }}>
         <p className="alert alert-warning" style={{ fontSize: "14px" }}>
@@ -176,9 +211,10 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
       </div>
     );
   }
+
   return (
     <div className="stack" style={{ gap: "var(--s-2)" }}>
-      {wallets.map((candidate) => (
+      {displayWallets.map((candidate) => (
         <button
           key={candidate.info.uuid}
           type="button"

@@ -74,11 +74,11 @@ export async function onboardInjectedWallet(
   provider: EIP1193Provider,
 ): Promise<{ view: UserView; address: Address }> {
   const address = await tx.requestWalletAddress(provider);
-  const { token } = await api.auth.token(address);
-  const { signInWithWalletToken } = await import("@/client/firebase");
-  await signInWithWalletToken(token);
 
+  // 1. Fetch SIWE challenge directly
   const challenge = await api.auth.challenge(address);
+
+  // 2. Request signature from the wallet with fallbacks for BridgeKey
   let signature: Hex;
   try {
     signature = await createWalletClient({ transport: custom(provider) }).signMessage({
@@ -86,8 +86,37 @@ export async function onboardInjectedWallet(
       message: challenge.message,
     });
   } catch (error) {
-    throw toChainError(error);
+    try {
+      const hex = ("0x" + Buffer.from(challenge.message, "utf8").toString("hex")) as Hex;
+      signature = (await provider.request({
+        method: "personal_sign",
+        params: [hex, address],
+      })) as Hex;
+    } catch {
+      try {
+        signature = (await provider.request({
+          method: "personal_sign",
+          params: [challenge.message, address],
+        })) as Hex;
+      } catch {
+        try {
+          signature = (await provider.request({
+            method: "personal_sign",
+            params: [address, challenge.message],
+          })) as Hex;
+        } catch {
+          throw toChainError(error);
+        }
+      }
+    }
   }
+
+  // 3. Authenticate with Firebase for this wallet
+  const { token } = await api.auth.token(address);
+  const { signInWithWalletToken } = await import("@/client/firebase");
+  await signInWithWalletToken(token);
+
+  // 4. Link wallet
   const view = await api.auth.linkWallet({
     address,
     message: challenge.message,
