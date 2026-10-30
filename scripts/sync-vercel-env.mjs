@@ -39,7 +39,7 @@ for (const rawLine of lines) {
 }
 
 // Ensure APP_URL for production
-vars["APP_URL"] = "https://sakar-app.vercel.app";
+vars["APP_URL"] = "https://saker-app.vercel.app";
 
 console.log(`Parsed ${Object.keys(vars).length} environment variables.`);
 
@@ -50,7 +50,7 @@ for (const [key, value] of Object.entries(vars)) {
   }
   process.stdout.write(`Updating ${key}... `);
   try {
-    execSync(`npx vercel env add ${key} production --project sakar --force`, {
+    execSync(`npx vercel env add ${key} production --project saker --force`, {
       input: value,
       stdio: ["pipe", "ignore", "inherit"],
     });

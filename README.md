@@ -10,7 +10,7 @@
 [![Solidity 0.8.24](https://img.shields.io/badge/solidity-0.8.24-363636.svg)](packages/contracts)
 [![Node.js 22+](https://img.shields.io/badge/node-%3E%3D22-339933.svg)](package.json)
 [![Contract coverage: 100%](https://img.shields.io/badge/contract%20coverage-100%25-brightgreen.svg)](docs/testing.md)
-[![Live: __SAKER_APP_URL__](https://img.shields.io/badge/live-sakar--app.vercel.app-black.svg)](https://__SAKER_APP_URL__)
+[![Live: __SAKER_APP_URL__](https://img.shields.io/badge/live-saker--app.vercel.app-black.svg)](https://__SAKER_APP_URL__)
 [![Health: ok](https://img.shields.io/badge/health-ok-brightgreen.svg)](https://__SAKER_APP_URL__/api/health)
 
 [Overview](#overview) · [How It Works](#how-it-works) · [Architecture](#system-architecture) · [Frontend Integration & SDK](#frontend-integration--client-sdk) · [Smart Contracts](#smart-contracts--economics) · [Deployments](#live-deployments--mstscan-records) · [Development](#getting-started) · [Testing](#testing--verification) · [Docs](#documentation)
