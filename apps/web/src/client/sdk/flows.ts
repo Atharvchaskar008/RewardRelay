@@ -330,8 +330,7 @@ export async function runDealAction(
   let outcome: TxOutcome | undefined;
   switch (action) {
     case "PAY":
-      outcome = (await payForDeal(sdk, deal.id, input.details)).tx;
-      break;
+      return payForDeal(sdk, deal.id, input.details);
     case "MARK_DELIVERED":
       if (!input.proof) throw new ChainError("Enter the order id first.");
       outcome = (await deliverOrder(sdk, deal.id, input.proof)).tx;

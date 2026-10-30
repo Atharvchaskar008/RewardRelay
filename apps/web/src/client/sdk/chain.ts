@@ -53,8 +53,8 @@ export interface TxOutcome {
 }
 
 const RECEIPT_TIMEOUT_MS = 120_000;
-/** MST makes a block about every 3 s; viem's default 4 s polling would add up to 4 s per transaction. */
-const POLLING_MS = 1_000;
+/** MST makes a block about every 3 s; poll at 350 ms to catch inclusion immediately. */
+const POLLING_MS = 350;
 
 export function viemChain(config: ChainConfig): Chain {
   const known = chainById(config.chainId);
@@ -233,7 +233,7 @@ export interface InjectedWallet {
  * Browser wallets: EIP-6963 announcements (several extensions side by side) for `waitMs`, and the
  * legacy `window.ethereum` when nothing announces itself (wallet in-app browsers, older extensions).
  */
-export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]> {
+export function discoverInjectedWallets(waitMs = 120): Promise<InjectedWallet[]> {
   if (typeof window === "undefined") return Promise.resolve([]);
   const found = new Map<string, InjectedWallet>();
   const onAnnounce = (event: Event) => {
@@ -392,8 +392,7 @@ async function sendEscrow(
   } as never;
   let hash: Hash | undefined;
   try {
-    await ctx.ensureChain?.();
-    await ctx.publicClient.simulateContract(call);
+    await Promise.all([ctx.ensureChain?.(), ctx.publicClient.simulateContract(call)]);
     hash = await ctx.walletClient.writeContract({
       ...(call as object),
       chain: ctx.chain,

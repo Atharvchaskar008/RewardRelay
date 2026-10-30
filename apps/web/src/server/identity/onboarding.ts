@@ -41,16 +41,13 @@ export async function linkWallet(
     : keyring().phoneHash(`wallet:${address.toLowerCase()}`);
   await claimIdentity(user.uid, phoneHash, address, input.walletKind ?? "embedded");
 
-  // Run badge verification and welcome faucet top-up concurrently.
-  // Allow a fast 1.2s settlement window, but never hold up or fail the user's login on chain congestion.
-  const chainOps = Promise.allSettled([
-    ensureBadge(user.uid, address),
-    ensureTopup(user.uid, address),
-  ]).catch((err) => {
-    log("warn", "onboarding.chain_tasks_delayed", errorFields(err));
-  });
-
-  await Promise.race([chainOps, new Promise((resolve) => setTimeout(resolve, 1200))]);
+  // Run badge verification and welcome faucet top-up concurrently in the background.
+  // Never hold up or block the user's login response on slow block mining.
+  void Promise.allSettled([ensureBadge(user.uid, address), ensureTopup(user.uid, address)]).catch(
+    (err) => {
+      log("warn", "onboarding.chain_tasks_delayed", errorFields(err));
+    },
+  );
 
   return buildUserView(address, await repos.users.get(user.uid));
 }

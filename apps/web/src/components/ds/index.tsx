@@ -44,6 +44,7 @@ export function Button({
     return (
       <Link
         href={href}
+        prefetch={external ? undefined : true}
         className={classes}
         {...(external ? { target: "_blank", rel: "noreferrer noopener" } : {})}
       >

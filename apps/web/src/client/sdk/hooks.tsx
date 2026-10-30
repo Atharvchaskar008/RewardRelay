@@ -215,7 +215,11 @@ export function useSdkContext(): () => SdkContext {
 /** The signed-in user's view (null until a wallet is linked). */
 export function useMe() {
   const { api, accountId } = useRewardRelay();
-  return useQuery({ queryKey: ["me", accountId], queryFn: () => api.me() });
+  return useQuery({
+    queryKey: ["me", accountId],
+    queryFn: () => api.me(),
+    staleTime: 10_000,
+  });
 }
 
 export interface WalletState {
@@ -346,6 +350,7 @@ export function useListings(filter: { category?: string; status?: "open" | "all"
     queryFn: ({ pageParam }) => api.listings.list({ ...filter, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
+    staleTime: 15_000,
   });
 }
 

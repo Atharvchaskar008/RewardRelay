@@ -572,6 +572,13 @@ a.list-row:hover {
   cursor: not-allowed;
 }
 
+.wallet-select-option.wallet-select-option-active {
+  opacity: 1 !important;
+  border-color: #1e17fc !important;
+  background: #f4f4fe !important;
+  box-shadow: 0 0 0 2px rgba(30, 23, 252, 0.15);
+}
+
 .wallet-icon-wrapper {
   display: flex;
   align-items: center;

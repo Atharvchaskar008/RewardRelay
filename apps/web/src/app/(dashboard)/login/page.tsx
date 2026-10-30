@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ErrorText, Page } from "@/components/ui";
 import {
@@ -145,6 +145,11 @@ export default function LoginPage() {
 
 function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWallet) => void }) {
   const wallets = useBrowserWallets();
+  const [connectingUuid, setConnectingUuid] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!props.busy) setConnectingUuid(null);
+  }, [props.busy]);
   if (wallets === null) return <p className="faint">Detecting installed wallets…</p>;
 
   // Check if window has an injected provider (BridgeKey or window.ethereum)
@@ -254,29 +259,54 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
 
   return (
     <div className="stack" style={{ gap: "var(--s-2)" }}>
-      {displayWallets.map((candidate) => (
-        <button
-          key={candidate.info.uuid}
-          type="button"
-          className="wallet-select-option"
-          disabled={props.busy}
-          onClick={() => props.onPick(candidate)}
-        >
-          <div className="wallet-icon-wrapper">
-            {candidate.info.icon ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={candidate.info.icon} alt="" width={28} height={28} />
-            ) : (
-              <Avatar size={28} />
-            )}
-          </div>
-          <div className="wallet-text-wrapper">
-            <span className="wallet-title">{candidate.info.name}</span>
-            <span className="wallet-subtitle">MST Blockchain Compatible</span>
-          </div>
-          <IconChevronRight />
-        </button>
-      ))}
+      {displayWallets.map((candidate) => {
+        const isConnecting = props.busy && connectingUuid === candidate.info.uuid;
+        return (
+          <button
+            key={candidate.info.uuid}
+            type="button"
+            className={`wallet-select-option ${isConnecting ? "wallet-select-option-active" : ""}`}
+            disabled={props.busy}
+            onClick={() => {
+              setConnectingUuid(candidate.info.uuid);
+              props.onPick(candidate);
+            }}
+          >
+            <div className="wallet-icon-wrapper">
+              {isConnecting ? (
+                <span
+                  className="spinner"
+                  style={{
+                    width: 20,
+                    height: 20,
+                    border: "2px solid var(--accent)",
+                    borderRightColor: "transparent",
+                    borderRadius: "50%",
+                    display: "inline-block",
+                    animation: "spin 700ms linear infinite",
+                  }}
+                />
+              ) : candidate.info.icon ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={candidate.info.icon} alt="" width={28} height={28} />
+              ) : (
+                <Avatar size={28} />
+              )}
+            </div>
+            <div className="wallet-text-wrapper">
+              <span className="wallet-title">
+                {isConnecting ? `Opening ${candidate.info.name}…` : candidate.info.name}
+              </span>
+              <span className="wallet-subtitle">
+                {isConnecting
+                  ? "Approve the prompt in your extension"
+                  : "MST Blockchain Compatible"}
+              </span>
+            </div>
+            <IconChevronRight />
+          </button>
+        );
+      })}
       <p className="faint" style={{ fontSize: "12px", textAlign: "center", margin: "4px 0 0" }}>
         Please unlock your wallet extension with your password/PIN before connecting.
       </p>
