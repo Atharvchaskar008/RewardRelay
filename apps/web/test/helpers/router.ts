@@ -14,6 +14,7 @@ type RouteModule = Partial<Record<"GET" | "POST" | "PUT", Handler>>;
 const ROUTES: [string, () => Promise<RouteModule>][] = [
   ["/api/health", () => import("@/app/api/health/route")],
   ["/api/auth/challenge", () => import("@/app/api/auth/challenge/route")],
+  ["/api/auth/token", () => import("@/app/api/auth/token/route")],
   ["/api/auth/link-wallet", () => import("@/app/api/auth/link-wallet/route")],
   ["/api/me", () => import("@/app/api/me/route")],
   ["/api/wallet/backup", () => import("@/app/api/wallet/backup/route")],

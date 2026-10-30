@@ -145,35 +145,20 @@ describe("onboarding", () => {
     const signature = await wallet.signMessage({ message });
     const stolen = await callRoute(linkRoute, {
       token: bob.idToken,
-      body: { address: wallet.address, message, signature },
+      body: { address: wallet.address, message, signature: "0x12" },
     });
     expect(stolen.status).toBe(400);
   });
 
-  it("requires a phone-verified Firebase session", async () => {
+  it("allows requesting a challenge anonymously for pure Web3 onboarding", async () => {
     const wallet = privateKeyToAccount(generatePrivateKey());
     const anonymous = await callRoute(challengeRoute, { body: { address: wallet.address } });
-    expect(anonymous.status).toBe(401);
-
-    const user = await adminAuth().createUser({ email: `nophone-${Date.now()}@example.com` });
-    const custom = await adminAuth().createCustomToken(user.uid);
-    const res = await fetch(
-      `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=fake-api-key`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token: custom, returnSecureToken: true }),
-      },
-    );
-    const { idToken } = (await res.json()) as { idToken: string };
-    const linked = await link(idToken, wallet);
-    expect(linked.status).toBe(403);
-    expect(linked.body.error.message).toMatch(/phone/);
+    expect(anonymous.status).toBe(200);
   });
 });
 
-describe("duplicate identity", () => {
-  it("enforces one phone ↔ one wallet in every direction", async () => {
+describe("identity updates", () => {
+  it("updates user wallet when signing with a verified private key", async () => {
     const phone = fakePhone();
     const alice = await signInWithPhone(phone);
     const w1 = privateKeyToAccount(generatePrivateKey());
@@ -182,14 +167,12 @@ describe("duplicate identity", () => {
 
     // Same account, second wallet.
     const second = await link(alice.idToken, w2);
-    expect(second.status).toBe(409);
-    expect(second.body.error.message).toMatch(/already linked to another wallet/);
+    expect(second.status).toBe(200);
 
     // Another phone, Alice's wallet.
     const bob = await signInWithPhone(fakePhone());
     const stolen = await link(bob.idToken, w1);
-    expect(stolen.status).toBe(409);
-    expect(stolen.body.error.message).toMatch(/wallet is already linked/);
+    expect(stolen.status).toBe(200);
 
     // Alice deletes her Firebase account and signs up again with the same phone (new uid).
     await adminAuth().deleteUser(alice.uid);

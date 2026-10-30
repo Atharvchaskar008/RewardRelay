@@ -149,7 +149,15 @@ describe("session revocation", () => {
     expect((await callRoute(meRoute, { token: user.idToken })).status).toBe(404);
     await pause();
     await adminAuth().revokeRefreshTokens(user.uid);
-    expect((await challenge(user.idToken)).status).toBe(401);
+    const stolen = await callRoute(linkRoute, {
+      token: user.idToken,
+      body: {
+        address: "0x000000000000000000000000000000000000dEaD",
+        message: "m",
+        signature: "0x12",
+      },
+    });
+    expect(stolen.status).toBe(401);
 
     // A reader whose revocation was not checked recently is refused too. (Reusing a recent check for
     // up to a minute is covered by the RevocationCache unit test: under the emulator the Admin SDK
