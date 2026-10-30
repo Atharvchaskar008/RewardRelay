@@ -142,7 +142,6 @@ describe("onboarding", () => {
     expect(forged.status).toBe(403);
 
     const { message } = await challenge(alice.idToken, wallet);
-    const signature = await wallet.signMessage({ message });
     const stolen = await callRoute(linkRoute, {
       token: bob.idToken,
       body: { address: wallet.address, message, signature: "0x12" },

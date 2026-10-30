@@ -6,7 +6,6 @@ import { POST as resolveRoute } from "@/app/api/admin/disputes/[id]/resolve/rout
 import { GET as adminListRoute } from "@/app/api/admin/disputes/route";
 import { POST as evidenceRoute } from "@/app/api/disputes/[id]/evidence/route";
 import { POST as rpcRoute } from "@/app/api/rpc/[network]/route";
-import { POST as challengeRoute } from "@/app/api/auth/challenge/route";
 import { GET as meRoute } from "@/app/api/me/route";
 import { adminAuth } from "@/server/firebaseAdmin";
 import { repos } from "@/server/repositories";
@@ -134,11 +133,6 @@ describe("admin conflict of interest", () => {
 });
 
 describe("session revocation", () => {
-  const challenge = (token: string) =>
-    callRoute(challengeRoute, {
-      token,
-      body: { address: "0x000000000000000000000000000000000000dEaD" },
-    });
   // A token issued in the same second as the revocation still counts as valid (Firebase compares
   // seconds), so each revocation happens a little over a second after sign-in.
   const pause = () => new Promise((resolve) => setTimeout(resolve, 1_100));
