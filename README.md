@@ -4,14 +4,14 @@
 
 **A trusted peer-to-peer marketplace for unused rewards and card perks, secured by smart contract escrow and on-chain reputation on MST Blockchain.**
 
-[![CI](https://github.com/Atharvchaskar008/__SAKER_REPO__/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharvchaskar008/__SAKER_REPO__/actions/workflows/ci.yml)
+[![CI](https://github.com/Atharvchaskar008/SAKER/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharvchaskar008/SAKER/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Network: MST Testnet](https://img.shields.io/badge/network-MST%20Testnet-6f42c1.svg)](https://testnet.mstscan.com/address/0x5aB34fB9CFce4a442b2CA773692a7D031D173C9A)
+[![Network: MST Mainnet](<https://img.shields.io/badge/network-MST%20Mainnet%20(4646)-6f42c1.svg>)](https://mstscan.com/address/0xE13c653b082E8243eD0ceE972463a949AB2743a7)
 [![Solidity 0.8.24](https://img.shields.io/badge/solidity-0.8.24-363636.svg)](packages/contracts)
 [![Node.js 22+](https://img.shields.io/badge/node-%3E%3D22-339933.svg)](package.json)
 [![Contract coverage: 100%](https://img.shields.io/badge/contract%20coverage-100%25-brightgreen.svg)](docs/testing.md)
-[![Live: __SAKER_APP_URL__](https://img.shields.io/badge/live-saker--app.vercel.app-black.svg)](https://__SAKER_APP_URL__)
-[![Health: ok](https://img.shields.io/badge/health-ok-brightgreen.svg)](https://__SAKER_APP_URL__/api/health)
+[![Live: saker-app.vercel.app](https://img.shields.io/badge/live-saker--app.vercel.app-black.svg)](https://saker-app.vercel.app)
+[![Health: ok](https://img.shields.io/badge/health-ok-brightgreen.svg)](https://saker-app.vercel.app/api/health)
 
 [Overview](#overview) · [How It Works](#how-it-works) · [Architecture](#system-architecture) · [Frontend Integration & SDK](#frontend-integration--client-sdk) · [Smart Contracts](#smart-contracts--economics) · [Deployments](#live-deployments--mstscan-records) · [Development](#getting-started) · [Testing](#testing--verification) · [Docs](#documentation)
 
@@ -35,8 +35,8 @@ Every year, billions of rupees in credit card offers, airport lounge access pass
 > Geist Mono, one electric-blue accent, a generative pixel field and pixel avatars derived from each
 > wallet address. Landing page designed by Atharv Chaskar.
 
-> **MST Blockchain Buildathon #2** (Round 2 MVP). Deployed on **MST Testnet** (Chain ID `91562037`) with test MSTC (tMSTC).  
-> **Production Live App:** [**SAKER_APP_URL**](https://__SAKER_APP_URL__) · **System Health:** [**SAKER_APP_URL**/api/health](https://__SAKER_APP_URL__/api/health)
+> **MST Blockchain Buildathon #2** (Round 2 MVP). Deployed on **MST Mainnet** (Chain ID `4646`) and **MST Testnet** (Chain ID `91562037`).  
+> **Production Live App:** [**saker-app.vercel.app**](https://saker-app.vercel.app) · **Mirror:** [**sakar-app.vercel.app**](https://sakar-app.vercel.app) · **System Health:** [**saker-app.vercel.app/api/health**](https://saker-app.vercel.app/api/health)
 
 ---
 
@@ -56,6 +56,31 @@ Every year, billions of rupees in credit card offers, airport lounge access pass
    Smart contracts cannot self-execute. A scheduled keeper calls `release()` for expired return windows, triggers default dispute rulings, purges expired PII, and cleans up rate-limiting records every 2 minutes. Any network participant can trigger these public release methods.
 7. **Native Gas Relayer Service (`/api/relay`)**  
    Users never need to hold or manage MSTC tokens for gas fees. SAKER integrates a dedicated server-side transaction relayer (`src/server/signer.ts`, `/api/relay`) that sponsors gas, manages strict nonce sequencing with exponential backoff, and provides a seamless zero-gas transaction experience.
+
+---
+
+## ⚡ Quick Start for Judges (2-Minute Evaluation)
+
+Welcome, Judges! SAKER is live and accessible without mandatory wallet configuration or gas tokens.
+
+### Option A: Instant Guest Mode (No Extension Needed)
+
+1. Navigate directly to [**saker-app.vercel.app/explore**](https://saker-app.vercel.app/explore) or click **"Enter Guest Mode →"** on the [Login Page](https://saker-app.vercel.app/login).
+2. Browse active benefit offers across E-Commerce, Dining, Travel, and Digital Vouchers.
+3. Click any offer to inspect the trustless state machine, on-chain deposit requirements, and automated dispute resolution timers.
+
+### Option B: Web3 Wallet Experience (BridgeKey or MetaMask)
+
+1. Open [**saker-app.vercel.app/login**](https://saker-app.vercel.app/login).
+2. Select **BridgeKey** or **MetaMask** — the app detects your extension and prompts to switch to **MST Chain (`4646`)**.
+3. Sign the one-click EIP-4361 SIWE challenge to claim your on-chain **Trust Badge** (`ReputationSBT`).
+4. In the Deal Room, test instant on-chain escrow commitments with real-time 350ms block confirmations.
+
+### Smart Contracts on MST Mainnet (Chain ID `4646`)
+
+- **RelayEscrow:** [`0xE13c653b082E8243eD0ceE972463a949AB2743a7`](https://mstscan.com/address/0xE13c653b082E8243eD0ceE972463a949AB2743a7)
+- **ReputationSBT:** [`0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e`](https://mstscan.com/address/0x8dcF8EB4F893b415BD32c6Aab44cbecD49A4690e)
+- **RPC Endpoint:** `https://mariorpc.mstblockchain.com`
 
 ---
 
