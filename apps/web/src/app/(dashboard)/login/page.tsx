@@ -160,10 +160,16 @@ function BrowserWalletPicker(props: { busy: boolean; onPick: (wallet: InjectedWa
   if (wallets === null) return <p className="faint">Detecting installed wallets…</p>;
 
   // Check if window has an injected provider (BridgeKey or window.ethereum)
-  const win = typeof window !== "undefined" ? (window as any) : undefined;
-  const directBk =
-    win?.bridgekey ?? win?.bridgeKey ?? win?.BridgeKey ?? win?.Bridgekey ?? win?.mst ?? win?.MST;
-  const directEth = win?.ethereum;
+  const win =
+    typeof window !== "undefined" ? (window as unknown as Record<string, unknown>) : undefined;
+  const directBk = (win?.bridgekey ??
+    win?.bridgeKey ??
+    win?.BridgeKey ??
+    win?.Bridgekey ??
+    win?.mst ??
+    win?.MST) as InjectedWallet["provider"] | undefined;
+  const directEth = win?.ethereum as
+    (InjectedWallet["provider"] & { isMetaMask?: boolean }) | undefined;
 
   const displayWallets = [...(wallets ?? [])];
 

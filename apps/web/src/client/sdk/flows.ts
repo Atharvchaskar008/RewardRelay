@@ -86,21 +86,27 @@ export async function onboardInjectedWallet(
       message: challenge.message,
     });
   } catch (error) {
+    const raw = provider as unknown as {
+      request: (args: {
+        method: string;
+        params?: unknown[] | Record<string, unknown>;
+      }) => Promise<unknown>;
+    };
     try {
       const hex = ("0x" + Buffer.from(challenge.message, "utf8").toString("hex")) as Hex;
-      signature = (await provider.request({
+      signature = (await raw.request({
         method: "personal_sign",
         params: [hex, address],
       })) as Hex;
     } catch {
       try {
-        signature = (await provider.request({
+        signature = (await raw.request({
           method: "personal_sign",
           params: [challenge.message, address],
         })) as Hex;
       } catch {
         try {
-          signature = (await provider.request({
+          signature = (await raw.request({
             method: "personal_sign",
             params: [address, challenge.message],
           })) as Hex;

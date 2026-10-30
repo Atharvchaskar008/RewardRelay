@@ -123,12 +123,18 @@ export async function requestWalletAddress(provider: EIP1193Provider): Promise<A
     // Continue to direct provider requests below
   }
 
+  const raw = provider as unknown as {
+    request: (args: {
+      method: string;
+      params?: unknown[] | Record<string, unknown>;
+    }) => Promise<unknown>;
+  };
   try {
-    const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
+    const accounts = (await raw.request({ method: "eth_requestAccounts" })) as string[];
     if (accounts && accounts[0]) return getAddress(accounts[0]);
   } catch {
     try {
-      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      const accounts = (await raw.request({ method: "eth_accounts" })) as string[];
       if (accounts && accounts[0]) return getAddress(accounts[0]);
     } catch {
       // Fall through to error
@@ -203,7 +209,7 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
     setTimeout(() => {
       window.removeEventListener("eip6963:announceProvider", onAnnounce);
 
-      const win = window as any;
+      const win = window as unknown as Record<string, unknown>;
 
       const hasBridgeKey = [...found.values()].some(
         (w) =>
@@ -212,15 +218,14 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
       );
 
       // Check explicit window.bridgekey, window.bridgeKey, window.BridgeKey, or window.mst
-      const explicitBridgeKey =
-        win.bridgekey ??
+      const explicitBridgeKey = (win.bridgekey ??
         win.bridgeKey ??
         win.BridgeKey ??
         win.Bridgekey ??
         win.mst ??
         win.MST ??
         win.mstWallet ??
-        win.mstChain;
+        win.mstChain) as EIP1193Provider | undefined;
 
       if (explicitBridgeKey && !hasBridgeKey) {
         found.set("io.bridgekey.wallet", {
@@ -235,8 +240,24 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
       }
 
       // Check window.ethereum.providers array (when multiple extensions coexist)
-      if (win.ethereum?.providers && Array.isArray(win.ethereum.providers)) {
-        for (const p of win.ethereum.providers) {
+      const winEth = win.ethereum as
+        | (EIP1193Provider & {
+            providers?: (EIP1193Provider & {
+              isBridgeKey?: boolean;
+              bridgeKey?: boolean;
+              isMST?: boolean;
+              name?: string;
+            })[];
+            isBridgeKey?: boolean;
+            bridgeKey?: boolean;
+            isMST?: boolean;
+            isMetaMask?: boolean;
+            isCoinbaseWallet?: boolean;
+          })
+        | undefined;
+
+      if (winEth?.providers && Array.isArray(winEth.providers)) {
+        for (const p of winEth.providers) {
           const isBk =
             p.isBridgeKey || p.bridgeKey || p.isMST || p.name?.toLowerCase().includes("bridgekey");
           if (isBk && !found.has("io.bridgekey.wallet")) {
@@ -254,12 +275,12 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
       }
 
       // Check if window.ethereum itself is BridgeKey
-      if (win.ethereum) {
+      if (winEth) {
         const isBk =
-          win.ethereum.isBridgeKey ||
-          win.ethereum.bridgeKey ||
-          win.ethereum.isMST ||
-          (!win.ethereum.isMetaMask && !win.ethereum.isCoinbaseWallet);
+          winEth.isBridgeKey ||
+          winEth.bridgeKey ||
+          winEth.isMST ||
+          (!winEth.isMetaMask && !winEth.isCoinbaseWallet);
         if (isBk && !found.has("io.bridgekey.wallet")) {
           found.set("io.bridgekey.wallet", {
             info: {
@@ -268,13 +289,13 @@ export function discoverInjectedWallets(waitMs = 400): Promise<InjectedWallet[]>
               icon: "",
               rdns: "io.bridgekey.wallet",
             },
-            provider: win.ethereum,
+            provider: winEth,
           });
         }
       }
 
       // Fallback for legacy window.ethereum when no wallets announced through EIP-6963
-      const legacy = win.ethereum;
+      const legacy = winEth;
       if (found.size === 0 && legacy) {
         found.set(LEGACY_WALLET_ID, {
           info: {
