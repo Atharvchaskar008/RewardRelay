@@ -283,7 +283,11 @@ export async function payForDeal(sdk: SdkContext, dealId: string, details?: Deli
     if (problem) throw new ChainError(problem);
   }
   const outcome = await tx.acceptListing(sdk.chain, BigInt(dealId));
-  if (needsDetails && details) await sdk.api.deals.submitDetails(dealId, details);
+  // The payment is final here, so a failed upload must not read as a failed payment: the deal room
+  // keeps asking for the address until it arrives.
+  if (needsDetails && details) {
+    await sdk.api.deals.submitDetails(dealId, details).catch(() => undefined);
+  }
   return { tx: outcome, deal: await sdk.api.deals.get(dealId) };
 }
 

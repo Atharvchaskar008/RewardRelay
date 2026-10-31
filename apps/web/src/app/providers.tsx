@@ -5,6 +5,7 @@ import { onIdTokenChanged, type User } from "firebase/auth";
 import { SakerProvider } from "@/client/sdk";
 import { appConfig } from "@/client/config";
 import { firebaseAuth } from "@/client/firebase";
+import { useKeyboardAssist } from "@/client/hooks/useKeyboardAssist";
 
 /** Firebase session state for the UI (the SDK gets ID tokens through `getIdToken`). */
 interface Session {
@@ -20,6 +21,7 @@ export function useSession(): Session {
 
 export function Providers({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session>({ ready: false, user: null });
+  useKeyboardAssist();
 
   useEffect(() => {
     const auth = firebaseAuth();

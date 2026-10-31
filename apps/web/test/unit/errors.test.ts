@@ -1,5 +1,52 @@
 import { describe, expect, it } from "vitest";
-import { ApiError, userMessage } from "@/client/sdk/errors";
+import { ApiError, toChainError, userMessage } from "@/client/sdk/errors";
+
+describe("toChainError", () => {
+  const wrapped = (cause: unknown, message = "An unknown RPC error occurred.") =>
+    Object.assign(new Error(message), { name: "TransactionExecutionError", cause });
+
+  it("shows what the wallet actually said instead of a bare failure", () => {
+    const error = toChainError(wrapped({ code: -32603, message: "nonce too low: next 11\nraw" }));
+    expect(error.message).toBe("The transaction failed: nonce too low: next 11");
+  });
+
+  it("reads details nested below viem's wrapper, in plain objects too", () => {
+    expect(toChainError(wrapped({ code: 4001, message: "nope" })).reason).toBe("UserRejected");
+    expect(toChainError(wrapped({ code: -32002, message: "busy" })).reason).toBe("PendingRequest");
+    expect(toChainError(wrapped({ details: "insufficient funds for gas" })).reason).toBe(
+      "InsufficientFunds",
+    );
+    expect(toChainError("User cancelled").reason).toBe("UserRejected");
+  });
+
+  it("names a wallet on the wrong network", () => {
+    const mismatch = Object.assign(
+      new Error("The current chain of the wallet (id: 1) does not match the target chain"),
+      { name: "ChainMismatchError" },
+    );
+    expect(toChainError(wrapped(mismatch))).toMatchObject({ reason: "WrongChain" });
+  });
+
+  it("is not fooled by function names in viem's messages", () => {
+    const message = (fn: string) =>
+      `Execution failed.\n\nContract Call:\n  function: ${fn}(uint256)`;
+    expect(toChainError(new Error(message("claimTimeout"))).reason).toBeUndefined();
+    expect(toChainError(new Error(message("cancelListing"))).reason).toBeUndefined();
+  });
+
+  it("never calls a sent transaction failed when its result is unknown", () => {
+    const error = toChainError(new Error("connection lost"), "0xabc");
+    expect(error).toMatchObject({ reason: "Unconfirmed", hash: "0xabc" });
+    expect(error.message).not.toMatch(/failed/i);
+  });
+
+  it("keeps the plain sentence when there is nothing more to say", () => {
+    expect(toChainError(undefined).message).toBe("The transaction failed. Please try again.");
+    expect(toChainError(new Error("Transaction failed")).message).toBe(
+      "The transaction failed. Please try again.",
+    );
+  });
+});
 
 /** Shape of a FirebaseError from firebase/auth (an Error with a string `code`). */
 function firebaseError(code: string): Error {

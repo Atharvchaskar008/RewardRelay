@@ -94,6 +94,44 @@ export function revertReason(error: unknown): string | undefined {
   return undefined;
 }
 
+interface ErrorLink {
+  name?: unknown;
+  code?: unknown;
+  message?: unknown;
+  shortMessage?: unknown;
+  details?: unknown;
+  cause?: unknown;
+}
+
+/** An error and its causes, outermost first: viem nests what the wallet or node actually said. */
+function causeChain(error: unknown): ErrorLink[] {
+  const links: ErrorLink[] = [];
+  let current: unknown = error;
+  for (let depth = 0; current && depth < 8; depth++) {
+    if (typeof current !== "object") {
+      links.push({ message: String(current) });
+      break;
+    }
+    links.push(current as ErrorLink);
+    current = (current as ErrorLink).cause;
+  }
+  return links;
+}
+
+const linkTexts = (link: ErrorLink): string[] =>
+  [link.message, link.shortMessage, link.details].filter(
+    (part): part is string => typeof part === "string" && part.trim() !== "",
+  );
+
+const MAX_DETAIL_LENGTH = 140;
+
+/** The most specific sentence in the chain, for errors no rule recognises. */
+function underlyingDetail(links: ErrorLink[]): string | undefined {
+  const line = links.flatMap(linkTexts).at(-1)?.split("\n")[0]?.trim();
+  if (!line || /^(the )?transaction failed/i.test(line)) return undefined;
+  return line.length > MAX_DETAIL_LENGTH ? `${line.slice(0, MAX_DETAIL_LENGTH)}…` : line;
+}
+
 /** Converts any viem/wallet error into a ChainError with a user-safe message. */
 export function toChainError(error: unknown, hash?: string): ChainError {
   if (error instanceof ChainError) return error;
@@ -105,8 +143,12 @@ export function toChainError(error: unknown, hash?: string): ChainError {
       hash,
       error,
     );
-  const text =
-    error instanceof Error ? `${error.name} ${error.message}`.toLowerCase() : String(error);
+  const links = causeChain(error);
+  const codes = links.map((link) => link.code);
+  const text = links
+    .flatMap((link) => [typeof link.name === "string" ? link.name : "", ...linkTexts(link)])
+    .join(" ")
+    .toLowerCase();
   if (
     text.includes("insufficient funds") ||
     text.includes("insufficient balance") ||
@@ -124,7 +166,9 @@ export function toChainError(error: unknown, hash?: string): ChainError {
     text.includes("user rejected") ||
     text.includes("denied") ||
     text.includes("rejected the request") ||
-    (error as { code?: unknown })?.code === 4001
+    // Not a bare "cancel": viem's messages name the function, e.g. cancelListing.
+    /\bcancell?ed\b/.test(text) ||
+    codes.includes(4001)
   ) {
     return new ChainError(
       "You cancelled or rejected the prompt in your wallet.",
@@ -133,7 +177,7 @@ export function toChainError(error: unknown, hash?: string): ChainError {
       error,
     );
   }
-  if (text.includes("already pending") || (error as { code?: unknown })?.code === -32002) {
+  if (text.includes("already pending") || codes.includes(-32002)) {
     return new ChainError(
       "A wallet prompt is already open. Please open your BridgeKey or MetaMask extension popup to approve it.",
       "PendingRequest",
@@ -141,7 +185,16 @@ export function toChainError(error: unknown, hash?: string): ChainError {
       error,
     );
   }
-  if (text.includes("timed out") || text.includes("timeout")) {
+  if (text.includes("chainmismatch") || text.includes("does not match the target chain")) {
+    return new ChainError(
+      "Your wallet is on another network. Switch it to MST Blockchain, then try again.",
+      "WrongChain",
+      hash,
+      error,
+    );
+  }
+  // Not a bare "timeout": viem's messages name the function, e.g. claimTimeout.
+  if (/timed out|took too long|\btimeout/.test(text)) {
     return new ChainError(
       "The network is slow. Check the transaction on mstscan before retrying.",
       "Timeout",
@@ -149,7 +202,22 @@ export function toChainError(error: unknown, hash?: string): ChainError {
       error,
     );
   }
-  return new ChainError("The transaction failed. Please try again.", undefined, hash, error);
+  console.error("Transaction error", error);
+  if (hash) {
+    return new ChainError(
+      "Your transaction was sent, but its result could not be read. Check it on mstscan before retrying.",
+      "Unconfirmed",
+      hash,
+      error,
+    );
+  }
+  const detail = underlyingDetail(links);
+  return new ChainError(
+    detail ? `The transaction failed: ${detail}` : "The transaction failed. Please try again.",
+    undefined,
+    hash,
+    error,
+  );
 }
 
 /** Firebase Auth (phone sign-in) error codes the user can act on. */

@@ -1,5 +1,5 @@
 // SAKER PWA Service Worker
-const CACHE_NAME = "saker-pwa-v2";
+const CACHE_NAME = "saker-pwa-v3";
 const STATIC_ASSETS = [
   "/",
   "/manifest.webmanifest",

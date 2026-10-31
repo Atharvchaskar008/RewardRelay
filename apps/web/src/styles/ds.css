@@ -580,6 +580,27 @@
     box-shadow var(--dur) var(--ease);
 }
 
+/*
+ * Wallet in-app browsers may inject `user-select: none` to stop long-press menus, which also stops
+ * typing in a field. `!important` wins over that injected rule. The scroll margin keeps a revealed
+ * field clear of the top bar (useKeyboardAssist).
+ */
+input,
+textarea {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  scroll-margin-top: 88px;
+}
+
+/* Below 16px, iOS zooms the page on focus. */
+@media (max-width: 760px) {
+  .input,
+  .select,
+  .textarea {
+    font-size: 16px;
+  }
+}
+
 .textarea {
   height: auto;
   min-height: 96px;

@@ -199,7 +199,16 @@ export async function ensureWalletChain(
   try {
     await walletClient.switchChain({ id: config.chainId });
   } catch (error) {
-    if (!isUnknownChain(error)) throw toChainError(error);
+    if (!isUnknownChain(error)) {
+      const failure = toChainError(error);
+      if (failure.reason) throw failure;
+      throw new ChainError(
+        `Your wallet could not switch to ${viemChain(config).name}. Switch it by hand (chain id ${config.chainId}), then try again.`,
+        "WrongChain",
+        undefined,
+        error,
+      );
+    }
     await walletClient.addChain({ chain: publicChain(config) });
     const afterChainId = await walletClient.getChainId().catch(() => null);
     if (afterChainId !== config.chainId) {
@@ -319,8 +328,9 @@ export function discoverInjectedWallets(waitMs = 120): Promise<InjectedWallet[]>
         }
       }
 
-      // Check if window.ethereum itself is BridgeKey or an injected provider
-      if (winEth && !found.has("io.bridgekey.wallet")) {
+      // Check if window.ethereum itself is BridgeKey or an injected provider. Not when BridgeKey
+      // announced itself: window.ethereum may then be another extension under BridgeKey's name.
+      if (winEth && !hasBridgeKey && !found.has("io.bridgekey.wallet")) {
         found.set("io.bridgekey.wallet", {
           info: {
             uuid: "bridgekey-injected",
@@ -377,6 +387,26 @@ type EscrowFunction =
   | "defaultResolve"
   | "withdraw";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Waits for the receipt, tolerating failed polls: once the wallet returned a hash the transaction is
+ * out, so a relay or network hiccup while polling must never read as a failed transaction.
+ */
+async function waitForReceipt(ctx: ChainContext, hash: Hash): Promise<TransactionReceipt> {
+  const deadline = Date.now() + RECEIPT_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const receipt = await ctx.publicClient.getTransactionReceipt({ hash }).catch(() => null);
+    if (receipt) return receipt;
+    await sleep(POLLING_MS);
+  }
+  throw new ChainError(
+    "The network is slow. Check the transaction on mstscan before retrying.",
+    "Timeout",
+    hash,
+  );
+}
+
 async function sendEscrow(
   ctx: ChainContext,
   functionName: EscrowFunction,
@@ -393,21 +423,14 @@ async function sendEscrow(
   } as never;
   let hash: Hash | undefined;
   try {
-    await Promise.all([
-      ctx.ensureChain?.().catch(() => null),
-      ctx.publicClient.simulateContract(call),
-    ]);
+    await Promise.all([ctx.ensureChain?.(), ctx.publicClient.simulateContract(call)]);
     hash = await ctx.walletClient.writeContract({
       ...(call as object),
       chain: ctx.chain,
       type: "legacy",
       gasPrice: GAS_PRICE_WEI,
     } as never);
-    const receipt = await ctx.publicClient.waitForTransactionReceipt({
-      hash,
-      timeout: RECEIPT_TIMEOUT_MS,
-      pollingInterval: POLLING_MS,
-    });
+    const receipt = await waitForReceipt(ctx, hash);
     if (receipt.status !== "success")
       throw new ChainError("The transaction failed on-chain.", "Reverted", hash);
     return { hash, receipt, explorerUrl: explorerTx(ctx, hash) };
@@ -519,10 +542,7 @@ export async function sendMstc(ctx: ChainContext, to: Address, value: bigint): P
       type: "legacy",
       gasPrice: GAS_PRICE_WEI,
     } as never);
-    const receipt = await ctx.publicClient.waitForTransactionReceipt({
-      hash,
-      timeout: RECEIPT_TIMEOUT_MS,
-    });
+    const receipt = await waitForReceipt(ctx, hash);
     if (receipt.status !== "success")
       throw new ChainError("The transfer failed.", "Reverted", hash);
     return { hash, receipt, explorerUrl: explorerTx(ctx, hash) };

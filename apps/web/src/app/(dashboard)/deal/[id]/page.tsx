@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Fragment, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useState, type CSSProperties } from "react";
+import { loadSavedDelivery, saveDelivery } from "@/client/savedDelivery";
 import { ErrorText, LoadingCard, Page, StatusPill } from "@/components/ui";
 import {
   Avatar,
@@ -127,7 +128,7 @@ function progress(deal: DealView) {
 function DealRoom({ deal }: { deal: DealView }) {
   const wallet = useWallet();
   const action = useDealAction(deal.id);
-  const [details, setDetails] = useState<DeliveryDetails>(EMPTY_DETAILS);
+  const [details, setDetails] = useDeliveryDetails();
   const [orderId, setOrderId] = useState("");
   const [notes, setNotes] = useState("");
   const [invoice, setInvoice] = useState<File | undefined>();
@@ -137,6 +138,9 @@ function DealRoom({ deal }: { deal: DealView }) {
   const [lastTx, setLastTx] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [openForm, setOpenForm] = useState<DealAction | null>(null);
+
+  // The chain has the last word: when the deal moved on, an earlier error no longer applies.
+  useEffect(() => setError(null), [deal.status]);
 
   async function run(name: DealAction, input?: DealActionInput) {
     setError(null);
@@ -540,6 +544,16 @@ const cleanDetails = (details: DeliveryDetails): DeliveryDetails => ({
   addressLines: details.addressLines.map((line) => line.trim()).filter(Boolean),
 });
 
+/** The delivery form's state, starting from the address last used on this device. */
+function useDeliveryDetails() {
+  const { accountId } = useRewardRelay();
+  const [details, setDetails] = useState<DeliveryDetails>(
+    () => loadSavedDelivery(accountId) ?? EMPTY_DETAILS,
+  );
+  useEffect(() => saveDelivery(cleanDetails(details), accountId), [details, accountId]);
+  return [details, setDetails] as const;
+}
+
 function DeliveryForm({
   value,
   onChange,
@@ -596,7 +610,7 @@ function DeliveryForm({
  */
 function MissingDeliveryDetails({ deal }: { deal: DealView }) {
   const send = useSendDeliveryDetails(deal.id);
-  const [details, setDetails] = useState<DeliveryDetails>(EMPTY_DETAILS);
+  const [details, setDetails] = useDeliveryDetails();
   if (deal.deliveryDetailsSent !== false || deal.status !== "Locked") return null;
   if (deal.role === "sharer") {
     return (

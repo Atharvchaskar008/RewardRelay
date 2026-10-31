@@ -188,6 +188,15 @@
     width: 20px;
     height: 20px;
   }
+
+  /* While typing (useKeyboardAssist): nothing sits over the field, and any field can scroll clear. */
+  html.typing .bottombar {
+    display: none;
+  }
+
+  html.typing body {
+    padding-bottom: 60vh;
+  }
 }
 
 /* ---------- Page frame ---------- */
