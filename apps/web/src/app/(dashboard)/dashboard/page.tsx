@@ -22,7 +22,7 @@ import { useListings, useMe, useRewardRelay } from "@/client/sdk";
 import { useSession } from "@/app/providers";
 import { PixelField } from "@/landing/PixelField";
 
-const DEPOSIT = ["50%", "30%", "20%"];
+const DEPOSIT = ["5%", "3%", "2%"];
 
 /** Overview: your balance, badge and deals at a glance, then the newest offers. */
 export default function OverviewPage() {

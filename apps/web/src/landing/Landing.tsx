@@ -33,9 +33,9 @@ const LOOP = [
 ];
 
 const TIERS = [
-  { name: "Standard", deposit: "50%", how: "Wallet connected", density: 0.25 },
-  { name: "Trusted", deposit: "30%", how: "5 deals completed", density: 0.5 },
-  { name: "Verified", deposit: "20%", how: "20 deals completed", density: 0.8 },
+  { name: "Standard", deposit: "5%", how: "Wallet connected", density: 0.25 },
+  { name: "Trusted", deposit: "3%", how: "5 deals completed", density: 0.5 },
+  { name: "Verified", deposit: "2%", how: "20 deals completed", density: 0.8 },
 ];
 
 const TEAM_MEMBERS = [

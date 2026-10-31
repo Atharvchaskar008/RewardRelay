@@ -420,9 +420,9 @@ The core protocol consists of two audited, verified smart contracts on MST Testn
 
 | Trust Tier           | Requirements                                                  | Deal Limit (Demo Rate) | Sharer Deposit | Seeker Deposit |
 | :------------------- | :------------------------------------------------------------ | :--------------------- | :------------- | :------------- |
-| **Tier 0: New**      | Phone-verified wallet linking                                 | ₹500 (0.005 tMSTC)     | 50% of price   | 5% of price    |
-| **Tier 1: Trusted**  | 5 completed deals, 3 unique counterparties, 0 disputes lost   | ₹2,000 (0.02 tMSTC)    | 30% of price   | 5% of price    |
-| **Tier 2: Verified** | 20 completed deals, 10 unique counterparties, 0 disputes lost | ₹10,000 (0.1 tMSTC)    | 20% of price   | 5% of price    |
+| **Tier 0: New**      | Phone-verified wallet linking                                 | ₹500 (0.005 tMSTC)     | 5% of price    | 5% of price    |
+| **Tier 1: Trusted**  | 5 completed deals, 3 unique counterparties, 0 disputes lost   | ₹2,000 (0.02 tMSTC)    | 3% of price    | 5% of price    |
+| **Tier 2: Verified** | 20 completed deals, 10 unique counterparties, 0 disputes lost | ₹10,000 (0.1 tMSTC)    | 2% of price    | 5% of price    |
 
 _Note: Any lost dispute automatically demotes the user back to Tier 0._
 
